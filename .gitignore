@@ -35,3 +35,5 @@ _runtime/
 *.bak.*
 *.before-*
 *profile-dropdown-backup*
+!src/pages/logs/
+!src/pages/logs/**
