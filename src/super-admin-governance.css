@@ -1,0 +1,241 @@
+/* Super Admin governance, subscription enforcement, and profile-menu safety */
+
+.app-topbar.glass-panel {
+  overflow: visible !important;
+}
+
+.app-topbar .profile-menu {
+  position: relative;
+  z-index: 100;
+}
+
+.app-topbar .profile-popover {
+  z-index: 1000;
+}
+
+.profile-popover__action {
+  text-decoration: none;
+}
+
+.super-admin-dashboard {
+  min-height: 100%;
+}
+
+.super-admin-command-bar {
+  align-items: center;
+}
+
+.super-admin-module-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.super-admin-module-link {
+  color: inherit;
+  min-width: 0;
+  text-decoration: none;
+}
+
+.super-admin-module-card {
+  align-items: center;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  height: 100%;
+  min-height: 176px;
+  padding: 22px;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.super-admin-module-link:hover .super-admin-module-card {
+  transform: translateY(-3px);
+}
+
+.super-admin-module-card__icon {
+  align-items: center;
+  border: 1px solid rgba(99, 102, 241, 0.18);
+  border-radius: 16px;
+  display: inline-flex;
+  height: 48px;
+  justify-content: center;
+  width: 48px;
+}
+
+.super-admin-module-card > div {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.super-admin-module-card > div > span,
+.super-admin-module-card > div > small {
+  color: var(--text-muted);
+}
+
+.super-admin-module-card > div > strong {
+  font-size: clamp(1.05rem, 2vw, 1.45rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.super-admin-scope-card {
+  align-items: flex-start;
+  display: flex;
+  gap: 16px;
+  padding: 22px;
+}
+
+.super-admin-scope-card h2,
+.super-admin-scope-card p {
+  margin: 0;
+}
+
+.super-admin-scope-card p {
+  color: var(--text-muted);
+  margin-top: 6px;
+  max-width: 920px;
+}
+
+.subscription-access-page {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  min-height: calc(100vh - 170px);
+  padding: 24px 0;
+}
+
+.subscription-access-card {
+  display: grid;
+  gap: 18px;
+  justify-items: center;
+  max-width: 720px;
+  padding: clamp(28px, 5vw, 54px);
+  text-align: center;
+  width: 100%;
+}
+
+.subscription-access-card__icon {
+  align-items: center;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 22px;
+  display: inline-flex;
+  height: 72px;
+  justify-content: center;
+  width: 72px;
+}
+
+.subscription-access-card__icon .material-icon {
+  font-size: 34px;
+}
+
+.subscription-access-card h1,
+.subscription-access-card p {
+  margin: 0;
+}
+
+.subscription-access-card p {
+  color: var(--text-muted);
+  line-height: 1.7;
+  max-width: 600px;
+}
+
+.subscription-access-message {
+  align-items: flex-start;
+  background: rgba(99, 102, 241, 0.06);
+  border: 1px solid rgba(99, 102, 241, 0.14);
+  border-radius: 16px;
+  display: flex;
+  gap: 10px;
+  padding: 14px 16px;
+  text-align: left;
+  width: 100%;
+}
+
+.subscription-access-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+}
+
+.subscription-access-actions .glass-button,
+.subscription-access-actions .primary-gradient-button {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.subscription-sidebar-note {
+  align-items: flex-start;
+  color: var(--text-muted);
+  display: flex;
+  font-size: 0.82rem;
+  gap: 9px;
+  line-height: 1.45;
+  padding: 12px 14px;
+}
+
+.subscription-renewal-form {
+  align-items: end;
+  background: rgba(99, 102, 241, 0.045);
+  border: 1px solid rgba(99, 102, 241, 0.12);
+  border-radius: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 16px;
+  padding: 16px;
+}
+
+.subscription-renewal-form .control-inline-field {
+  flex: 1 1 280px;
+}
+
+@media (max-width: 1180px) {
+  .super-admin-module-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .super-admin-module-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .super-admin-module-card {
+    min-height: 140px;
+  }
+
+  .subscription-access-actions,
+  .subscription-access-actions > * {
+    width: 100%;
+  }
+
+  .subscription-renewal-form,
+  .subscription-renewal-form > * {
+    width: 100%;
+  }
+}
+
+
+.company-card__actions {
+  display: grid;
+  gap: 0.65rem;
+  min-width: 8.5rem;
+}
+
+.company-status-button {
+  width: 100%;
+}
+
+@media (max-width: 760px) {
+  .company-card__actions {
+    width: 100%;
+  }
+}

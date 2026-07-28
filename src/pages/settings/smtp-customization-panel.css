@@ -1,0 +1,223 @@
+.smtp-customize-shell {
+  display: grid;
+  gap: 20px;
+}
+.smtp-customize-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 26px;
+}
+.smtp-customize-hero h2 {
+  margin: 8px 0 0;
+  font-size: clamp(24px, 3vw, 34px);
+}
+.smtp-customize-hero p {
+  max-width: 720px;
+  margin: 10px 0 0;
+  line-height: 1.65;
+}
+.smtp-brevo-button,
+.smtp-secondary-button,
+.smtp-system-state button {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 14px;
+  padding: 0 17px;
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+}
+.smtp-brevo-button {
+  background:
+    linear-gradient(
+      135deg,
+      #6759e8,
+      #8a7cf5
+    );
+  box-shadow:
+    8px 10px 22px rgba(103, 89, 232, 0.24);
+  color: #ffffff;
+}
+.smtp-secondary-button,
+.smtp-system-state button {
+  background: #eef3f9;
+  box-shadow:
+    7px 7px 16px rgba(174, 185, 201, 0.28),
+    -7px -7px 16px rgba(255, 255, 255, 0.9);
+  color: #40506d;
+}
+.smtp-feedback {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border-radius: 15px;
+  padding: 13px 15px;
+  font-size: 13px;
+}
+.smtp-feedback--success {
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  background: #f0fdf4;
+  color: #17723b;
+}
+.smtp-feedback--error {
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  background: #fef2f2;
+  color: #b42318;
+}
+.smtp-customize-grid {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1.5fr)
+    minmax(280px, 0.72fr);
+  gap: 20px;
+}
+.smtp-config-card,
+.smtp-status-card,
+.smtp-test-card {
+  padding: 22px;
+}
+.smtp-side-stack {
+  display: grid;
+  align-content: start;
+  gap: 20px;
+}
+.smtp-card-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.smtp-card-heading h3 {
+  margin: 5px 0 0;
+}
+.smtp-card-heading > div > span {
+  color: #6e7890;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.smtp-state {
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: #e8edf4;
+  color: #68748a;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: capitalize;
+}
+.smtp-state--active {
+  background: #dcfce7;
+  color: #168443;
+}
+.smtp-form-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 15px;
+}
+.smtp-field {
+  display: grid;
+  gap: 8px;
+}
+.smtp-field--wide {
+  grid-column: 1 / -1;
+}
+.smtp-field > span {
+  color: #4c5870;
+  font-size: 12px;
+  font-weight: 750;
+}
+.smtp-field small {
+  color: #7c879a;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.smtp-config-card > .primary-gradient-button {
+  margin-top: 20px;
+}
+.smtp-detail-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+.smtp-detail-list > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  border-radius: 12px;
+  padding: 11px 12px;
+  background: rgba(241, 245, 249, 0.9);
+}
+.smtp-detail-list dt {
+  color: #768197;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.smtp-detail-list dd {
+  margin: 0;
+  color: #2b3548;
+  font-size: 12px;
+  font-weight: 750;
+  text-align: right;
+}
+.smtp-test-card {
+  display: grid;
+  gap: 15px;
+}
+.smtp-test-card .smtp-card-heading {
+  margin-bottom: 0;
+}
+.smtp-test-card p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.smtp-system-state {
+  display: flex;
+  min-height: 190px;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 26px;
+}
+.smtp-system-state > div {
+  display: grid;
+  gap: 4px;
+}
+.smtp-system-state--error {
+  color: #b42318;
+}
+@media (max-width: 980px) {
+  .smtp-customize-grid {
+    grid-template-columns: 1fr;
+  }
+  .smtp-side-stack {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 700px) {
+  .smtp-customize-hero {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .smtp-form-grid,
+  .smtp-side-stack {
+    grid-template-columns: 1fr;
+  }
+  .smtp-field--wide {
+    grid-column: auto;
+  }
+  .smtp-brevo-button {
+    width: 100%;
+  }
+}

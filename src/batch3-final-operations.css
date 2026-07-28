@@ -1,0 +1,422 @@
+/* publisher_tracker_batch3_final_operations_v1 */
+
+.final-operations-page,
+.account-page {
+  gap: 1.25rem;
+}
+
+.final-filter-grid {
+  display: grid;
+  grid-template-columns: minmax(14rem, 2fr) repeat(4, minmax(9rem, 1fr));
+  gap: 0.85rem;
+  align-items: end;
+  margin: 1rem 0 1.25rem;
+}
+
+.final-filter-grid--logs {
+  grid-template-columns: minmax(14rem, 2fr) repeat(6, minmax(8.5rem, 1fr));
+}
+
+.final-filter-grid > label,
+.final-manual-conversion-form > label,
+.account-form > label {
+  display: grid;
+  gap: 0.42rem;
+  color: var(--on-surface-variant);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.final-filter-grid input,
+.final-filter-grid select,
+.final-manual-conversion-form input,
+.final-manual-conversion-form select,
+.account-form input,
+.account-form select {
+  width: 100%;
+  min-height: 2.75rem;
+  border: 1px solid rgba(112, 128, 150, 0.16);
+  border-radius: 0.9rem;
+  background:
+    linear-gradient(145deg, rgba(241, 246, 252, 0.92), rgba(255, 255, 255, 0.8));
+  box-shadow:
+    inset 3px 3px 8px rgba(170, 183, 202, 0.18),
+    inset -3px -3px 8px rgba(255, 255, 255, 0.94);
+  color: var(--on-surface-strong);
+  padding: 0.72rem 0.85rem;
+}
+
+.final-filter-grid input:focus,
+.final-filter-grid select:focus,
+.final-manual-conversion-form input:focus,
+.final-manual-conversion-form select:focus,
+.account-form input:focus,
+.account-form select:focus {
+  border-color: rgba(89, 104, 239, 0.42);
+  outline: none;
+  box-shadow:
+    0 0 0 4px rgba(89, 104, 239, 0.08),
+    inset 2px 2px 6px rgba(170, 183, 202, 0.14),
+    inset -2px -2px 6px rgba(255, 255, 255, 0.96);
+}
+
+.final-search-field {
+  position: relative;
+  display: flex !important;
+  align-items: center;
+}
+
+.final-search-field .app-icon {
+  position: absolute;
+  left: 0.85rem;
+  z-index: 1;
+  color: var(--on-surface-muted);
+}
+
+.final-search-field input {
+  padding-left: 2.6rem;
+}
+
+.final-manual-conversion-form {
+  display: grid;
+  grid-template-columns: minmax(14rem, 2fr) minmax(9rem, 1fr) minmax(9rem, 1fr) minmax(7rem, 0.75fr) auto;
+  gap: 0.85rem;
+  align-items: end;
+}
+
+.final-manual-conversion-form .primary-gradient-button {
+  min-height: 2.75rem;
+  white-space: nowrap;
+}
+
+.final-report-table,
+.final-log-table,
+.final-user-agent-table,
+.billing-invoice-table {
+  min-width: 72rem;
+}
+
+.final-report-table thead th,
+.final-log-table thead th,
+.final-user-agent-table thead th,
+.billing-invoice-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: rgba(244, 247, 251, 0.96) !important;
+  backdrop-filter: blur(16px);
+}
+
+.final-report-table tfoot td {
+  border-top: 1px solid rgba(89, 104, 239, 0.2);
+  background: rgba(238, 240, 255, 0.52);
+  color: var(--on-surface-strong);
+  font-weight: 800;
+}
+
+.final-report-table td strong,
+.final-log-table td strong,
+.final-user-agent-table td strong,
+.billing-invoice-table td strong {
+  color: var(--on-surface-strong);
+}
+
+.final-log-table td small,
+.final-user-agent-table td small,
+.billing-invoice-table td small {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--on-surface-muted);
+  font-size: 0.72rem;
+}
+
+.final-expand-button,
+.final-copy-button {
+  display: inline-grid;
+  width: 2.3rem;
+  height: 2.3rem;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.88);
+  border-radius: 0.75rem;
+  background: linear-gradient(145deg, #ffffff, #eaf0f7);
+  box-shadow:
+    5px 5px 12px rgba(169, 181, 199, 0.22),
+    -5px -5px 12px rgba(255, 255, 255, 0.92);
+  color: var(--primary);
+  cursor: pointer;
+}
+
+.final-expand-button:hover,
+.final-copy-button:hover {
+  transform: translateY(-1px);
+  color: var(--primary-dark);
+}
+
+.final-expand-button:disabled,
+.final-copy-button:disabled {
+  opacity: 0.46;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.final-expand-button .app-icon {
+  transition: transform 180ms ease;
+}
+
+.final-icon-rotated {
+  transform: rotate(180deg);
+}
+
+.final-detail-row > td {
+  padding: 0 !important;
+  background: rgba(238, 242, 248, 0.5) !important;
+}
+
+.final-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  padding: 1rem 1.15rem 1.15rem;
+}
+
+.final-detail-grid > div {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.88);
+  border-radius: 0.9rem;
+  background: rgba(255, 255, 255, 0.68);
+  padding: 0.8rem;
+}
+
+.final-detail-grid span {
+  color: var(--on-surface-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.final-detail-grid strong {
+  overflow-wrap: anywhere;
+}
+
+.final-detail-grid__wide {
+  grid-column: 1 / -1;
+}
+
+.final-user-agent-text {
+  display: block;
+  max-width: 42rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.final-inline-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  min-height: 8rem;
+  color: var(--on-surface-variant);
+  font-weight: 700;
+}
+
+.account-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.1rem;
+}
+
+.account-grid > :first-child {
+  grid-row: span 2;
+}
+
+.account-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.account-form input:disabled {
+  opacity: 0.72;
+  cursor: not-allowed;
+}
+
+.billing-plan-showcase {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.billing-plan-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.35rem 0.85rem;
+  align-items: center;
+  min-height: 9.5rem;
+  padding: 1.2rem 1.3rem;
+  overflow: hidden;
+}
+
+.billing-plan-card::after {
+  position: absolute;
+  right: -2.5rem;
+  bottom: -3.5rem;
+  width: 9rem;
+  height: 9rem;
+  border-radius: 50%;
+  background: rgba(89, 104, 239, 0.08);
+  content: '';
+  pointer-events: none;
+}
+
+.billing-plan-card--current {
+  border-color: rgba(89, 104, 239, 0.28) !important;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(238, 240, 255, 0.78)) !important;
+}
+
+.billing-plan-card > .app-icon {
+  grid-row: 2 / span 2;
+  width: 2.7rem;
+  height: 2.7rem;
+  padding: 0.6rem;
+  border-radius: 0.9rem;
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.billing-plan-card > strong {
+  color: var(--on-surface-strong);
+  font-size: 1.25rem;
+}
+
+.billing-plan-card > span:not(.billing-plan-card__eyebrow):not(.control-status) {
+  color: var(--on-surface-variant);
+}
+
+.billing-plan-card > .control-status {
+  grid-column: 3;
+  grid-row: 2 / span 2;
+}
+
+.billing-plan-card__eyebrow {
+  grid-column: 1 / -1;
+  color: var(--primary);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.app-sidebar__footer {
+  display: grid;
+  gap: 0.35rem;
+}
+
+@media (max-width: 1440px) {
+  .final-filter-grid,
+  .final-filter-grid--logs {
+    grid-template-columns: repeat(4, minmax(9rem, 1fr));
+  }
+
+  .final-search-field {
+    grid-column: span 2;
+  }
+
+  .final-manual-conversion-form {
+    grid-template-columns: repeat(4, minmax(9rem, 1fr));
+  }
+
+  .final-manual-conversion-form .primary-gradient-button {
+    grid-column: span 4;
+    justify-self: start;
+  }
+}
+
+@media (max-width: 960px) {
+  .final-filter-grid,
+  .final-filter-grid--logs,
+  .final-manual-conversion-form,
+  .account-grid,
+  .billing-plan-showcase {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .final-search-field,
+  .final-manual-conversion-form .primary-gradient-button {
+    grid-column: span 2;
+  }
+
+  .account-grid > :first-child {
+    grid-row: auto;
+  }
+
+  .final-detail-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .final-filter-grid,
+  .final-filter-grid--logs,
+  .final-manual-conversion-form,
+  .account-grid,
+  .billing-plan-showcase,
+  .final-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .final-search-field,
+  .final-manual-conversion-form .primary-gradient-button,
+  .final-detail-grid__wide {
+    grid-column: auto;
+  }
+
+  .final-manual-conversion-form .primary-gradient-button {
+    width: 100%;
+  }
+
+  .billing-plan-card {
+    grid-template-columns: auto 1fr;
+  }
+
+  .billing-plan-card > .control-status {
+    grid-column: 1 / -1;
+    grid-row: auto;
+    justify-self: start;
+  }
+}
+
+
+.account-password-field {
+  position: relative;
+  display: block;
+}
+
+.account-password-field > input {
+  padding-right: 3.25rem;
+}
+
+.account-password-field__toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.45rem;
+  width: 2.2rem;
+  height: 2.2rem;
+  transform: translateY(-50%);
+  border: 1px solid rgba(112, 128, 150, 0.12);
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--on-surface-variant);
+  box-shadow:
+    4px 4px 10px rgba(151, 166, 187, 0.13),
+    -3px -3px 8px rgba(255, 255, 255, 0.86);
+}
+
+.account-password-field__toggle:hover,
+.account-password-field__toggle:focus-visible {
+  color: var(--primary);
+  background: rgba(255, 255, 255, 0.94);
+}
