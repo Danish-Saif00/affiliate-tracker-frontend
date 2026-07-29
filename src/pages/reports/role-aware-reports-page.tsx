@@ -22,5 +22,10 @@ export function ReportsPage({
     );
   }
 
-  return <AdministrativeReportsPage dimension={dimension} />;
+  return (
+    <AdministrativeReportsPage
+      dimension={dimension}
+      hideModuleHeader={isPublisher}
+    />
+  );
 }

@@ -81,8 +81,10 @@ function endOfToday(): string {
 
 export function ReportsPage({
   dimension,
+  hideModuleHeader = false,
 }: {
   dimension: PerformanceReportDimension;
+  hideModuleHeader?: boolean;
 }) {
   const configuration = REPORT_CONFIGURATION[dimension];
   const [rangeDays, setRangeDays] = useState(30);
@@ -163,35 +165,41 @@ export function ReportsPage({
   );
 
   return (
-    <div className="control-page final-operations-page">
-      <ControlModuleHeader
-        description={
-          <>
-            Compare approved, rejected, and unchecked attribution for{' '}
-            <strong>{report.companyName}</strong>.
-          </>
-        }
-        eyebrow={configuration.eyebrow}
-        icon="analytics"
-        stats={[
-          {
-            label: 'Clicks',
-            value: formatCompactNumber(totals.totalClicks),
-          },
-          {
-            label: 'Conversions',
-            value: formatCompactNumber(totals.totalConversions),
-          },
-          {
-            label: 'Approved CVR',
-            value: formatPercentage(
-              totals.approvedConversions,
-              totals.totalClicks,
-            ),
-          },
-        ]}
-        title={configuration.title}
-      />
+    <div
+      className={`control-page final-operations-page${
+        hideModuleHeader ? " publisher-compact-page" : ""
+      }`}
+    >
+      {!hideModuleHeader && (
+        <ControlModuleHeader
+          description={
+            <>
+              Compare approved, rejected, and unchecked attribution for{' '}
+              <strong>{report.companyName}</strong>.
+            </>
+          }
+          eyebrow={configuration.eyebrow}
+          icon="analytics"
+          stats={[
+            {
+              label: 'Clicks',
+              value: formatCompactNumber(totals.totalClicks),
+            },
+            {
+              label: 'Conversions',
+              value: formatCompactNumber(totals.totalConversions),
+            },
+            {
+              label: 'Approved CVR',
+              value: formatPercentage(
+                totals.approvedConversions,
+                totals.totalClicks,
+              ),
+            },
+          ]}
+          title={configuration.title}
+        />
+      )}
 
       <ControlFeedback error={report.error} message={null} />
 

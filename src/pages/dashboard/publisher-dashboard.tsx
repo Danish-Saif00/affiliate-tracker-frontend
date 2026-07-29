@@ -6,14 +6,8 @@ import { GlassPanel } from "../../components/ui/glass-panel";
 import { useCompany } from "../../features/companies/use-company";
 import { usePublisherOffers } from "../../features/publisher-workspace/use-publisher-offers";
 import { useReportingDashboard } from "../../features/reporting/use-reporting-dashboard";
-import type {
-  ReportingMonetaryTotal,
-  ReportingPerformanceRow,
-} from "../../features/reporting/reporting.types";
-import {
-  ControlEmpty,
-  ControlFeedback,
-} from "../control-plane/control-plane-ui";
+import type { ReportingMonetaryTotal } from "../../features/reporting/reporting.types";
+import { ControlFeedback } from "../control-plane/control-plane-ui";
 
 function dateInputValue(date: Date): string {
   const offset = date.getTimezoneOffset() * 60_000;
@@ -77,59 +71,6 @@ function formatPayout(totals: readonly ReportingMonetaryTotal[]): string {
   return totals.length === 1
     ? formatMoney(total.payoutAmountMinor, total.currency)
     : `${totals.length} currencies`;
-}
-
-function OfferPerformanceTable({
-  rows,
-}: {
-  rows: readonly ReportingPerformanceRow[];
-}) {
-  return (
-    <GlassPanel as="section" className="dashboard-report-card">
-      <div className="dashboard-card-heading">
-        <div>
-          <span>My performance</span>
-          <h2>Offer results</h2>
-        </div>
-        <Link to="/reports/offers">View report</Link>
-      </div>
-
-      {rows.length === 0 ? (
-        <ControlEmpty
-          icon="table_rows"
-          message="Clicks and conversions will appear after your tracking links receive traffic."
-          title="No performance data"
-        />
-      ) : (
-        <div className="responsive-table">
-          <table>
-            <thead>
-              <tr>
-                <th>Offer</th>
-                <th>Clicks</th>
-                <th>Conversions</th>
-                <th>Approved</th>
-                <th>Payout</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.slice(0, 8).map((row) => (
-                <tr key={row.dimensionId}>
-                  <td>
-                    <strong>{row.dimensionName}</strong>
-                  </td>
-                  <td>{formatCompact(row.clicks)}</td>
-                  <td>{formatCompact(row.conversions)}</td>
-                  <td>{formatCompact(row.approvedConversions)}</td>
-                  <td>{formatPayout(row.monetaryTotals)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </GlassPanel>
-  );
 }
 
 export function PublisherDashboard() {
@@ -309,49 +250,6 @@ export function PublisherDashboard() {
           </Link>
         ))}
       </section>
-
-      <div className="dashboard-report-grid publisher-dashboard__content">
-        <OfferPerformanceTable rows={dashboard.offers} />
-
-        <GlassPanel as="section" className="dashboard-report-card">
-          <div className="dashboard-card-heading">
-            <div>
-              <span>Publisher workspace</span>
-              <h2>Assigned Offers</h2>
-            </div>
-            <Link to="/offers/manage">View all</Link>
-          </div>
-
-          {publisherOffers.offers.length === 0 ? (
-            <ControlEmpty
-              icon="local_offer"
-              message="Your Manager has not assigned an active Offer yet."
-              title="No assigned Offers"
-            />
-          ) : (
-            <div className="publisher-dashboard__offer-list">
-              {publisherOffers.offers.slice(0, 6).map((offer) => (
-                <article key={offer.id}>
-                  <div>
-                    <span>Offer #{offer.publicId}</span>
-                    <strong>{offer.name}</strong>
-                    <small>
-                      {offer.trackingDomainHostname ??
-                        "Tracking Domain assigned when the link is created"}
-                    </small>
-                  </div>
-                  <Link
-                    aria-label={`Create or review tracking links for ${offer.name}`}
-                    to="/tracking-links"
-                  >
-                    <MaterialIcon name="link" />
-                  </Link>
-                </article>
-              ))}
-            </div>
-          )}
-        </GlassPanel>
-      </div>
     </div>
   );
 }

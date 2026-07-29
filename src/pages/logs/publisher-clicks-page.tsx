@@ -20,7 +20,6 @@ import {
   ControlEmpty,
   ControlFeedback,
   ControlLoading,
-  ControlModuleHeader,
   ControlStatus,
   RefreshButton,
 } from "../control-plane/control-plane-ui";
@@ -92,32 +91,7 @@ export function PublisherClicksPage() {
   );
 
   return (
-    <div className="control-page final-operations-page">
-      <ControlModuleHeader
-        description={
-          <>
-            Review traffic generated only by your Publisher links in{" "}
-            <strong>{logs.companyName}</strong>.
-          </>
-        }
-        eyebrow="My Traffic"
-        icon="ads_click"
-        stats={[
-          { label: "Visible", value: logs.clicks.length },
-          {
-            label: "Approved",
-            value: logs.clicks.filter((click) => click.status === "approved")
-              .length,
-          },
-          {
-            label: "Rejected",
-            value: logs.clicks.filter((click) => click.status === "rejected")
-              .length,
-          },
-        ]}
-        title="My Clicks"
-      />
-
+    <div className="control-page final-operations-page publisher-compact-page">
       <ControlFeedback error={logs.error ?? offers.error} message={null} />
 
       <GlassPanel

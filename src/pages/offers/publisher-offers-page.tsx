@@ -60,10 +60,7 @@ function formatSchedule(offer: PublisherOffer): string {
 export function PublisherOffersPage() {
   const publisherOffers = usePublisherOffers();
   const [search, setSearch] = useState("");
-  const [shareModes, setShareModes] = useState<
-    Readonly<Record<string, OfferShareMode>>
-  >({});
-  const [copiedOfferId, setCopiedOfferId] = useState<string | null>(null);
+  const [copyMessage, setCopyMessage] = useState<string | null>(null);
   const [copyError, setCopyError] = useState<string | null>(null);
 
   const filteredOffers = useMemo(() => {
@@ -84,12 +81,14 @@ export function PublisherOffersPage() {
     );
   }, [publisherOffers.offers, search]);
 
-  async function copyOffer(offer: PublisherOffer): Promise<void> {
-    const mode = shareModes[offer.id] ?? "link";
+  async function copyOffer(
+    offer: PublisherOffer,
+    mode: OfferShareMode,
+  ): Promise<void> {
     const value = mode === "text" ? offer.promotionalText : offer.trackingLink;
 
     setCopyError(null);
-    setCopiedOfferId(null);
+    setCopyMessage(null);
 
     if (value === null) {
       setCopyError(
@@ -102,7 +101,11 @@ export function PublisherOffersPage() {
 
     try {
       await copyOfferShareValue(value);
-      setCopiedOfferId(offer.id);
+      setCopyMessage(
+        mode === "text"
+          ? "Promotional text copied."
+          : "Tracking link copied.",
+      );
     } catch (error: unknown) {
       setCopyError(
         error instanceof Error
@@ -131,38 +134,9 @@ export function PublisherOffersPage() {
 
   return (
     <div className="page-stack publisher-offers-page">
-      <header className="publisher-workspace-heading">
-        <div>
-          <span className="eyebrow-chip">
-            <MaterialIcon name="local_offer" />
-            Publisher Workspace
-          </span>
-          <h1>Assigned Offers</h1>
-          <p>
-            Every active assignment includes its generated tracking link and
-            promotional text. No separate tracking-link creation is required.
-          </p>
-        </div>
-
-        <button
-          className="control-icon-button"
-          disabled={publisherOffers.isRefreshing}
-          onClick={() => void publisherOffers.refresh()}
-          title="Refresh assigned Offers"
-          type="button"
-        >
-          <MaterialIcon
-            className={publisherOffers.isRefreshing ? "spin" : undefined}
-            name="refresh"
-          />
-        </button>
-      </header>
-
       <ControlFeedback
         error={copyError ?? publisherOffers.error}
-        message={
-          copiedOfferId === null ? null : "Selected Offer content copied."
-        }
+        message={copyMessage}
       />
 
       <GlassPanel as="section" className="publisher-offers-toolbar">
@@ -178,9 +152,23 @@ export function PublisherOffersPage() {
             />
           </div>
         </label>
-        <div>
-          <span>Active assignments</span>
-          <strong>{publisherOffers.offers.length}</strong>
+        <div className="publisher-offers-toolbar__actions">
+          <div className="publisher-offers-toolbar__count">
+            <span>Active assignments</span>
+            <strong>{publisherOffers.offers.length}</strong>
+          </div>
+          <button
+            className="control-icon-button"
+            disabled={publisherOffers.isRefreshing}
+            onClick={() => void publisherOffers.refresh()}
+            title="Refresh assigned Offers"
+            type="button"
+          >
+            <MaterialIcon
+              className={publisherOffers.isRefreshing ? "spin" : undefined}
+              name="refresh"
+            />
+          </button>
         </div>
       </GlassPanel>
 
@@ -203,10 +191,6 @@ export function PublisherOffersPage() {
       ) : (
         <section aria-label="Assigned Offers" className="publisher-offer-grid">
           {filteredOffers.map((offer) => {
-            const shareMode = shareModes[offer.id] ?? "link";
-            const selectedValue =
-              shareMode === "text" ? offer.promotionalText : offer.trackingLink;
-
             return (
               <GlassPanel
                 as="article"
@@ -215,60 +199,56 @@ export function PublisherOffersPage() {
               >
                 <details className="offer-collapsible-card">
                   <summary>
-                    <div>
-                      <span>Offer #{offer.publicId}</span>
-                      <h2>{offer.name}</h2>
+                    <div className="publisher-offer-card__summary-layout">
+                      <div className="publisher-offer-card__identity">
+                        <span>Offer #{offer.publicId}</span>
+                        <h2>{offer.name}</h2>
+                      </div>
+
+                      <div
+                        className="publisher-offer-card__quick-actions"
+                        onClick={(event) => event.stopPropagation()}
+                        onKeyDown={(event) => event.stopPropagation()}
+                        onPointerDown={(event) => event.stopPropagation()}
+                      >
+                        <button
+                          className="publisher-offer-card__copy-button"
+                          disabled={offer.promotionalText === null}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            void copyOffer(offer, "text");
+                          }}
+                          title="Copy promotional text"
+                          type="button"
+                        >
+                          <MaterialIcon name="text_snippet" />
+                          Copy Text
+                        </button>
+                        <button
+                          className="publisher-offer-card__copy-button publisher-offer-card__copy-button--primary"
+                          disabled={offer.trackingLink === null}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            void copyOffer(offer, "link");
+                          }}
+                          title="Copy tracking link"
+                          type="button"
+                        >
+                          <MaterialIcon name="link" />
+                          Copy Link
+                        </button>
+                      </div>
                     </div>
-                    <MaterialIcon name="expand_more" />
+                    <MaterialIcon
+                      className="publisher-offer-card__chevron"
+                      name="expand_more"
+                    />
                   </summary>
 
                   <div className="offer-collapsible-card__body">
                     {offer.description !== null && <p>{offer.description}</p>}
-
-                    <div
-                      className="offer-share-control"
-                      onClick={(event) => event.stopPropagation()}
-                      onKeyDown={(event) => event.stopPropagation()}
-                      onPointerDown={(event) => event.stopPropagation()}
-                    >
-                      <label>
-                        <span>Copy content</span>
-                        <select
-                          onChange={(event) => {
-                            event.stopPropagation();
-                            const nextMode = event.currentTarget
-                              .value as OfferShareMode;
-
-                            setShareModes((current) => ({
-                              ...current,
-                              [offer.id]: nextMode,
-                            }));
-                          }}
-                          onClick={(event) => event.stopPropagation()}
-                          onKeyDown={(event) => event.stopPropagation()}
-                          onMouseDown={(event) => event.stopPropagation()}
-                          onPointerDown={(event) => event.stopPropagation()}
-                          value={shareMode}
-                        >
-                          <option value="link">Link</option>
-                          <option value="text">Text</option>
-                        </select>
-                      </label>
-                      <code>{selectedValue ?? "Unavailable"}</code>
-                      <button
-                        className="primary-gradient-button primary-gradient-button--compact"
-                        disabled={selectedValue === null}
-                        onClick={(event) => {
-                          event.preventDefault();
-                          event.stopPropagation();
-                          void copyOffer(offer);
-                        }}
-                        type="button"
-                      >
-                        <MaterialIcon name="content_copy" />
-                        Copy
-                      </button>
-                    </div>
 
                     <dl className="publisher-offer-card__details">
                       <div>
