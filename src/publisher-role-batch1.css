@@ -715,3 +715,199 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Publisher offer-card redesign v2.1. */
+.publisher-offer-grid {
+  grid-template-columns: 1fr;
+}
+
+.publisher-offer-card {
+  border-color: rgba(99, 113, 145, 0.18);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.99),
+      rgba(247, 249, 253, 0.97)
+    );
+  box-shadow:
+    0 16px 40px rgba(47, 61, 96, 0.09),
+    0 2px 8px rgba(47, 61, 96, 0.05);
+}
+
+.publisher-offer-card .offer-collapsible-card > summary {
+  min-height: 7.4rem;
+  padding: 1.3rem 1.35rem;
+}
+
+.publisher-offer-card__summary-layout {
+  align-items: stretch;
+  gap: 1.25rem;
+}
+
+.publisher-offer-card__content {
+  display: grid;
+  min-width: 0;
+  flex: 1 1 auto;
+  gap: 0.85rem;
+}
+
+.publisher-offer-card__heading-row {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.publisher-offer-card__identity span {
+  margin-bottom: 0.45rem;
+  padding: 0.3rem 0.62rem;
+  border-color: rgba(91, 108, 249, 0.18);
+  background: rgba(91, 108, 249, 0.09);
+  color: #5a67d8;
+}
+
+.publisher-offer-card__identity h2 {
+  color: #202a3d;
+  font-size: clamp(1.08rem, 1.7vw, 1.28rem);
+  font-weight: 760;
+}
+
+.publisher-offer-card__status {
+  display: inline-flex;
+  min-height: 2rem;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.38rem;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 0.73rem;
+  font-weight: 780;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.publisher-offer-card__status .app-icon {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.publisher-offer-card__status--live {
+  border-color: rgba(28, 169, 112, 0.2);
+  background: rgba(28, 169, 112, 0.1);
+  color: #08794f;
+}
+
+.publisher-offer-card__status--setup {
+  border-color: rgba(224, 145, 37, 0.24);
+  background: rgba(255, 184, 77, 0.14);
+  color: #9a5707;
+}
+
+.publisher-offer-card__meta {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.publisher-offer-card__meta > span {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.38rem;
+  padding: 0.42rem 0.62rem;
+  border: 1px solid rgba(122, 137, 166, 0.13);
+  border-radius: 0.7rem;
+  background: rgba(246, 248, 252, 0.9);
+  color: #667187;
+  font-size: 0.75rem;
+  font-weight: 650;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.publisher-offer-card__meta .app-icon {
+  width: 0.95rem;
+  height: 0.95rem;
+  flex: 0 0 auto;
+  color: #6775e8;
+}
+
+.publisher-offer-card__quick-actions {
+  align-self: center;
+  padding-left: 1.15rem;
+  border-left: 1px solid rgba(125, 139, 165, 0.14);
+}
+
+.publisher-offer-card__copy-button {
+  min-height: 2.8rem;
+  padding: 0.72rem 1rem;
+  border-color: rgba(91, 108, 249, 0.22);
+  background: #ffffff;
+  color: #4e5fd0;
+}
+
+.publisher-offer-card__copy-button--primary {
+  border-color: #5869ed;
+  background: linear-gradient(135deg, #5f70f6, #6e5deb);
+  color: #ffffff;
+}
+
+.publisher-offer-card__copy-button--primary:disabled {
+  border-color: rgba(224, 145, 37, 0.35) !important;
+  background: rgba(255, 184, 77, 0.16) !important;
+  box-shadow: none !important;
+  color: #8a4d05 !important;
+  -webkit-text-fill-color: #8a4d05;
+  opacity: 1 !important;
+}
+
+.publisher-offer-card__copy-button--primary:disabled .app-icon {
+  color: #9a5707 !important;
+}
+
+.publisher-offer-card__chevron {
+  align-self: center;
+  border-color: rgba(91, 108, 249, 0.18);
+  background: rgba(91, 108, 249, 0.09);
+  color: #5363e8;
+}
+
+@media (max-width: 980px) {
+  .publisher-offer-card__summary-layout {
+    display: grid;
+  }
+
+  .publisher-offer-card__quick-actions {
+    justify-content: flex-start;
+    padding-top: 0.9rem;
+    padding-left: 0;
+    border-top: 1px solid rgba(125, 139, 165, 0.14);
+    border-left: 0;
+  }
+}
+
+@media (max-width: 620px) {
+  .publisher-offer-card .offer-collapsible-card > summary {
+    padding: 1rem;
+  }
+
+  .publisher-offer-card__heading-row {
+    display: grid;
+  }
+
+  .publisher-offer-card__status {
+    width: fit-content;
+  }
+
+  .publisher-offer-card__meta {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .publisher-offer-card__quick-actions {
+    grid-template-columns: 1fr;
+  }
+}
