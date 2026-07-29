@@ -21,7 +21,6 @@ import {
   ControlEmpty,
   ControlFeedback,
   ControlLoading,
-  ControlModuleHeader,
   ControlStatus,
   RefreshButton,
 } from "../control-plane/control-plane-ui";
@@ -108,33 +107,6 @@ export function PublisherConversionsPage() {
 
   return (
     <div className="control-page final-operations-page">
-      <ControlModuleHeader
-        description={
-          <>
-            Review conversions attributed only to your Publisher links in{" "}
-            <strong>{logs.companyName}</strong>.
-          </>
-        }
-        eyebrow="My Results"
-        icon="sync_alt"
-        stats={[
-          { label: "Visible", value: logs.conversions.length },
-          {
-            label: "Approved",
-            value: logs.conversions.filter(
-              (conversion) => conversion.status === "approved",
-            ).length,
-          },
-          {
-            label: "Pending",
-            value: logs.conversions.filter(
-              (conversion) => conversion.status === "pending",
-            ).length,
-          },
-        ]}
-        title="My Conversions"
-      />
-
       <ControlFeedback error={logs.error ?? offers.error} message={null} />
 
       <GlassPanel

@@ -19,7 +19,6 @@ import {
   ControlEmpty,
   ControlFeedback,
   ControlLoading,
-  ControlModuleHeader,
   RefreshButton,
 } from "../control-plane/control-plane-ui";
 
@@ -109,32 +108,6 @@ export function PublisherUserAgentsPage() {
 
   return (
     <div className="control-page final-operations-page">
-      <ControlModuleHeader
-        description={
-          <>
-            Review browser signatures captured only from your Publisher traffic
-            in <strong>{logs.companyName}</strong>.
-          </>
-        }
-        eyebrow="My Client Intelligence"
-        icon="text_snippet"
-        stats={[
-          { label: "Signatures", value: logs.userAgents.length },
-          {
-            label: "Clicks",
-            value: logs.userAgents.reduce(
-              (total, item) => total + item.clickCount,
-              0,
-            ),
-          },
-          {
-            label: "Browsers",
-            value: new Set(logs.userAgents.map((item) => item.browser)).size,
-          },
-        ]}
-        title="My User Agents"
-      />
-
       <ControlFeedback
         error={logs.error ?? offers.error}
         message={copyMessage}

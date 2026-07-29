@@ -1,0 +1,38 @@
+/* src/styles/components/publisher-role-surface-removals.css
+ * Publisher-only layout cleanup for intentionally removed summary surfaces.
+ *
+ * This file changes presentation only. It preserves all current data loading,
+ * filters, date controls, actions, routes, permissions, and API behavior.
+ */
+
+.publisher-dashboard .publisher-dashboard__filter-only {
+  justify-content: flex-end;
+  padding: 0;
+}
+
+.publisher-dashboard
+  .publisher-dashboard__filter-only
+  .dashboard-date-filter--compact {
+  margin-left: auto;
+}
+
+.publisher-offers-page {
+  align-content: start;
+}
+
+.publisher-offers-page > .publisher-offer-grid,
+.publisher-offers-page > .control-card {
+  margin-top: 0;
+}
+
+@media (max-width: 760px) {
+  .publisher-dashboard .publisher-dashboard__filter-only {
+    align-items: stretch;
+  }
+
+  .publisher-dashboard
+    .publisher-dashboard__filter-only
+    .dashboard-date-filter--compact {
+    margin-left: 0;
+  }
+}

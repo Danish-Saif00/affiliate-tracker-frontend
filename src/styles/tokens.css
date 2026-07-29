@@ -1,0 +1,124 @@
+/* src/styles/tokens.css
+ * Shared visual tokens for the Publisher Tracker neumorphic interface.
+ */
+
+:root {
+  color-scheme: light;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+
+  --pt-canvas: #eceff5;
+  --pt-canvas-soft: #f2f4f8;
+  --pt-surface: #f1f3f8;
+  --pt-surface-raised: #f7f8fb;
+  --pt-surface-strong: #ffffff;
+  --pt-surface-inset: #e9edf4;
+  --pt-surface-muted: #e3e8f1;
+
+  --pt-text: #29344a;
+  --pt-text-strong: #172238;
+  --pt-text-muted: #748198;
+  --pt-text-subtle: #97a2b4;
+
+  --pt-primary: #1768f2;
+  --pt-primary-hover: #0f57da;
+  --pt-primary-active: #0d49bd;
+  --pt-primary-soft: #e8f0ff;
+  --pt-cyan: #2fc9df;
+  --pt-cyan-soft: #e3fafd;
+
+  --pt-success: #11865d;
+  --pt-success-soft: #e5f7ef;
+  --pt-warning: #9a650a;
+  --pt-warning-soft: #fff4d9;
+  --pt-danger: #c9475b;
+  --pt-danger-soft: #fff0f3;
+  --pt-info: #356fd4;
+  --pt-info-soft: #eaf2ff;
+
+  --pt-border: rgba(114, 130, 158, 0.16);
+  --pt-border-strong: rgba(23, 104, 242, 0.28);
+  --pt-highlight: rgba(255, 255, 255, 0.96);
+  --pt-shadow-color: rgba(157, 169, 190, 0.34);
+  --pt-shadow-color-soft: rgba(157, 169, 190, 0.22);
+
+  --pt-shadow-raised:
+    10px 10px 22px var(--pt-shadow-color),
+    -10px -10px 22px var(--pt-highlight);
+  --pt-shadow-raised-soft:
+    6px 6px 14px var(--pt-shadow-color-soft),
+    -6px -6px 14px rgba(255, 255, 255, 0.9);
+  --pt-shadow-floating:
+    0 22px 52px rgba(69, 83, 111, 0.2),
+    0 8px 20px rgba(69, 83, 111, 0.1);
+  --pt-shadow-inset:
+    inset 4px 4px 9px rgba(160, 172, 193, 0.22),
+    inset -4px -4px 9px rgba(255, 255, 255, 0.92);
+  --pt-shadow-pressed:
+    inset 3px 3px 7px rgba(154, 167, 190, 0.28),
+    inset -3px -3px 7px rgba(255, 255, 255, 0.82);
+
+  --pt-radius-xs: 8px;
+  --pt-radius-sm: 12px;
+  --pt-radius-md: 16px;
+  --pt-radius-lg: 22px;
+  --pt-radius-xl: 28px;
+  --pt-radius-pill: 999px;
+
+  --pt-space-1: 4px;
+  --pt-space-2: 8px;
+  --pt-space-3: 12px;
+  --pt-space-4: 16px;
+  --pt-space-5: 20px;
+  --pt-space-6: 24px;
+  --pt-space-8: 32px;
+  --pt-space-10: 40px;
+
+  --pt-control-sm: 36px;
+  --pt-control-md: 44px;
+  --pt-control-lg: 50px;
+  --pt-focus-ring: 0 0 0 4px rgba(23, 104, 242, 0.16);
+  --pt-transition-fast: 140ms ease;
+  --pt-transition: 180ms ease;
+
+  --sidebar-width: 272px;
+  --shell-gap: 18px;
+  --topbar-height: 70px;
+
+  --background: var(--pt-canvas);
+  --background-soft: var(--pt-canvas-soft);
+  --surface: var(--pt-surface);
+  --surface-solid: var(--pt-surface-raised);
+  --surface-elevated: var(--pt-surface-strong);
+  --surface-lowest: var(--pt-surface-strong);
+  --surface-low: var(--pt-surface);
+  --surface-muted: var(--pt-surface-inset);
+  --surface-container: var(--pt-surface);
+  --surface-container-high: var(--pt-surface-raised);
+  --surface-high: var(--pt-surface-inset);
+  --surface-highest: var(--pt-surface-muted);
+  --on-surface: var(--pt-text);
+  --on-surface-strong: var(--pt-text-strong);
+  --on-surface-variant: var(--pt-text-muted);
+  --on-surface-muted: var(--pt-text-subtle);
+  --outline: var(--pt-border);
+  --outline-strong: var(--pt-border-strong);
+  --outline-variant: rgba(114, 130, 158, 0.2);
+  --primary: var(--pt-primary);
+  --primary-dark: var(--pt-primary-hover);
+  --primary-soft: var(--pt-primary-soft);
+  --secondary: var(--pt-cyan);
+  --secondary-soft: var(--pt-cyan-soft);
+  --success: var(--pt-success);
+  --success-soft: var(--pt-success-soft);
+  --warning: var(--pt-warning);
+  --warning-soft: var(--pt-warning-soft);
+  --danger: var(--pt-danger);
+  --danger-soft: var(--pt-danger-soft);
+  --info: var(--pt-info);
+  --info-soft: var(--pt-info-soft);
+  --shadow-soft: var(--pt-shadow-raised-soft);
+  --shadow-medium: var(--pt-shadow-raised);
+  --shadow-inset: var(--pt-shadow-inset);
+}

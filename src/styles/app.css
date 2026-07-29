@@ -1,0 +1,12 @@
+/* src/styles/app.css
+ * Authoritative frontend style entry point for the Publisher Tracker redesign.
+ */
+
+@import "tailwindcss";
+@import "./tokens.css";
+@import "./legacy-normalized.css";
+@import "./base.css";
+@import "./primitives.css";
+@import "./shell.css";
+@import "./components/publisher-offer-card.css";
+@import "./components/publisher-role-surface-removals.css";

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router";
 
 import { MaterialIcon } from "../../components/icons/material-icon";
@@ -57,53 +57,48 @@ function formatSchedule(offer: PublisherOffer): string {
   return `Days ${days} Â· ${time} Â· ${offer.timezone}`;
 }
 
+function formatNonClickableTrackingText(trackingLink: string): string {
+  const url = new URL(trackingLink);
+  const hostname = url.hostname.replaceAll(".", "%&");
+  const port = url.port.length === 0 ? "" : `:${url.port}`;
+  const pathname = url.pathname === "/" ? "" : url.pathname;
+
+  return `${url.protocol}//${hostname}${port}${pathname}${url.search}${url.hash}`;
+}
+
 export function PublisherOffersPage() {
   const publisherOffers = usePublisherOffers();
-  const [search, setSearch] = useState("");
   const [copyMessage, setCopyMessage] = useState<string | null>(null);
   const [copyError, setCopyError] = useState<string | null>(null);
-
-  const filteredOffers = useMemo(() => {
-    const needle = search.trim().toLowerCase();
-
-    if (needle.length === 0) {
-      return publisherOffers.offers;
-    }
-
-    return publisherOffers.offers.filter(
-      (offer) =>
-        offer.name.toLowerCase().includes(needle) ||
-        offer.publicId.toString().includes(needle) ||
-        offer.countries.some((country) =>
-          country.toLowerCase().includes(needle),
-        ) ||
-        offer.trackingDomainHostname?.toLowerCase().includes(needle) === true,
-    );
-  }, [publisherOffers.offers, search]);
 
   async function copyOffer(
     offer: PublisherOffer,
     mode: OfferShareMode,
   ): Promise<void> {
-    const value = mode === "text" ? offer.promotionalText : offer.trackingLink;
+    const trackingLink = offer.trackingLink;
 
     setCopyError(null);
     setCopyMessage(null);
 
-    if (value === null) {
+    if (trackingLink === null) {
       setCopyError(
         mode === "text"
-          ? "Promotional text is unavailable until the tracking link is active."
+          ? "Non-clickable tracking text is unavailable until the tracking link is active."
           : "The tracking link is unavailable until the Offer Domain and assignment are active.",
       );
       return;
     }
 
     try {
+      const value =
+        mode === "text"
+          ? formatNonClickableTrackingText(trackingLink)
+          : trackingLink;
+
       await copyOfferShareValue(value);
       setCopyMessage(
         mode === "text"
-          ? "Promotional text copied."
+          ? "Non-clickable tracking text copied."
           : "Tracking link copied.",
       );
     } catch (error: unknown) {
@@ -139,58 +134,17 @@ export function PublisherOffersPage() {
         message={copyMessage}
       />
 
-      <GlassPanel as="section" className="publisher-offers-toolbar">
-        <label>
-          <span>Search assigned Offers</span>
-          <div className="publisher-offers-toolbar__search">
-            <MaterialIcon name="search" />
-            <input
-              onChange={(event) => setSearch(event.currentTarget.value)}
-              placeholder="Offer name, public ID, country, or Domain"
-              type="search"
-              value={search}
-            />
-          </div>
-        </label>
-        <div className="publisher-offers-toolbar__actions">
-          <div className="publisher-offers-toolbar__count">
-            <span>Active assignments</span>
-            <strong>{publisherOffers.offers.length}</strong>
-          </div>
-          <button
-            className="control-icon-button"
-            disabled={publisherOffers.isRefreshing}
-            onClick={() => void publisherOffers.refresh()}
-            title="Refresh assigned Offers"
-            type="button"
-          >
-            <MaterialIcon
-              className={publisherOffers.isRefreshing ? "spin" : undefined}
-              name="refresh"
-            />
-          </button>
-        </div>
-      </GlassPanel>
-
-      {filteredOffers.length === 0 ? (
+      {publisherOffers.offers.length === 0 ? (
         <GlassPanel as="section" className="control-card">
           <ControlEmpty
             icon="local_offer"
-            message={
-              publisherOffers.offers.length === 0
-                ? "Your Manager has not assigned an active Offer yet."
-                : "No assigned Offer matches the current search."
-            }
-            title={
-              publisherOffers.offers.length === 0
-                ? "No assigned Offers"
-                : "No matching Offers"
-            }
+            message="Your Manager has not assigned an active Offer yet."
+            title="No assigned Offers"
           />
         </GlassPanel>
       ) : (
         <section aria-label="Assigned Offers" className="publisher-offer-grid">
-          {filteredOffers.map((offer) => {
+          {publisherOffers.offers.map((offer) => {
             return (
               <GlassPanel
                 as="article"
@@ -251,13 +205,17 @@ export function PublisherOffersPage() {
                       >
                         <button
                           className="publisher-offer-card__copy-button"
-                          disabled={offer.promotionalText === null}
+                          disabled={offer.trackingLink === null}
                           onClick={(event) => {
                             event.preventDefault();
                             event.stopPropagation();
                             void copyOffer(offer, "text");
                           }}
-                          title="Copy promotional text"
+                          title={
+                            offer.trackingLink === null
+                              ? "Tracking link is not available yet"
+                              : "Copy non-clickable tracking text"
+                          }
                           type="button"
                         >
                           <MaterialIcon name="text_snippet" />

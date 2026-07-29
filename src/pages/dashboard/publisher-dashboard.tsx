@@ -173,18 +173,7 @@ export function PublisherDashboard() {
 
   return (
     <div className="page-stack dashboard-page publisher-dashboard">
-      <header className="company-dashboard-heading">
-        <div>
-          <span className="eyebrow-chip">
-            <MaterialIcon name="dashboard" />
-            Publisher Dashboard
-          </span>
-          <h1>{company.activeCompany.name}</h1>
-          <p>
-            Review only your assigned Offers, traffic, conversions, and payout.
-          </p>
-        </div>
-
+      <header className="company-dashboard-heading publisher-dashboard__filter-only">
         <div className="dashboard-date-filter dashboard-date-filter--compact">
           <label>
             <span>From</span>

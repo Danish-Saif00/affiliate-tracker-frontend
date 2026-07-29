@@ -16,7 +16,6 @@ import {
   ControlEmpty,
   ControlFeedback,
   ControlLoading,
-  ControlModuleHeader,
   RefreshButton,
 } from "../control-plane/control-plane-ui";
 
@@ -87,36 +86,6 @@ export function PublisherSessionsPage() {
 
   return (
     <div className="control-page final-operations-page">
-      <ControlModuleHeader
-        description={
-          <>
-            Review visitor sessions created only from your Publisher traffic in{" "}
-            <strong>{logs.companyName}</strong>.
-          </>
-        }
-        eyebrow="My Visitors"
-        icon="history"
-        stats={[
-          { label: "Sessions", value: logs.sessions.length },
-          {
-            label: "Clicks",
-            value: logs.sessions.reduce(
-              (total, session) => total + session.clickCount,
-              0,
-            ),
-          },
-          {
-            label: "Countries",
-            value: new Set(
-              logs.sessions
-                .map((session) => session.countryCode)
-                .filter((country): country is string => typeof country === "string"),
-            ).size,
-          },
-        ]}
-        title="My Sessions"
-      />
-
       <ControlFeedback error={logs.error} message={null} />
 
       <GlassPanel

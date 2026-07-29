@@ -7,15 +7,7 @@ import { queryClient } from "./app/query-client";
 import { AuthProvider } from "./features/auth/auth-provider";
 import { CompanyProvider } from "./features/companies/company-provider";
 import App from "./App";
-import "./index.css";
-import "./control-plane.css";
-import "./major-overhaul.css";
-import "./batch1-ui-foundation.css";
-import "./batch2-core-catalog.css";
-import "./batch3-final-operations.css";
-import "./super-admin-governance.css";
-import "./company-admin-governance.css";
-import "./publisher-role-batch1.css";
+import "./styles/app.css";
 
 const rootElement = document.getElementById("root");
 
