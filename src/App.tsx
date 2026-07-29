@@ -4,7 +4,6 @@ import { Navigate, Route, Routes } from "react-router";
 import { AppShell } from "./components/layout/app-shell";
 import { ProtectedRoute } from "./features/auth/protected-route";
 import { PublicOnlyRoute } from "./features/auth/public-only-route";
-import { AcceptInvitationPage } from "./pages/invitations/accept-invitation-page";
 import { ModulePlaceholderPage } from "./pages/shared/module-placeholder-page";
 
 const AccountPage = lazy(async () => ({
@@ -29,10 +28,6 @@ const DashboardPage = lazy(async () => ({
 const FraudReviewPage = lazy(async () => ({
   default: (await import("./pages/fraud-review/fraud-review-page"))
     .FraudReviewPage,
-}));
-const ForgotPasswordPage = lazy(async () => ({
-  default: (await import("./pages/auth/forgot-password-page"))
-    .ForgotPasswordPage,
 }));
 const LoginPage = lazy(async () => ({
   default: (await import("./pages/auth/login-page")).LoginPage,
@@ -92,10 +87,6 @@ const UserAgentsPage = lazy(async () => ({
   default: (await import("./pages/logs/role-aware-user-agents-page"))
     .UserAgentsPage,
 }));
-const UpdatePasswordPage = lazy(async () => ({
-  default: (await import("./pages/auth/update-password-page"))
-    .UpdatePasswordPage,
-}));
 
 function RouteLoading() {
   return <div className="route-loading">Loading Publisher Tracker...</div>;
@@ -119,28 +110,9 @@ export default function App() {
             </LazyRoute>
           }
         />
-        <Route
-          path="/forgot-password"
-          element={
-            <LazyRoute>
-              <ForgotPasswordPage />
-            </LazyRoute>
-          }
-        />
       </Route>
 
-      <Route
-        path="/update-password"
-        element={
-          <LazyRoute>
-            <UpdatePasswordPage />
-          </LazyRoute>
-        }
-      />
-
       <Route element={<ProtectedRoute />}>
-        <Route path="accept-invitation" element={<AcceptInvitationPage />} />
-
         <Route element={<AppShell />}>
           <Route
             path="dashboard"

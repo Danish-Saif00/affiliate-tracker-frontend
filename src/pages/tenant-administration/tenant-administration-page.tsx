@@ -1,566 +1,327 @@
-import { type FormEvent, useMemo, useState } from 'react';
+import { useMemo, useState } from "react";
 
-import { MaterialIcon } from '../../components/icons/material-icon';
-import { GlassPanel } from '../../components/ui/glass-panel';
+import {
+  ManagedUserCreateForm,
+  ManagedUserPasswordResetForm,
+} from "../../components/managed-users/managed-user-credential-forms";
+import { MaterialIcon } from "../../components/icons/material-icon";
+import { GlassPanel } from "../../components/ui/glass-panel";
+import { useAuth } from "../../features/auth/use-auth";
 import type {
   CompanyMembershipStatus,
   CompanyRole,
-} from '../../features/auth/auth.types';
-import { useAuth } from '../../features/auth/use-auth';
-import { useCompany } from '../../features/companies/use-company';
+} from "../../features/auth/auth.types";
+import { useCompany } from "../../features/companies/use-company";
 import type {
   CompanyDirectoryUser,
-  CompanyInvitation,
   DirectoryFilters,
   UserStatus,
-} from '../../features/tenant-administration/tenant-administration.types';
-import { useTenantAdministration } from '../../features/tenant-administration/use-tenant-administration';
+} from "../../features/tenant-administration/tenant-administration.types";
+import { useTenantAdministration } from "../../features/tenant-administration/use-tenant-administration";
+import { formatDateTime } from "../control-plane/control-plane-formatters";
+import {
+  ControlAccessDenied,
+  ControlCardHeading,
+  ControlEmpty,
+  ControlFeedback,
+  ControlLoading,
+  ControlModuleHeader,
+  ControlStatus,
+  RefreshButton,
+} from "../control-plane/control-plane-ui";
 
-type TenantTab = 'directory' | 'audit';
+type TargetRoleConfiguration = {
+  role: CompanyRole;
+  singularLabel: string;
+  pluralLabel: string;
+};
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/u;
-
-const roleOptions: readonly CompanyRole[] = [
-  'company_admin',
-  'manager',
-  'publisher',
-];
-
-const platformAdminRoleOptions: readonly CompanyRole[] = [
-  'company_admin',
-];
-
-// frontend_invitation_role_matrix_v1
-const companyAdminInvitationRoleOptions:
-  readonly CompanyRole[] = [
-    'manager',
-    'publisher',
-  ];
-
-const managerInvitationRoleOptions:
-  readonly CompanyRole[] = [
-    'publisher',
-  ];
-
-const noInvitationRoleOptions:
-  readonly CompanyRole[] =
-  Object.freeze([]);
-
-function resolveInvitationRoleOptions(
-  platformRole: string | null,
-  companyRole: CompanyRole | null,
-): readonly CompanyRole[] {
-  if (
-    platformRole ===
-    'platform_super_admin'
-  ) {
-    return platformAdminRoleOptions;
+function resolveTargetRole(
+  platformAdmin: boolean,
+  actorRole: CompanyRole | null,
+): TargetRoleConfiguration | null {
+  if (platformAdmin) {
+    return {
+      role: "company_admin",
+      singularLabel: "Company Admin",
+      pluralLabel: "Company Admins",
+    };
   }
 
-  if (companyRole === 'company_admin') {
-    return companyAdminInvitationRoleOptions;
+  if (actorRole === "company_admin") {
+    return {
+      role: "manager",
+      singularLabel: "Manager",
+      pluralLabel: "Managers",
+    };
   }
 
-  if (companyRole === 'manager') {
-    return managerInvitationRoleOptions;
+  if (actorRole === "manager") {
+    return {
+      role: "publisher",
+      singularLabel: "Publisher",
+      pluralLabel: "Publishers",
+    };
   }
 
-  return noInvitationRoleOptions;
+  return null;
 }
 
-function canManageInvitationRole(
-  platformRole: string | null,
-  companyRole: CompanyRole | null,
-  invitationRole: CompanyRole,
-): boolean {
-  if (
-    platformRole ===
-    'platform_super_admin'
-  ) {
-    return invitationRole === 'company_admin';
-  }
-
-  if (companyRole === 'company_admin') {
-    return (
-      invitationRole === 'manager' ||
-      invitationRole === 'publisher'
-    );
-  }
-
-  return (
-    companyRole === 'manager' &&
-    invitationRole === 'publisher'
-  );
-}
-
-const membershipStatusOptions: readonly CompanyMembershipStatus[] = [
-  'invited',
-  'active',
-  'suspended',
-  'revoked',
-];
-
-function formatLabel(value: string): string {
-  return value
-    .split(/[._-]/u)
-    .filter((part) => part.length > 0)
-    .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
-    .join(' ');
-}
-
-function formatDate(value: string | null): string {
-  if (value === null) {
-    return 'Not joined';
-  }
-
-  const date = new Date(value);
-
-  return Number.isNaN(date.getTime())
-    ? 'Unknown'
-    : new Intl.DateTimeFormat(undefined, {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-      }).format(date);
-}
-
-function compactId(value: string): string {
-  return `${value.slice(0, 8)}…${value.slice(-6)}`;
-}
-
-function statusClass(value: string): string {
-  return `tenant-status tenant-status--${value.replaceAll('_', '-')}`;
-}
-
-function formatMetadata(metadata: Readonly<Record<string, unknown>>): string {
-  const entries = Object.entries(metadata);
-
-  if (entries.length === 0) {
-    return 'No additional metadata';
-  }
-
-  const text = entries
-    .slice(0, 3)
-    .map(([key, value]) => {
-      const normalizedValue =
-        typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean'
-          ? String(value)
-          : JSON.stringify(value);
-
-      return `${formatLabel(key)}: ${normalizedValue}`;
-    })
-    .join(' · ');
-
-  return text.length > 180 ? `${text.slice(0, 177)}…` : text;
-}
-
-function UserAccessForm({
-  user,
-  disabled,
-  canManageUserStatus,
-  availableRoles,
-  onSaveMembership,
-  onToggleUserStatus,
-}: {
-  user: CompanyDirectoryUser;
-  disabled: boolean;
-  canManageUserStatus: boolean;
-  availableRoles: readonly CompanyRole[];
-  onSaveMembership: (
-    user: CompanyDirectoryUser,
-    role: CompanyRole,
-    status: CompanyMembershipStatus,
-  ) => Promise<void>;
-  onToggleUserStatus: (user: CompanyDirectoryUser) => Promise<void>;
-}) {
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const roleValue = formData.get('role');
-    const statusValue = formData.get('membershipStatus');
-
-    if (
-      typeof roleValue !== 'string' ||
-      !availableRoles.includes(roleValue as CompanyRole) ||
-      typeof statusValue !== 'string' ||
-      !membershipStatusOptions.includes(statusValue as CompanyMembershipStatus)
-    ) {
-      return;
-    }
-
-    await onSaveMembership(
-      user,
-      roleValue as CompanyRole,
-      statusValue as CompanyMembershipStatus,
-    );
-  }
-
-  return (
-    <form
-      className="tenant-user-card__controls"
-      key={`${user.membershipId}:${user.role}:${user.membershipStatus}`}
-      onSubmit={(event) => void handleSubmit(event)}
-    >
-      <label>
-        <span>Role</span>
-        <select defaultValue={user.role} disabled={disabled} name="role">
-          {availableRoles.map((role) => (
-            <option key={role} value={role}>
-              {formatLabel(role)}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <label>
-        <span>Membership</span>
-        <select
-          defaultValue={user.membershipStatus}
-          disabled={disabled}
-          name="membershipStatus"
-        >
-          {membershipStatusOptions.map((status) => (
-            <option key={status} value={status}>
-              {formatLabel(status)}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <button className="tenant-secondary-button" disabled={disabled} type="submit">
-        <MaterialIcon name="save" />
-        Save access
-      </button>
-
-      {canManageUserStatus && (
-        <button
-          className={
-            user.userStatus === 'active'
-              ? 'tenant-danger-button'
-              : 'tenant-secondary-button'
-          }
-          disabled={disabled}
-          onClick={() => void onToggleUserStatus(user)}
-          type="button"
-        >
-          <MaterialIcon
-            name={user.userStatus === 'active' ? 'person_off' : 'person_check'}
-          />
-          {user.userStatus === 'active' ? 'Suspend account' : 'Activate account'}
-        </button>
-      )}
-    </form>
-  );
+function userLabel(user: CompanyDirectoryUser): string {
+  return user.displayName ?? user.email ?? user.userId.slice(0, 8);
 }
 
 export function TenantAdministrationPage() {
   const auth = useAuth();
   const company = useCompany();
-  const [tab, setTab] = useState<TenantTab>('directory');
-  const [search, setSearch] = useState('');
-  const [role, setRole] = useState<CompanyRole | ''>('');
-  const [membershipStatus, setMembershipStatus] =
-    useState<CompanyMembershipStatus | ''>('');
-  const [userStatus, setUserStatus] = useState<UserStatus | ''>('');
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState<CompanyRole>('publisher');
+  const platformAdmin =
+    auth.identity?.authorization.platformRole === "platform_super_admin";
+  const actorRole =
+    auth.identity?.authorization.companyMembership?.role ?? null;
+  const target = resolveTargetRole(platformAdmin, actorRole);
+  const [search, setSearch] = useState("");
+  const [membershipStatus, setMembershipStatus] = useState<
+    CompanyMembershipStatus | ""
+  >("");
+  const [userStatus, setUserStatus] = useState<UserStatus | "">("");
   const [feedback, setFeedback] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [passwordTarget, setPasswordTarget] =
+    useState<CompanyDirectoryUser | null>(null);
 
-  const platformRole = auth.identity?.authorization.platformRole ?? null;
-  const platformAdmin = platformRole === 'platform_super_admin';
   const filters = useMemo<DirectoryFilters>(
     () => ({
       search,
-      role: platformAdmin ? 'company_admin' : role,
+      role: target?.role ?? "",
       membershipStatus,
       userStatus,
     }),
-    [membershipStatus, platformAdmin, role, search, userStatus],
+    [membershipStatus, search, target?.role, userStatus],
   );
+
   const tenant = useTenantAdministration(filters);
-  const companyRole = auth.identity?.authorization.companyMembership?.role ?? null;
-  const canManageMemberships =
-    platformRole === 'platform_super_admin' ||
-    companyRole === 'company_admin';
 
-  const canCreateInvitations =
-    canManageMemberships ||
-    companyRole === 'manager';
-
-  const canManageUserStatus =
-    platformRole === 'platform_super_admin';
-
-  const inviteRoleOptions =
-    resolveInvitationRoleOptions(
-      platformRole,
-      companyRole,
-    );
-  const activeUsers = useMemo(
-    () => tenant.directory.items.filter((user) => user.userStatus === 'active').length,
-    [tenant.directory.items],
-  );
-  const pendingInvitations = useMemo(
-    () => tenant.invitations.filter((invitation) => invitation.status === 'pending'),
-    [tenant.invitations],
-  );
-
-  async function handleInvite(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  function resetFeedback(): void {
     setFeedback(null);
     setActionError(null);
-    const email = inviteEmail.trim().toLowerCase();
+  }
 
-    if (!EMAIL_PATTERN.test(email)) {
-      setActionError(
-        'Enter a valid email address.',
-      );
+  async function createUser(input: {
+    email: string;
+    password: string;
+  }): Promise<void> {
+    if (target === null) {
       return;
     }
 
-    const effectiveInviteRole = platformAdmin ? 'company_admin' : inviteRole;
-
-    if (
-      !inviteRoleOptions.includes(
-        effectiveInviteRole,
-      )
-    ) {
-      setActionError(
-        'Your current role cannot create this invitation type.',
-      );
-      return;
-    }
+    resetFeedback();
 
     try {
-      await tenant.createInvitation({ email, role: effectiveInviteRole });
-      setInviteEmail('');
-      setFeedback(`Invitation created and queued for delivery to ${email}.`);
-    } catch (error: unknown) {
-      setActionError(
-        error instanceof Error ? error.message : 'The invitation could not be created.',
-      );
-    }
-  }
-
-  async function handleResendInvitation(invitation: CompanyInvitation) {
-    setFeedback(null);
-    setActionError(null);
-
-    try {
-      await tenant.resendInvitation({ invitationId: invitation.id });
-      setFeedback(`A fresh invitation was queued for delivery to ${invitation.email}.`);
-    } catch (error: unknown) {
-      setActionError(
-        error instanceof Error ? error.message : 'The invitation could not be resent.',
-      );
-    }
-  }
-
-  async function handleRevokeInvitation(invitation: CompanyInvitation) {
-    setFeedback(null);
-    setActionError(null);
-
-    try {
-      await tenant.revokeInvitation({ invitationId: invitation.id });
-      setFeedback(`The invitation for ${invitation.email} was revoked.`);
-    } catch (error: unknown) {
-      setActionError(
-        error instanceof Error ? error.message : 'The invitation could not be revoked.',
-      );
-    }
-  }
-
-  async function handleMembershipUpdate(
-    user: CompanyDirectoryUser,
-    nextRole: CompanyRole,
-    nextStatus: CompanyMembershipStatus,
-  ) {
-    setFeedback(null);
-    setActionError(null);
-
-    try {
-      await tenant.updateMembership({
-        membershipId: user.membershipId,
-        role: nextRole,
-        status: nextStatus,
-      });
-      setFeedback(`${user.displayName ?? compactId(user.userId)} access was updated.`);
-    } catch (error: unknown) {
-      setActionError(
-        error instanceof Error ? error.message : 'The membership could not be updated.',
-      );
-    }
-  }
-
-  async function handleUserStatusUpdate(user: CompanyDirectoryUser) {
-    setFeedback(null);
-    setActionError(null);
-    const nextStatus: UserStatus =
-      user.userStatus === 'active' ? 'suspended' : 'active';
-
-    try {
-      await tenant.updateUserStatus({
-        userId: user.userId,
-        status: nextStatus,
-      });
+      const user = await tenant.createManagedUser(input);
       setFeedback(
-        `${user.displayName ?? compactId(user.userId)} account is now ${nextStatus}.`,
+        `${user.email ?? input.email} was created as an active ${target.singularLabel}.`,
       );
     } catch (error: unknown) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : `The ${target.singularLabel} could not be created.`;
+      setActionError(message);
+      throw error;
+    }
+  }
+
+  async function resetPassword(password: string): Promise<void> {
+    if (passwordTarget === null) {
+      return;
+    }
+
+    resetFeedback();
+
+    try {
+      await tenant.resetManagedUserPassword({
+        userId: passwordTarget.userId,
+        password,
+      });
+      setFeedback(`Password reset completed for ${userLabel(passwordTarget)}.`);
+      setPasswordTarget(null);
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "The managed password could not be reset.";
+      setActionError(message);
+      throw error;
+    }
+  }
+
+  async function updateManagedStatus(
+    user: CompanyDirectoryUser,
+    nextStatus: "active" | "suspended" | "revoked",
+  ): Promise<void> {
+    resetFeedback();
+
+    try {
+      if (platformAdmin) {
+        if (nextStatus === "revoked") {
+          throw new Error(
+            "Company Admin accounts can be activated or suspended, not revoked.",
+          );
+        }
+
+        await tenant.updateUserStatus({
+          userId: user.userId,
+          status: nextStatus,
+        });
+      } else {
+        await tenant.updateMembership({
+          membershipId: user.membershipId,
+          role: user.role,
+          status: nextStatus,
+        });
+      }
+
+      setFeedback(`${userLabel(user)} is now ${nextStatus}.`);
+    } catch (error: unknown) {
       setActionError(
-        error instanceof Error ? error.message : 'The user status could not be updated.',
+        error instanceof Error
+          ? error.message
+          : "The managed user status could not be updated.",
       );
     }
   }
 
   if (company.activeCompany === null) {
     return (
-      <GlassPanel as="section" className="access-state-panel page-stack">
-        <MaterialIcon name="domain_disabled" />
-        <h1>Select an active company</h1>
-        <p>Tenant administration requires a verified company context.</p>
-      </GlassPanel>
+      <ControlAccessDenied
+        message="Select an active company before managing users."
+        title="Company context required"
+      />
     );
   }
 
-  return (
-    <div className="tenant-page page-stack">
-      <GlassPanel as="section" className="page-heading-panel">
-        <div>
-          <span className="eyebrow-chip">
-            <MaterialIcon name="admin_panel_settings" filled />
-            Access Control
-          </span>
-          <h1>{platformAdmin ? 'Company Admins' : 'Tenant Administration'}</h1>
-          <p>
-            {platformAdmin
-              ? 'Create and manage Company Admin access for '
-              : 'Manage membership roles, account access, and the audit trail for '}
-            <strong>{company.activeCompany.name}</strong>.
-          </p>
-        </div>
-        <div className="tenant-heading-stats">
-          <div>
-            <span>Loaded users</span>
-            <strong>{tenant.directory.items.length}</strong>
-          </div>
-          <div>
-            <span>Active</span>
-            <strong>{activeUsers}</strong>
-          </div>
-          <div>
-            <span>Pending invites</span>
-            <strong>{pendingInvitations.length}</strong>
-          </div>
-        </div>
-      </GlassPanel>
+  if (target === null) {
+    return (
+      <ControlAccessDenied
+        message="Your current role cannot create or manage child accounts."
+        title="Managed-user access denied"
+      />
+    );
+  }
 
-      <div className="tenant-tab-bar" role="tablist">
-        <button
-          aria-selected={tab === 'directory'}
-          className={tab === 'directory' ? 'tenant-tab tenant-tab--active' : 'tenant-tab'}
-          onClick={() => setTab('directory')}
-          role="tab"
-          type="button"
-        >
-          <MaterialIcon name="group" />
-          User Directory
-        </button>
-        {!platformAdmin && (
-          <button
-            aria-selected={tab === 'audit'}
-            className={tab === 'audit' ? 'tenant-tab tenant-tab--active' : 'tenant-tab'}
-            onClick={() => setTab('audit')}
-            role="tab"
-            type="button"
-          >
-            <MaterialIcon name="history" />
-            Audit Trail
-          </button>
+  if (tenant.status === "loading") {
+    return <ControlLoading label={target.pluralLabel} />;
+  }
+
+  const activeCount = tenant.directory.items.filter((user) =>
+    platformAdmin
+      ? user.userStatus === "active"
+      : user.membershipStatus === "active",
+  ).length;
+
+  return (
+    <div className="control-page tenant-administration-page">
+      <ControlModuleHeader
+        description={`Create and manage ${target.pluralLabel} for ${company.activeCompany.name}. Credentials are set directly by the parent administrator.`}
+        eyebrow="Managed Access"
+        icon="admin_panel_settings"
+        stats={[
+          { label: target.pluralLabel, value: tenant.directory.items.length },
+          { label: "Active", value: activeCount },
+          {
+            label: "Suspended",
+            value: tenant.directory.items.filter((user) =>
+              platformAdmin
+                ? user.userStatus === "suspended"
+                : user.membershipStatus === "suspended",
+            ).length,
+          },
+        ]}
+        title={target.pluralLabel}
+      />
+
+      <ControlFeedback error={actionError ?? tenant.error} message={feedback} />
+
+      <div className="tenant-administration-layout">
+        <GlassPanel as="section" className="control-card tenant-invite-card">
+          <ControlCardHeading
+            eyebrow="Direct Credentials"
+            title={`Create ${target.singularLabel}`}
+            description="Email and password are set immediately. No invitation, verification, or password-setup email is sent."
+          />
+          <ManagedUserCreateForm
+            disabled={tenant.isMutating}
+            onCreate={createUser}
+            roleLabel={target.singularLabel}
+          />
+        </GlassPanel>
+
+        {passwordTarget !== null && (
+          <GlassPanel as="section" className="control-card tenant-invite-card">
+            <ControlCardHeading
+              eyebrow="Administrator Reset"
+              title={`Reset ${target.singularLabel} password`}
+              description="The current password is never readable. This action only overwrites it with a new password."
+            />
+            <ManagedUserPasswordResetForm
+              disabled={tenant.isMutating}
+              onCancel={() => setPasswordTarget(null)}
+              onReset={resetPassword}
+              targetLabel={userLabel(passwordTarget)}
+            />
+          </GlassPanel>
         )}
-        <button
-          aria-label="Refresh tenant administration data"
-          className="tenant-refresh-button"
-          disabled={tenant.status === 'loading'}
-          onClick={() => void tenant.refresh()}
-          type="button"
-        >
-          <MaterialIcon name="refresh" />
-        </button>
       </div>
 
-      {(actionError ?? tenant.error) !== null && (
-        <div className="tenant-message tenant-message--error">
-          <MaterialIcon name="error" />
-          <span>{actionError ?? tenant.error}</span>
-        </div>
-      )}
+      <GlassPanel as="section" className="control-card tenant-directory-card">
+        <ControlCardHeading
+          action={
+            <RefreshButton
+              disabled={tenant.isMutating}
+              onClick={() => void tenant.refresh()}
+            />
+          }
+          eyebrow="Directory"
+          title={target.pluralLabel}
+          description="Passwords are never displayed. Parent administrators can only reset credentials for the role directly beneath them."
+        />
 
-      {feedback !== null && (
-        <div className="tenant-message tenant-message--success">
-          <MaterialIcon name="check_circle" />
-          <span>{feedback}</span>
-        </div>
-      )}
+        <div className="tenant-filter-grid">
+          <label>
+            <span>Search</span>
+            <input
+              onChange={(event) => setSearch(event.currentTarget.value)}
+              placeholder="Search by name, email, or user ID"
+              value={search}
+            />
+          </label>
 
-      {platformAdmin || tab === 'directory' ? (
-        <>
-          <GlassPanel as="section" className="tenant-filter-panel">
-            <label className="tenant-search-field">
-              <MaterialIcon name="search" />
-              <input
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search by name, email, or user ID"
-                value={search}
-              />
-            </label>
-
-            {platformAdmin ? (
-              <label>
-                <span>Role</span>
-                <select disabled value="company_admin">
-                  <option value="company_admin">Company Admin</option>
-                </select>
-              </label>
-            ) : (
-              <label>
-                <span>Role</span>
-                <select
-                  onChange={(event) => setRole(event.target.value as CompanyRole | '')}
-                  value={role}
-                >
-                  <option value="">All roles</option>
-                  {roleOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {formatLabel(option)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            )}
-
+          {!platformAdmin && (
             <label>
               <span>Membership</span>
               <select
                 onChange={(event) =>
                   setMembershipStatus(
-                    event.target.value as CompanyMembershipStatus | '',
+                    event.currentTarget.value as CompanyMembershipStatus | "",
                   )
                 }
                 value={membershipStatus}
               >
                 <option value="">All memberships</option>
-                {membershipStatusOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {formatLabel(option)}
-                  </option>
-                ))}
+                <option value="active">Active</option>
+                <option value="suspended">Suspended</option>
+                <option value="revoked">Revoked</option>
               </select>
             </label>
+          )}
 
+          {platformAdmin && (
             <label>
               <span>Account</span>
               <select
-                onChange={(event) => setUserStatus(event.target.value as UserStatus | '')}
+                onChange={(event) =>
+                  setUserStatus(event.currentTarget.value as UserStatus | "")
+                }
                 value={userStatus}
               >
                 <option value="">All accounts</option>
@@ -568,267 +329,131 @@ export function TenantAdministrationPage() {
                 <option value="suspended">Suspended</option>
               </select>
             </label>
-          </GlassPanel>
+          )}
+        </div>
 
-          <div className="tenant-directory-layout">
-            {canCreateInvitations && (
-              <GlassPanel as="section" className="tenant-invite-card">
-                <div className="panel-heading">
-                  <div>
-                    <h2>{platformAdmin ? 'Invite Company Admin' : 'Invite by Email'}</h2>
-                    <p>Queue a secure invitation for Brevo delivery.</p>
-                  </div>
-                  <span className="data-source-badge">Brevo Queue</span>
-                </div>
-
-                <form onSubmit={(event) => void handleInvite(event)}>
-                  <label className="form-field">
-                    <span>Email address</span>
-                    <div className="glass-input">
-                      <MaterialIcon name="mail" />
-                      <input
-                        autoComplete="email"
-                        onChange={(event) => setInviteEmail(event.target.value)}
-                        placeholder={platformAdmin ? "admin@example.com" : "publisher@example.com"}
-                        type="email"
-                        value={inviteEmail}
-                      />
-                    </div>
-                  </label>
-
-                  <label className="form-field">
-                    <span>Initial company role</span>
-                    <div className="glass-input">
-                      <MaterialIcon name="manage_accounts" />
-                      {platformAdmin ? (
-                        <select disabled value="company_admin">
-                          <option value="company_admin">Company Admin</option>
-                        </select>
-                      ) : (
-                        <select
-                          onChange={(event) =>
-                            setInviteRole(event.target.value as CompanyRole)
-                          }
-                          value={inviteRole}
-                        >
-                          {inviteRoleOptions.map((option) => (
-                            <option key={option} value={option}>
-                              {formatLabel(option)}
-                            </option>
-                          ))}
-                        </select>
-                      )}
-                    </div>
-                  </label>
-
-                  <button
-                    className="primary-gradient-button tenant-invite-submit"
-                    disabled={tenant.isMutating}
-                    type="submit"
-                  >
-                    <MaterialIcon name="person_add" />
-                    Send invitation
-                  </button>
-                </form>
-
-                <div className="tenant-scope-note">
-                  <MaterialIcon name="info" />
-                  <span>
-                    Supabase generates the secure account link; Brevo delivers the email in the background. No UUID lookup is required.
-                  </span>
-                </div>
-              </GlassPanel>
-            )}
-
-            <div className="tenant-directory-stack">
-              <GlassPanel as="section" className="tenant-invitations-card">
-                <div className="panel-heading">
-                  <div>
-                    <h2>Pending Invitations</h2>
-                    <p>{pendingInvitations.length} invitations awaiting acceptance.</p>
-                  </div>
-                  <span className="data-source-badge">Email Flow</span>
-                </div>
-
-                {pendingInvitations.length === 0 ? (
-                  <div className="tenant-empty-state tenant-empty-state--compact">
-                    <MaterialIcon name="mark_email_read" />
-                    <p>No pending invitations.</p>
-                  </div>
-                ) : (
-                  <div className="tenant-invitation-list">
-                    {pendingInvitations.map((invitation) => (
-                      <article className="tenant-invitation-row" key={invitation.id}>
-                        <div>
-                          <strong>{invitation.email}</strong>
-                          <span>
-                            {formatLabel(invitation.role)} · {formatLabel(invitation.deliveryStatus)} · Expires {formatDate(invitation.expiresAt)}
-                          </span>
-                        </div>
-                        {canManageInvitationRole(
-                          platformRole,
-                          companyRole,
-                          invitation.role,
-                        ) && (
-                          <div className="tenant-invitation-actions">
-                            <button
-                              className="tenant-secondary-button"
-                              disabled={tenant.isMutating}
-                              onClick={() => void handleResendInvitation(invitation)}
-                              type="button"
-                            >
-                              <MaterialIcon name="forward_to_inbox" />
-                              Resend
-                            </button>
-                            <button
-                              className="tenant-danger-button"
-                              disabled={tenant.isMutating}
-                              onClick={() => void handleRevokeInvitation(invitation)}
-                              type="button"
-                            >
-                              <MaterialIcon name="cancel" />
-                              Revoke
-                            </button>
-                          </div>
-                        )}
-                      </article>
-                    ))}
-                  </div>
-                )}
-              </GlassPanel>
-
-              <GlassPanel as="section" className="tenant-directory-card">
-              <div className="panel-heading">
-                <div>
-                  <h2>{platformAdmin ? 'Company Admin Accounts' : 'Company Users'}</h2>
-                  <p>{tenant.directory.items.length} matching membership records.</p>
-                </div>
-                {tenant.directory.nextCursor !== null && (
-                  <span className="tenant-pagination-note">More records available</span>
-                )}
-              </div>
-
-              {tenant.status === 'loading' ? (
-                <div className="tenant-empty-state">
-                  <MaterialIcon className="spin" name="progress_activity" />
-                  <p>Loading tenant directory…</p>
-                </div>
-              ) : tenant.directory.items.length === 0 ? (
-                <div className="tenant-empty-state">
-                  <MaterialIcon name="group_off" />
-                  <h3>{platformAdmin ? 'No Company Admin accounts' : 'No matching company users'}</h3>
-                  <p>{platformAdmin ? 'Invite the first Company Admin for this company.' : 'Send an email invitation or change the active filters.'}</p>
-                </div>
-              ) : (
-                <div className="tenant-user-list">
-                  {tenant.directory.items.map((user) => (
-                    <article className="tenant-user-card" key={user.membershipId}>
-                      <div className="tenant-user-card__identity">
-                        <div className="tenant-avatar">
-                          {(user.displayName ?? user.userId).charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <div className="tenant-user-card__title">
-                            <strong>{user.displayName ?? 'Unnamed User'}</strong>
-                            <span className={statusClass(user.userStatus)}>
-                              {formatLabel(user.userStatus)} account
-                            </span>
-                            <span className={statusClass(user.membershipStatus)}>
-                              {formatLabel(user.membershipStatus)} membership
-                            </span>
-                          </div>
-                          {user.email === null ? (
-                            <span className="tenant-user-email">No email address</span>
-                          ) : (
-                            <a className="tenant-user-email" href={`mailto:${user.email}`}>
-                              {user.email}
-                            </a>
-                          )}
-                          <code title={user.userId}>{compactId(user.userId)}</code>
-                          <div className="tenant-user-card__meta">
-                            <span>
-                              <MaterialIcon name="login" />
-                              {formatDate(user.joinedAt)}
-                            </span>
-                            <span>
-                              <MaterialIcon name="update" />
-                              {formatDate(user.membershipUpdatedAt)}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {canManageMemberships ? (
-                        <UserAccessForm
-                          availableRoles={
-                            platformAdmin ? platformAdminRoleOptions : roleOptions
-                          }
-                          canManageUserStatus={canManageUserStatus}
+        {tenant.directory.items.length === 0 ? (
+          <ControlEmpty
+            icon="group"
+            message={`Create the first ${target.singularLabel} or change the filters.`}
+            title={`No ${target.pluralLabel} found`}
+          />
+        ) : (
+          <div className="responsive-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Membership</th>
+                  <th>Account</th>
+                  <th>Joined</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tenant.directory.items.map((user) => (
+                  <tr key={user.membershipId}>
+                    <td>
+                      <strong>{userLabel(user)}</strong>
+                      <small>{user.userId.slice(0, 8)}</small>
+                    </td>
+                    <td>{user.email ?? "Unavailable"}</td>
+                    <td>{user.role.replaceAll("_", " ")}</td>
+                    <td>
+                      <ControlStatus status={user.membershipStatus} />
+                    </td>
+                    <td>
+                      <ControlStatus status={user.userStatus} />
+                    </td>
+                    <td>{formatDateTime(user.joinedAt)}</td>
+                    <td>
+                      <div className="manager-row-actions">
+                        <button
                           disabled={tenant.isMutating}
-                          onSaveMembership={handleMembershipUpdate}
-                          onToggleUserStatus={handleUserStatusUpdate}
-                          user={user}
-                        />
-                      ) : (
-                        <div className="tenant-readonly-access">
-                          <MaterialIcon name="visibility" />
-                          <span>{formatLabel(user.role)}</span>
-                        </div>
-                      )}
-                    </article>
-                  ))}
-                </div>
-              )}
-              </GlassPanel>
-            </div>
-          </div>
-        </>
-      ) : (
-        <GlassPanel as="section" className="tenant-audit-card">
-          <div className="panel-heading">
-            <div>
-              <h2>Audit Trail</h2>
-              <p>Latest security and tenant mutations from the backend audit log.</p>
-            </div>
-            <span className="data-source-badge">Live API</span>
-          </div>
+                          onClick={() => setPasswordTarget(user)}
+                          title="Reset password"
+                          type="button"
+                        >
+                          <MaterialIcon name="password" />
+                        </button>
 
-          {tenant.status === 'loading' ? (
-            <div className="tenant-empty-state">
-              <MaterialIcon className="spin" name="progress_activity" />
-              <p>Loading audit events…</p>
-            </div>
-          ) : tenant.audit.items.length === 0 ? (
-            <div className="tenant-empty-state">
-              <MaterialIcon name="history_toggle_off" />
-              <h3>No audit events found</h3>
-              <p>New tenant actions will appear here automatically.</p>
-            </div>
+                        {(platformAdmin
+                          ? user.userStatus !== "active"
+                          : user.membershipStatus !== "active") && (
+                          <button
+                            disabled={tenant.isMutating}
+                            onClick={() =>
+                              void updateManagedStatus(user, "active")
+                            }
+                            title="Activate user"
+                            type="button"
+                          >
+                            <MaterialIcon name="play_arrow" />
+                          </button>
+                        )}
+
+                        {(platformAdmin
+                          ? user.userStatus === "active"
+                          : user.membershipStatus === "active") && (
+                          <button
+                            disabled={tenant.isMutating}
+                            onClick={() =>
+                              void updateManagedStatus(user, "suspended")
+                            }
+                            title="Suspend user"
+                            type="button"
+                          >
+                            <MaterialIcon name="pause" />
+                          </button>
+                        )}
+
+                        {!platformAdmin &&
+                          user.membershipStatus !== "revoked" && (
+                            <button
+                              disabled={tenant.isMutating}
+                              onClick={() =>
+                                void updateManagedStatus(user, "revoked")
+                              }
+                              title="Revoke membership"
+                              type="button"
+                            >
+                              <MaterialIcon name="delete" />
+                            </button>
+                          )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </GlassPanel>
+
+      {!platformAdmin && (
+        <GlassPanel as="section" className="control-card tenant-audit-card">
+          <ControlCardHeading
+            eyebrow="Audit Trail"
+            title="Managed-user security events"
+            description="Creation and password reset events record actor, target, role, and request context without recording password values."
+          />
+          {tenant.audit.items.length === 0 ? (
+            <ControlEmpty
+              icon="history"
+              message="No tenant audit events are available."
+              title="No audit events"
+            />
           ) : (
             <div className="tenant-audit-list">
-              {tenant.audit.items.map((event) => (
-                <article className="tenant-audit-event" key={event.id}>
-                  <div className="tenant-audit-event__icon">
-                    <MaterialIcon name="shield_person" />
+              {tenant.audit.items.slice(0, 20).map((event) => (
+                <article key={event.id}>
+                  <div>
+                    <strong>{event.eventName}</strong>
+                    <span>{event.entityType}</span>
                   </div>
-                  <div className="tenant-audit-event__body">
-                    <div>
-                      <strong>{formatLabel(event.eventName)}</strong>
-                      <time>{formatDate(event.createdAt)}</time>
-                    </div>
-                    <p>{formatMetadata(event.metadata)}</p>
-                    <div className="tenant-audit-event__meta">
-                      <span>{formatLabel(event.entityType)}</span>
-                      {event.entityId !== null && (
-                        <code title={event.entityId}>{compactId(event.entityId)}</code>
-                      )}
-                      {event.actorUserId !== null && (
-                        <span title={event.actorUserId}>
-                          Actor {compactId(event.actorUserId)}
-                        </span>
-                      )}
-                    </div>
-                  </div>
+                  <time>{formatDateTime(event.createdAt)}</time>
                 </article>
               ))}
             </div>

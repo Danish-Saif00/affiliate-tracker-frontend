@@ -1047,7 +1047,7 @@ export function OffersPage({ mode }: { mode: OffersPageMode }) {
           activeManagers.length === 0 ? (
             <ControlEmpty
               icon="warning"
-              message="Create an active Network, activate a verified Domain, and invite at least one active Manager before adding an Offer."
+              message="Create an active Network, activate a verified Domain, and add at least one active Manager before adding an Offer."
               title="Network, Domain, and Manager required"
             />
           ) : (

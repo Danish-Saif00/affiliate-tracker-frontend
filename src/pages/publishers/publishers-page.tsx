@@ -1,5 +1,9 @@
 import { type FormEvent, useMemo, useState } from "react";
 
+import {
+  ManagedUserCreateForm,
+  ManagedUserPasswordResetForm,
+} from "../../components/managed-users/managed-user-credential-forms";
 import { MaterialIcon } from "../../components/icons/material-icon";
 import { GlassPanel } from "../../components/ui/glass-panel";
 import { TIMEZONE_OPTIONS } from "../../features/catalog/catalog-options";
@@ -79,7 +83,9 @@ export function PublishersPage() {
     membershipStatus: "",
     userStatus: "",
   });
-  const [inviteEmail, setInviteEmail] = useState("");
+  const [passwordTarget, setPasswordTarget] = useState<CatalogPublisher | null>(
+    null,
+  );
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<PublisherFormState>({
     timezone: "UTC",
@@ -97,15 +103,6 @@ export function PublishersPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const snapshot = catalog.snapshot;
-
-  const pendingInvitations = useMemo(
-    () =>
-      tenant.invitations.filter(
-        (invitation) =>
-          invitation.role === "publisher" && invitation.status === "pending",
-      ),
-    [tenant.invitations],
-  );
 
   const offerOptions = useMemo(
     () =>
@@ -157,26 +154,53 @@ export function PublishersPage() {
     setActionError(null);
   }
 
-  async function handleInvite(
-    event: FormEvent<HTMLFormElement>,
-  ): Promise<void> {
-    event.preventDefault();
+  async function createPublisher(input: {
+    email: string;
+    password: string;
+  }): Promise<void> {
     resetFeedback();
 
     try {
-      await tenant.createInvitation({
-        email: inviteEmail,
-        role: "publisher",
-      });
-      setMessage(`Publisher invitation was queued for ${inviteEmail.trim()}.`);
-      setInviteEmail("");
+      const publisher = await tenant.createManagedUser(input);
+      setMessage(
+        `${publisher.email ?? input.email} was created as an active Publisher.`,
+      );
       await Promise.all([catalog.refresh(), tenant.refresh()]);
     } catch (error: unknown) {
-      setActionError(
+      const message =
         error instanceof Error
           ? error.message
-          : "The Publisher invitation could not be created.",
+          : "The Publisher could not be created.";
+      setActionError(message);
+      throw error;
+    }
+  }
+
+  async function resetPublisherPassword(password: string): Promise<void> {
+    if (passwordTarget === null) {
+      return;
+    }
+
+    resetFeedback();
+
+    try {
+      await tenant.resetManagedUserPassword({
+        userId: passwordTarget.userId,
+        password,
+      });
+      setMessage(
+        `Password reset completed for ${
+          passwordTarget.displayName ?? passwordTarget.email ?? "Publisher"
+        }.`,
       );
+      setPasswordTarget(null);
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "The Publisher password could not be reset.";
+      setActionError(message);
+      throw error;
     }
   }
 
@@ -308,7 +332,7 @@ export function PublishersPage() {
   return (
     <div className="page-stack catalog-page">
       <ControlModuleHeader
-        description="Invite Publishers, control their lifecycle, configure payout rules, and assign one or more Offers from the current Manager scope."
+        description="Create Publishers with administrator-set credentials, control their lifecycle, configure payout rules, and assign one or more Offers from the current Manager scope."
         eyebrow="Publisher Governance"
         icon="group"
         stats={[
@@ -318,7 +342,12 @@ export function PublishersPage() {
               (publisher) => publisher.membershipStatus === "active",
             ).length,
           },
-          { label: "Pending", value: pendingInvitations.length },
+          {
+            label: "Suspended",
+            value: snapshot.publishers.filter(
+              (publisher) => publisher.membershipStatus === "suspended",
+            ).length,
+          },
           {
             label: "Offer links",
             value: snapshot.publishers.reduce(
@@ -342,102 +371,51 @@ export function PublishersPage() {
             className="control-card publisher-editor-panel"
           >
             <ControlCardHeading
-              description="The Publisher sets a password through the one-time invitation link."
-              eyebrow="Add Publisher"
-              title="Send a secure invitation"
+              description="The Publisher account becomes active immediately. No invitation or password-setup email is sent."
+              eyebrow="Direct Credentials"
+              title="Create a Publisher"
             />
-            <form
-              className="catalog-form"
-              onSubmit={(event) => void handleInvite(event)}
-            >
-              <label>
-                <span>Email</span>
-                <input
-                  autoComplete="email"
-                  disabled={tenant.isMutating}
-                  onChange={(event) =>
-                    setInviteEmail(event.currentTarget.value)
-                  }
-                  placeholder="publisher@example.com"
-                  required
-                  type="email"
-                  value={inviteEmail}
-                />
-              </label>
+            <ManagedUserCreateForm
+              disabled={tenant.isMutating}
+              onCreate={createPublisher}
+              roleLabel="Publisher"
+            />
+          </GlassPanel>
+
+          {passwordTarget === null ? (
+            <GlassPanel as="section" className="control-card">
+              <ControlCardHeading
+                description="Select the password action beside a Publisher to overwrite their password securely."
+                eyebrow="Credential Control"
+                title="Administrator-managed passwords"
+              />
               <div className="catalog-security-note">
                 <MaterialIcon name="verified_user" />
                 <span>
-                  Invitation is committed first, encrypted in the outbox, and
-                  delivered asynchronously by Brevo.
+                  Passwords are never displayed, returned by the API, or stored
+                  in application tables and audit metadata.
                 </span>
               </div>
-              <button
-                className="primary-gradient-button primary-gradient-button--compact"
-                disabled={tenant.isMutating}
-                type="submit"
-              >
-                <MaterialIcon name="send" />
-                Invite Publisher
-              </button>
-            </form>
-          </GlassPanel>
-
-          <GlassPanel as="section" className="control-card">
-            <ControlCardHeading
-              description="Resend or revoke invitations without creating duplicate users."
-              eyebrow="Pending Invitations"
-              title="Awaiting acceptance"
-            />
-            {pendingInvitations.length === 0 ? (
-              <ControlEmpty
-                icon="mail"
-                message="New Publisher invitations will appear here."
-                title="No pending invitations"
+            </GlassPanel>
+          ) : (
+            <GlassPanel as="section" className="control-card">
+              <ControlCardHeading
+                description="Only the new password is accepted. The current password remains unreadable."
+                eyebrow="Administrator Reset"
+                title="Reset Publisher password"
               />
-            ) : (
-              <div className="catalog-compact-list">
-                {pendingInvitations.map((invitation) => (
-                  <article key={invitation.id}>
-                    <div>
-                      <strong>{invitation.email}</strong>
-                      <span>
-                        Delivery: {invitation.deliveryStatus} · Expires{" "}
-                        {formatDateTime(invitation.expiresAt)}
-                      </span>
-                    </div>
-                    <RowActions>
-                      <button
-                        aria-label={`Resend invitation to ${invitation.email}`}
-                        disabled={tenant.isMutating}
-                        onClick={() =>
-                          void tenant.resendInvitation({
-                            invitationId: invitation.id,
-                          })
-                        }
-                        title="Resend"
-                        type="button"
-                      >
-                        <MaterialIcon name="refresh" />
-                      </button>
-                      <button
-                        aria-label={`Revoke invitation to ${invitation.email}`}
-                        disabled={tenant.isMutating}
-                        onClick={() =>
-                          void tenant.revokeInvitation({
-                            invitationId: invitation.id,
-                          })
-                        }
-                        title="Revoke"
-                        type="button"
-                      >
-                        <MaterialIcon name="delete" />
-                      </button>
-                    </RowActions>
-                  </article>
-                ))}
-              </div>
-            )}
-          </GlassPanel>
+              <ManagedUserPasswordResetForm
+                disabled={tenant.isMutating}
+                onCancel={() => setPasswordTarget(null)}
+                onReset={resetPublisherPassword}
+                targetLabel={
+                  passwordTarget.displayName ??
+                  passwordTarget.email ??
+                  "Publisher"
+                }
+              />
+            </GlassPanel>
+          )}
         </div>
       )}
 
@@ -653,7 +631,7 @@ export function PublishersPage() {
         {pageRows.length === 0 ? (
           <ControlEmpty
             icon="group"
-            message="Invite a Publisher or change the filters."
+            message="Create a Publisher or change the filters."
             title="No Publishers found"
           />
         ) : (
@@ -698,6 +676,18 @@ export function PublishersPage() {
                     </td>
                     <td>
                       <RowActions>
+                        {catalog.permissions.canManagePublishers && (
+                          <button
+                            aria-label={`Reset password for ${publisher.email ?? "Publisher"}`}
+                            disabled={catalog.isMutating || tenant.isMutating}
+                            onClick={() => setPasswordTarget(publisher)}
+                            title="Reset Publisher password"
+                            type="button"
+                          >
+                            <MaterialIcon name="password" />
+                          </button>
+                        )}
+
                         {catalog.permissions.canManagePublishers &&
                           publisher.membershipStatus !== "revoked" && (
                             <button

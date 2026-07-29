@@ -183,7 +183,7 @@ function ManagerAssignmentTable({
       {managers.length === 0 ? (
         <ControlEmpty
           icon="supervisor_account"
-          message="Invite a Manager before assigning Offers."
+          message="Add an active Manager before assigning Offers."
           title="No Managers"
         />
       ) : (

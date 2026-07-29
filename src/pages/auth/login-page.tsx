@@ -1,10 +1,10 @@
-import { type FormEvent, useEffect, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router';
+import { type FormEvent, useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router";
 
-import { BrandMark } from '../../components/brand/brand-mark';
-import { MaterialIcon } from '../../components/icons/material-icon';
-import { useAuth } from '../../features/auth/use-auth';
-import { useApiHealth } from '../../features/system/use-api-health';
+import { BrandMark } from "../../components/brand/brand-mark";
+import { MaterialIcon } from "../../components/icons/material-icon";
+import { useAuth } from "../../features/auth/use-auth";
+import { useApiHealth } from "../../features/system/use-api-health";
 
 type LoginLocationState = {
   from?: unknown;
@@ -12,7 +12,9 @@ type LoginLocationState = {
 };
 
 function readLoginLocationState(value: unknown): LoginLocationState {
-  return typeof value === 'object' && value !== null ? (value as LoginLocationState) : {};
+  return typeof value === "object" && value !== null
+    ? (value as LoginLocationState)
+    : {};
 }
 
 export function LoginPage() {
@@ -20,30 +22,40 @@ export function LoginPage() {
   const location = useLocation();
   const auth = useAuth();
   const health = useApiHealth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const locationState = readLoginLocationState(location.state);
   const requestedPath =
-    typeof locationState.from === 'string' && locationState.from.startsWith('/')
+    typeof locationState.from === "string" && locationState.from.startsWith("/")
       ? locationState.from
-      : '/dashboard';
+      : "/dashboard";
   const routeError =
-    typeof locationState.authError === 'string' ? locationState.authError : null;
+    typeof locationState.authError === "string"
+      ? locationState.authError
+      : null;
   const displayedError = error ?? routeError ?? auth.error;
 
   useEffect(() => {
     const handlePointerMove = (event: PointerEvent) => {
       const root = document.documentElement;
-      root.style.setProperty('--pointer-x', `${(event.clientX / window.innerWidth) * 24}px`);
-      root.style.setProperty('--pointer-y', `${(event.clientY / window.innerHeight) * 24}px`);
+      root.style.setProperty(
+        "--pointer-x",
+        `${(event.clientX / window.innerWidth) * 24}px`,
+      );
+      root.style.setProperty(
+        "--pointer-y",
+        `${(event.clientY / window.innerHeight) * 24}px`,
+      );
     };
 
-    window.addEventListener('pointermove', handlePointerMove, { passive: true });
-    return () => window.removeEventListener('pointermove', handlePointerMove);
+    window.addEventListener("pointermove", handlePointerMove, {
+      passive: true,
+    });
+    return () => window.removeEventListener("pointermove", handlePointerMove);
   }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -51,7 +63,7 @@ export function LoginPage() {
     setError(null);
 
     if (!email.trim() || !password.trim()) {
-      setError('Enter both your email address and password.');
+      setError("Enter both your email address and password.");
       return;
     }
 
@@ -68,7 +80,7 @@ export function LoginPage() {
       setError(
         signInError instanceof Error
           ? signInError.message
-          : 'Sign in failed. Please try again.',
+          : "Sign in failed. Please try again.",
       );
     } finally {
       setSubmitting(false);
@@ -80,8 +92,13 @@ export function LoginPage() {
       <div className="login-orb login-orb--violet" />
       <div className="login-orb login-orb--orange" />
 
-      <section className="login-card glass-panel specular-panel" aria-labelledby="login-title">
-        <h1 className="sr-only" id="login-title">Sign in to Publisher Tracker</h1>
+      <section
+        className="login-card glass-panel specular-panel"
+        aria-labelledby="login-title"
+      >
+        <h1 className="sr-only" id="login-title">
+          Sign in to Publisher Tracker
+        </h1>
         <div className="login-card__brand">
           <BrandMark />
         </div>
@@ -134,7 +151,9 @@ export function LoginPage() {
               <span>Remember me</span>
             </label>
 
-            <Link to="/forgot-password">Forgot password?</Link>
+            <span>
+              Contact your parent administrator to reset your password.
+            </span>
           </div>
 
           {displayedError !== null && (
@@ -144,19 +163,35 @@ export function LoginPage() {
             </div>
           )}
 
-          <button className="primary-gradient-button" disabled={submitting} type="submit">
-            {submitting ? <MaterialIcon className="spin" name="progress_activity" /> : 'Sign In'}
+          <button
+            className="primary-gradient-button"
+            disabled={submitting}
+            type="submit"
+          >
+            {submitting ? (
+              <MaterialIcon className="spin" name="progress_activity" />
+            ) : (
+              "Sign In"
+            )}
           </button>
         </form>
 
         <p className="login-card__access">
-          Don&apos;t have an account? <a href="mailto:admin@publisher-tracker.local">Request Access</a>
+          Accounts are created directly by an authorized parent administrator.
         </p>
       </section>
 
       <div className="login-system-status" aria-live="polite">
-        <span className={`status-dot ${health.isSuccess ? 'status-dot--live' : 'status-dot--offline'}`} />
-        <span>{health.isLoading ? 'Checking System' : health.isSuccess ? 'System Nominal' : 'API Offline'}</span>
+        <span
+          className={`status-dot ${health.isSuccess ? "status-dot--live" : "status-dot--offline"}`}
+        />
+        <span>
+          {health.isLoading
+            ? "Checking System"
+            : health.isSuccess
+              ? "System Nominal"
+              : "API Offline"}
+        </span>
         <span className="login-system-status__divider" />
         <span>Secure Login</span>
       </div>

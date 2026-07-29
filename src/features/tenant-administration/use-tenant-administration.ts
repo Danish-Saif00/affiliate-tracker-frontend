@@ -1,34 +1,35 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { useCallback } from 'react';
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useCallback } from "react";
 
-import { queryClient } from '../../app/query-client';
-import { useAuth } from '../auth/use-auth';
-import { useCompany } from '../companies/use-company';
+import { queryClient } from "../../app/query-client";
+import { useAuth } from "../auth/use-auth";
+import { useCompany } from "../companies/use-company";
 import {
-  createCompanyInvitation,
+  createManagedUser,
   fetchCompanyAuditEvents,
   fetchCompanyDirectory,
-  fetchCompanyInvitations,
-  resendCompanyInvitation,
-  revokeCompanyInvitation,
+  resetManagedUserPassword,
   updateCompanyMembership,
   updatePlatformUserStatus,
-} from './tenant-administration-api';
+} from "./tenant-administration-api";
 import type {
   AuditEvent,
   CompanyDirectoryUser,
-  CompanyInvitation,
   CompanyMembership,
-  CreateInvitationInput,
+  CreateManagedUserInput,
   CursorPage,
   DirectoryFilters,
-  InvitationActionInput,
+  ManagedUserPasswordResetResult,
+  ResetManagedUserPasswordInput,
   UpdateMembershipInput,
   UpdateUserStatusInput,
   UserProfile,
-} from './tenant-administration.types';
+} from "./tenant-administration.types";
 
-const TENANT_QUERY_PREFIX = ['company-scoped', 'tenant-administration'] as const;
+const TENANT_QUERY_PREFIX = [
+  "company-scoped",
+  "tenant-administration",
+] as const;
 const EMPTY_DIRECTORY: CursorPage<CompanyDirectoryUser> = Object.freeze({
   items: Object.freeze([]),
   nextCursor: null,
@@ -37,12 +38,11 @@ const EMPTY_AUDIT: CursorPage<AuditEvent> = Object.freeze({
   items: Object.freeze([]),
   nextCursor: null,
 });
-const EMPTY_INVITATIONS: readonly CompanyInvitation[] = Object.freeze([]);
 
 function getErrorMessage(error: unknown): string {
   return error instanceof Error
     ? error.message
-    : 'Tenant administration data could not be loaded.';
+    : "Tenant administration data could not be loaded.";
 }
 
 export function useTenantAdministration(filters: DirectoryFilters) {
@@ -51,16 +51,16 @@ export function useTenantAdministration(filters: DirectoryFilters) {
   const session = auth.session;
   const companyId = company.activeCompanyId;
   const platformAdmin =
-    auth.identity?.authorization.platformRole === 'platform_super_admin';
+    auth.identity?.authorization.platformRole === "platform_super_admin";
   const enabled = session !== null && companyId !== null;
   const auditEnabled = enabled && !platformAdmin;
 
   const directoryQuery = useQuery({
-    queryKey: [...TENANT_QUERY_PREFIX, 'directory', companyId, filters],
+    queryKey: [...TENANT_QUERY_PREFIX, "directory", companyId, filters],
     enabled,
     queryFn: ({ signal }) => {
       if (session === null || companyId === null) {
-        throw new Error('An active authenticated company context is required.');
+        throw new Error("An active authenticated company context is required.");
       }
 
       return fetchCompanyDirectory(
@@ -74,11 +74,11 @@ export function useTenantAdministration(filters: DirectoryFilters) {
   const refetchDirectory = directoryQuery.refetch;
 
   const auditQuery = useQuery({
-    queryKey: [...TENANT_QUERY_PREFIX, 'audit', companyId],
+    queryKey: [...TENANT_QUERY_PREFIX, "audit", companyId],
     enabled: auditEnabled,
     queryFn: ({ signal }) => {
       if (session === null || companyId === null) {
-        throw new Error('An active authenticated company context is required.');
+        throw new Error("An active authenticated company context is required.");
       }
 
       return fetchCompanyAuditEvents(session.access_token, companyId, signal);
@@ -86,69 +86,44 @@ export function useTenantAdministration(filters: DirectoryFilters) {
   });
   const refetchAudit = auditQuery.refetch;
 
-  const invitationsQuery = useQuery({
-    queryKey: [...TENANT_QUERY_PREFIX, 'invitations', companyId],
-    enabled,
-    queryFn: ({ signal }) => {
-      if (session === null || companyId === null) {
-        throw new Error('An active authenticated company context is required.');
-      }
-
-      return fetchCompanyInvitations(session.access_token, companyId, signal);
-    },
-  });
-  const refetchInvitations = invitationsQuery.refetch;
-
   const invalidateTenantData = useCallback(async (): Promise<void> => {
     await queryClient.invalidateQueries({
       queryKey: TENANT_QUERY_PREFIX,
     });
     await queryClient.invalidateQueries({
-      queryKey: ['company-scoped', 'reporting'],
+      queryKey: ["company-scoped", "reporting"],
+    });
+    await queryClient.invalidateQueries({
+      queryKey: ["company-scoped", "catalog"],
     });
   }, []);
 
-  const invitationMutation = useMutation<
-    CompanyInvitation,
+  const createUserMutation = useMutation<
+    CompanyDirectoryUser,
     Error,
-    CreateInvitationInput
+    CreateManagedUserInput
   >({
     mutationFn: async (input) => {
       if (session === null || companyId === null) {
-        throw new Error('An active authenticated company context is required.');
+        throw new Error("An active authenticated company context is required.");
       }
 
-      return createCompanyInvitation(session.access_token, companyId, input);
+      return createManagedUser(session.access_token, companyId, input);
     },
     onSettled: invalidateTenantData,
   });
 
-  const resendMutation = useMutation<
-    CompanyInvitation,
+  const resetPasswordMutation = useMutation<
+    ManagedUserPasswordResetResult,
     Error,
-    InvitationActionInput
+    ResetManagedUserPasswordInput
   >({
     mutationFn: async (input) => {
       if (session === null || companyId === null) {
-        throw new Error('An active authenticated company context is required.');
+        throw new Error("An active authenticated company context is required.");
       }
 
-      return resendCompanyInvitation(session.access_token, companyId, input);
-    },
-    onSettled: invalidateTenantData,
-  });
-
-  const revokeMutation = useMutation<
-    CompanyInvitation,
-    Error,
-    InvitationActionInput
-  >({
-    mutationFn: async (input) => {
-      if (session === null || companyId === null) {
-        throw new Error('An active authenticated company context is required.');
-      }
-
-      return revokeCompanyInvitation(session.access_token, companyId, input);
+      return resetManagedUserPassword(session.access_token, companyId, input);
     },
     onSettled: invalidateTenantData,
   });
@@ -160,7 +135,7 @@ export function useTenantAdministration(filters: DirectoryFilters) {
   >({
     mutationFn: async (input) => {
       if (session === null || companyId === null) {
-        throw new Error('An active authenticated company context is required.');
+        throw new Error("An active authenticated company context is required.");
       }
 
       return updateCompanyMembership(session.access_token, companyId, input);
@@ -175,30 +150,23 @@ export function useTenantAdministration(filters: DirectoryFilters) {
   >({
     mutationFn: async (input) => {
       if (session === null || companyId === null) {
-        throw new Error('An authenticated company context is required.');
+        throw new Error("An authenticated company context is required.");
       }
 
-      return updatePlatformUserStatus(
-        session.access_token,
-        companyId,
-        input,
-      );
+      return updatePlatformUserStatus(session.access_token, companyId, input);
     },
     onSettled: invalidateTenantData,
   });
 
   const refresh = useCallback(async (): Promise<void> => {
-    const refreshes: Promise<unknown>[] = [
-      refetchDirectory(),
-      refetchInvitations(),
-    ];
+    const refreshes: Promise<unknown>[] = [refetchDirectory()];
 
     if (!platformAdmin) {
       refreshes.push(refetchAudit());
     }
 
     await Promise.all(refreshes);
-  }, [platformAdmin, refetchAudit, refetchDirectory, refetchInvitations]);
+  }, [platformAdmin, refetchAudit, refetchDirectory]);
 
   const auditError = platformAdmin ? null : auditQuery.error;
   const auditLoading = !platformAdmin && auditQuery.isLoading;
@@ -206,39 +174,30 @@ export function useTenantAdministration(filters: DirectoryFilters) {
   const firstError =
     directoryQuery.error ??
     auditError ??
-    invitationsQuery.error ??
-    invitationMutation.error ??
-    resendMutation.error ??
-    revokeMutation.error ??
+    createUserMutation.error ??
+    resetPasswordMutation.error ??
     membershipMutation.error ??
     userStatusMutation.error;
 
   return {
     companyId,
     directory: directoryQuery.data ?? EMPTY_DIRECTORY,
-    invitations: invitationsQuery.data ?? EMPTY_INVITATIONS,
     audit: platformAdmin ? EMPTY_AUDIT : (auditQuery.data ?? EMPTY_AUDIT),
     status: !enabled
-      ? 'idle'
-      : directoryQuery.isLoading ||
-          auditLoading ||
-          invitationsQuery.isLoading
-        ? 'loading'
-        : directoryQuery.isError ||
-            auditFailed ||
-            invitationsQuery.isError
-          ? 'error'
-          : 'ready',
+      ? "idle"
+      : directoryQuery.isLoading || auditLoading
+        ? "loading"
+        : directoryQuery.isError || auditFailed
+          ? "error"
+          : "ready",
     error: firstError === null ? null : getErrorMessage(firstError),
     isMutating:
-      invitationMutation.isPending ||
-      resendMutation.isPending ||
-      revokeMutation.isPending ||
+      createUserMutation.isPending ||
+      resetPasswordMutation.isPending ||
       membershipMutation.isPending ||
       userStatusMutation.isPending,
-    createInvitation: invitationMutation.mutateAsync,
-    resendInvitation: resendMutation.mutateAsync,
-    revokeInvitation: revokeMutation.mutateAsync,
+    createManagedUser: createUserMutation.mutateAsync,
+    resetManagedUserPassword: resetPasswordMutation.mutateAsync,
     updateMembership: membershipMutation.mutateAsync,
     updateUserStatus: userStatusMutation.mutateAsync,
     refresh,

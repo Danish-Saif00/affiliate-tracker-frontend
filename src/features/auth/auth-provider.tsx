@@ -1,4 +1,4 @@
-import type { Session } from '@supabase/supabase-js';
+import type { Session } from "@supabase/supabase-js";
 import {
   type ReactNode,
   useCallback,
@@ -6,24 +6,17 @@ import {
   useMemo,
   useRef,
   useState,
-} from 'react';
+} from "react";
 
-import { queryClient } from '../../app/query-client';
-import { AuthContext, type AuthContextValue } from './auth-context';
-import { ApiRequestError, fetchCurrentIdentity } from '../../lib/api-client';
-import { supabase } from '../../lib/supabase';
-import {
-  clearRememberSession,
-  setRememberSession,
-} from './auth-storage';
-import type {
-  ApiIdentity,
-  AuthState,
-  SignInInput,
-} from './auth.types';
+import { queryClient } from "../../app/query-client";
+import { AuthContext, type AuthContextValue } from "./auth-context";
+import { ApiRequestError, fetchCurrentIdentity } from "../../lib/api-client";
+import { supabase } from "../../lib/supabase";
+import { clearRememberSession, setRememberSession } from "./auth-storage";
+import type { ApiIdentity, AuthState, SignInInput } from "./auth.types";
 
 const initialAuthState: AuthState = {
-  status: 'loading',
+  status: "loading",
   session: null,
   user: null,
   identity: null,
@@ -32,12 +25,12 @@ const initialAuthState: AuthState = {
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof ApiRequestError) {
-    if (error.code === 'ACCOUNT_ACCESS_DENIED') {
-      return 'Your Publisher Tracker account is unavailable or suspended.';
+    if (error.code === "ACCOUNT_ACCESS_DENIED") {
+      return "Your Publisher Tracker account is unavailable or suspended.";
     }
 
-    if (error.code === 'COMPANY_ACCESS_DENIED') {
-      return 'Access to the selected company is unavailable.';
+    if (error.code === "COMPANY_ACCESS_DENIED") {
+      return "Access to the selected company is unavailable.";
     }
 
     return error.message;
@@ -46,22 +39,22 @@ function getErrorMessage(error: unknown): string {
   if (error instanceof Error) {
     const normalizedMessage = error.message.toLowerCase();
 
-    if (normalizedMessage.includes('invalid login credentials')) {
-      return 'The email address or password is incorrect.';
+    if (normalizedMessage.includes("invalid login credentials")) {
+      return "The email address or password is incorrect.";
     }
 
-    if (normalizedMessage.includes('email not confirmed')) {
-      return 'Confirm your email address before signing in.';
+    if (normalizedMessage.includes("email not confirmed")) {
+      return "Confirm your email address before signing in.";
     }
 
     return error.message;
   }
 
-  return 'Authentication failed. Please try again.';
+  return "Authentication failed. Please try again.";
 }
 
 async function clearLocalSession(): Promise<void> {
-  await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
+  await supabase.auth.signOut({ scope: "local" }).catch(() => undefined);
   clearRememberSession();
   queryClient.clear();
 }
@@ -71,12 +64,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const synchronizationSequence = useRef(0);
 
   const synchronizeSession = useCallback(
-    async (session: Session | null, companyId?: string): Promise<ApiIdentity | null> => {
+    async (
+      session: Session | null,
+      companyId?: string,
+    ): Promise<ApiIdentity | null> => {
       const sequence = ++synchronizationSequence.current;
 
       if (session === null) {
         setState({
-          status: 'unauthenticated',
+          status: "unauthenticated",
           session: null,
           user: null,
           identity: null,
@@ -86,14 +82,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       try {
-        const identity = await fetchCurrentIdentity(session.access_token, companyId);
+        const identity = await fetchCurrentIdentity(
+          session.access_token,
+          companyId,
+        );
 
         if (sequence !== synchronizationSequence.current) {
           return identity;
         }
 
         setState({
-          status: 'authenticated',
+          status: "authenticated",
           session,
           user: session.user,
           identity,
@@ -119,7 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await clearLocalSession();
 
         setState({
-          status: 'unauthenticated',
+          status: "unauthenticated",
           session: null,
           user: null,
           identity: null,
@@ -142,7 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (error !== null) {
         setState({
-          status: 'error',
+          status: "error",
           session: null,
           user: null,
           identity: null,
@@ -169,7 +168,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [synchronizeSession]);
 
   const signIn = useCallback(
-    async ({ email, password, rememberSession }: SignInInput): Promise<ApiIdentity> => {
+    async ({
+      email,
+      password,
+      rememberSession,
+    }: SignInInput): Promise<ApiIdentity> => {
       setRememberSession(rememberSession);
 
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -182,14 +185,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (data.session === null) {
-        throw new Error('Supabase did not return an authenticated session.');
+        throw new Error("Supabase did not return an authenticated session.");
       }
 
       try {
         const identity = await fetchCurrentIdentity(data.session.access_token);
 
         setState({
-          status: 'authenticated',
+          status: "authenticated",
           session: data.session,
           user: data.session.user,
           identity,
@@ -208,37 +211,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const signOut = useCallback(async (): Promise<void> => {
-    const { error } = await supabase.auth.signOut({ scope: 'local' });
+    const { error } = await supabase.auth.signOut({ scope: "local" });
 
     clearRememberSession();
     queryClient.clear();
 
     setState({
-      status: 'unauthenticated',
+      status: "unauthenticated",
       session: null,
       user: null,
       identity: null,
       error: null,
     });
-
-    if (error !== null) {
-      throw new Error(getErrorMessage(error), { cause: error });
-    }
-  }, []);
-
-  const requestPasswordReset = useCallback(async (email: string): Promise<void> => {
-    const redirectTo = `${window.location.origin}/update-password`;
-    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo,
-    });
-
-    if (error !== null) {
-      throw new Error(getErrorMessage(error), { cause: error });
-    }
-  }, []);
-
-  const updatePassword = useCallback(async (password: string): Promise<void> => {
-    const { error } = await supabase.auth.updateUser({ password });
 
     if (error !== null) {
       throw new Error(getErrorMessage(error), { cause: error });
@@ -263,18 +247,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ...state,
       signIn,
       signOut,
-      requestPasswordReset,
-      updatePassword,
       refreshIdentity,
     }),
-    [
-      refreshIdentity,
-      requestPasswordReset,
-      signIn,
-      signOut,
-      state,
-      updatePassword,
-    ],
+    [refreshIdentity, signIn, signOut, state],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

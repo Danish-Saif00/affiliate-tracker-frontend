@@ -2,11 +2,9 @@ import type {
   CompanyMembershipStatus,
   CompanyRole,
   PlatformRole,
-} from '../auth/auth.types';
+} from "../auth/auth.types";
 
-export type UserStatus = 'active' | 'suspended';
-export type InvitationStatus = 'pending' | 'accepted' | 'revoked';
-export type InvitationDeliveryStatus = 'pending' | 'sent' | 'failed';
+export type UserStatus = "active" | "suspended";
 
 export type CompanyDirectoryUser = {
   membershipId: string;
@@ -18,6 +16,7 @@ export type CompanyDirectoryUser = {
   userStatus: UserStatus;
   role: CompanyRole;
   membershipStatus: CompanyMembershipStatus;
+  invitedBy: string | null;
   joinedAt: string | null;
   membershipCreatedAt: string;
   membershipUpdatedAt: string;
@@ -46,26 +45,6 @@ export type CompanyMembership = {
   updatedAt: string;
 };
 
-export type CompanyInvitation = {
-  id: string;
-  companyId: string;
-  email: string;
-  role: CompanyRole;
-  status: InvitationStatus;
-  deliveryStatus: InvitationDeliveryStatus;
-  userId: string | null;
-  requiresPasswordSetup: boolean;
-  invitedBy: string | null;
-  expiresAt: string;
-  acceptedAt: string | null;
-  revokedAt: string | null;
-  lastSentAt: string | null;
-  sendCount: number;
-  lastDeliveryErrorCode: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
-
 export type AuditEvent = {
   id: string;
   companyId: string | null;
@@ -85,18 +64,24 @@ export type CursorPage<TItem> = {
 
 export type DirectoryFilters = {
   search: string;
-  role: CompanyRole | '';
-  membershipStatus: CompanyMembershipStatus | '';
-  userStatus: UserStatus | '';
+  role: CompanyRole | "";
+  membershipStatus: CompanyMembershipStatus | "";
+  userStatus: UserStatus | "";
 };
 
-export type CreateInvitationInput = {
+export type CreateManagedUserInput = {
   email: string;
-  role: CompanyRole;
+  password: string;
 };
 
-export type InvitationActionInput = {
-  invitationId: string;
+export type ResetManagedUserPasswordInput = {
+  userId: string;
+  password: string;
+};
+
+export type ManagedUserPasswordResetResult = {
+  userId: string;
+  passwordUpdated: true;
 };
 
 export type UpdateMembershipInput = {
