@@ -24,14 +24,17 @@ import { formatDateTime } from '../control-plane/control-plane-formatters';
 
 const PAGE_SIZE = 10;
 
-export type TrackingDomainsPageMode = 'add' | 'manage';
+export type TrackingDomainsPageMode = 'add' | 'manage' | 'approvals';
 
 export function TrackingDomainsPage({ mode }: { mode: TrackingDomainsPageMode }) {
+  const approvalMode = mode === 'approvals';
   const domains = useTrackingDomains();
-  const catalog = useCatalogOperations();
+  const catalog = useCatalogOperations({ enabled: !approvalMode });
   const [hostname, setHostname] = useState('');
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<TrackingDomainStatus | 'all'>('all');
+  const [status, setStatus] = useState<TrackingDomainStatus | 'all'>(
+    approvalMode ? 'pending_verification' : 'all',
+  );
   const [createdAfter, setCreatedAfter] = useState('');
   const [page, setPage] = useState(1);
   const [message, setMessage] = useState<string | null>(null);
@@ -41,6 +44,14 @@ export function TrackingDomainsPage({ mode }: { mode: TrackingDomainsPageMode })
     () => new Map(catalog.snapshot?.domains.map((domain) => [domain.id, domain.offerCount]) ?? []),
     [catalog.snapshot],
   );
+
+  const pendingCount = domains.domains.filter(
+    (domain) => domain.status === 'pending_verification',
+  ).length;
+  const activeCount = domains.domains.filter(
+    (domain) => domain.status === 'active',
+  ).length;
+  const domainLoadFailed = domains.status === 'error';
 
   const filtered = useMemo(() => {
     const needle = search.trim().toLowerCase();
@@ -72,7 +83,13 @@ export function TrackingDomainsPage({ mode }: { mode: TrackingDomainsPageMode })
       const created = await domains.createDomain({ hostname });
       setHostname('');
       setMessage(`${created.hostname} was added. Publish its TXT verification token before activation.`);
-      await catalog.refresh();
+      if (!approvalMode) {
+        if (!approvalMode) {
+        if (!approvalMode) {
+        await catalog.refresh();
+      }
+      }
+      }
     } catch (error: unknown) {
       setActionError(error instanceof Error ? error.message : 'The domain could not be added.');
     }
@@ -109,29 +126,85 @@ export function TrackingDomainsPage({ mode }: { mode: TrackingDomainsPageMode })
     setMessage('DNS verification token copied.');
   }
 
-  if (domains.status === 'forbidden') {
-    return <ControlAccessDenied title="Domain access unavailable" message="Manager or Company Administrator access is required." />;
+  if (approvalMode && !domains.permissions.platformAdmin) {
+    return (
+      <ControlAccessDenied
+        title="Domain approvals unavailable"
+        message="Platform Super Admin access is required."
+      />
+    );
   }
 
-  if (domains.status === 'loading' || catalog.isLoading) {
+  if (domains.status === 'forbidden') {
+    return (
+      <ControlAccessDenied
+        title="Domain access unavailable"
+        message="Platform Super Admin, Manager, or Company Administrator access is required."
+      />
+    );
+  }
+
+  if (
+    domains.status === 'loading' ||
+    (!approvalMode && catalog.isLoading)
+  ) {
     return <ControlLoading label="tracking domains" />;
   }
 
   return (
     <div className="page-stack catalog-page">
       <ControlModuleHeader
-        description="Add branded tracking hosts, publish DNS verification records, and control domain readiness for offers and links."
-        eyebrow="Domain Setup"
-        icon="dns"
-        stats={[
-          { label: 'Total', value: domains.domains.length },
-          { label: 'Active', value: domains.domains.filter((domain) => domain.status === 'active').length },
-          { label: 'Primary', value: domains.domains.find((domain) => domain.isPrimary)?.hostname ?? 'Not set' },
-        ]}
-        title={mode === 'add' ? 'Add Domain' : 'Manage Domains'}
+        description={
+          approvalMode
+            ? 'Review company tracking-domain requests, confirm the published DNS verification token, and control activation.'
+            : 'Add branded tracking hosts, publish DNS verification records, and control domain readiness for offers and links.'
+        }
+        eyebrow={approvalMode ? 'Platform Governance' : 'Domain Setup'}
+        icon={approvalMode ? 'domain_verification' : 'dns'}
+        stats={
+          approvalMode
+            ? [
+                {
+                  label: 'Pending',
+                  value: domainLoadFailed ? '—' : pendingCount,
+                },
+                {
+                  label: 'Active',
+                  value: domainLoadFailed ? '—' : activeCount,
+                },
+                {
+                  label: 'Total',
+                  value: domainLoadFailed ? '—' : domains.domains.length,
+                },
+              ]
+            : [
+                { label: 'Total', value: domains.domains.length },
+                { label: 'Active', value: activeCount },
+                {
+                  label: 'Primary',
+                  value:
+                    domains.domains.find((domain) => domain.isPrimary)?.hostname ??
+                    'Not set',
+                },
+              ]
+        }
+        title={
+          mode === 'add'
+            ? 'Add Domain'
+            : approvalMode
+              ? 'Domain Approvals'
+              : 'Manage Domains'
+        }
       />
 
-      <ControlFeedback error={actionError ?? domains.error ?? catalog.error} message={message} />
+      <ControlFeedback
+        error={
+          actionError ??
+          domains.error ??
+          (approvalMode ? null : catalog.error)
+        }
+        message={message}
+      />
 
       {mode === 'add' && domains.permissions.canManage && (
         <div className="catalog-two-column">
@@ -177,14 +250,30 @@ export function TrackingDomainsPage({ mode }: { mode: TrackingDomainsPageMode })
         </div>
       )}
 
-      {mode === 'manage' && (
+      {(mode === 'manage' || approvalMode) && (
       <GlassPanel as="section" className="control-card catalog-table-panel">
         <ControlCardHeading
-          action={<RefreshButton disabled={domains.isMutating} onClick={() => void Promise.all([domains.refresh(), catalog.refresh()])} />}
-          eyebrow="Domain Directory"
-          title="Manage domains"
-          description="Filter by hostname, status, and creation date."
+          action={
+            <RefreshButton
+              disabled={domains.isMutating}
+              onClick={() =>
+                void (
+                  approvalMode
+                    ? domains.refresh()
+                    : Promise.all([domains.refresh(), catalog.refresh()])
+                )
+              }
+            />
+          }
+          eyebrow={approvalMode ? 'Approval Queue' : 'Domain Directory'}
+          title={approvalMode ? 'Review domain requests' : 'Manage domains'}
+          description={
+            approvalMode
+              ? 'Select the company in the top bar, confirm its TXT verification token in DNS, then verify and activate the hostname.'
+              : 'Filter by hostname, status, and creation date.'
+          }
         />
+        {!domainLoadFailed && (
         <CatalogToolbar
           onSearch={(value) => {
             setSearch(value);
@@ -215,8 +304,15 @@ export function TrackingDomainsPage({ mode }: { mode: TrackingDomainsPageMode })
             value={createdAfter}
           />
         </CatalogToolbar>
+        )}
 
-        {pageRows.length === 0 ? (
+        {domainLoadFailed ? (
+          <ControlEmpty
+            icon="error"
+            title="Domain approvals could not be loaded"
+            message="The API request failed. Restore Platform Super Admin domain-governance access, then use Refresh."
+          />
+        ) : pageRows.length === 0 ? (
           <ControlEmpty icon="dns" title="No domains found" message="Add a domain or change the filters." />
         ) : (
           <div className="responsive-table catalog-table-wrap">
@@ -224,7 +320,7 @@ export function TrackingDomainsPage({ mode }: { mode: TrackingDomainsPageMode })
               <thead>
                 <tr>
                   <th>Name</th>
-                  <th>Offers</th>
+                  {!approvalMode && <th>Offers</th>}
                   <th>Verification token</th>
                   <th>Primary</th>
                   <th>Status</th>
@@ -236,7 +332,9 @@ export function TrackingDomainsPage({ mode }: { mode: TrackingDomainsPageMode })
                 {pageRows.map((domain) => (
                   <tr key={domain.id}>
                     <td><strong>{domain.hostname}</strong><small>{domain.verifiedAt === null ? 'Not verified' : `Verified ${formatDateTime(domain.verifiedAt)}`}</small></td>
-                    <td>{offerCountByDomain.get(domain.id) ?? 0}</td>
+                    {!approvalMode && (
+                      <td>{offerCountByDomain.get(domain.id) ?? 0}</td>
+                    )}
                     <td>
                       <button className="catalog-copy-token" onClick={() => void copyToken(domain.verificationToken)} title="Copy token" type="button">
                         <code>{domain.verificationToken.slice(0, 16)}…</code>
@@ -251,9 +349,17 @@ export function TrackingDomainsPage({ mode }: { mode: TrackingDomainsPageMode })
                         {domains.permissions.canManage && domain.status === 'active' && !domain.isPrimary && (
                           <button aria-label={`Make ${domain.hostname} primary`} onClick={() => void handlePrimary(domain.id)} title="Make primary" type="button"><MaterialIcon name="star" /></button>
                         )}
-                        {domains.permissions.platformAdmin && domain.status === 'pending_verification' && (
-                          <button aria-label={`Activate ${domain.hostname}`} onClick={() => void handleStatus(domain.id, 'active')} title="Activate" type="button"><MaterialIcon name="verified" /></button>
-                        )}
+                        {domains.permissions.platformAdmin &&
+                          domain.status === 'pending_verification' && (
+                            <button
+                              aria-label={`Verify and activate ${domain.hostname}`}
+                              onClick={() => void handleStatus(domain.id, 'active')}
+                              title="Verify and activate"
+                              type="button"
+                            >
+                              <MaterialIcon name="verified" />
+                            </button>
+                          )}
                         {domains.permissions.canManage && domain.status === 'suspended' && domain.verifiedAt !== null && (
                           <button aria-label={`Activate ${domain.hostname}`} onClick={() => void handleStatus(domain.id, 'active')} title="Activate" type="button"><MaterialIcon name="play_arrow" /></button>
                         )}
@@ -271,7 +377,13 @@ export function TrackingDomainsPage({ mode }: { mode: TrackingDomainsPageMode })
             </table>
           </div>
         )}
-        <CatalogPagination onPage={setPage} page={safePage} pageCount={pageCount} />
+        {!domainLoadFailed && (
+          <CatalogPagination
+            onPage={setPage}
+            page={safePage}
+            pageCount={pageCount}
+          />
+        )}
       </GlassPanel>
       )}
     </div>

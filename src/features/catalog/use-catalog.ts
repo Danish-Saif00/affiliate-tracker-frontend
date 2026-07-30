@@ -27,7 +27,13 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Catalog data could not be updated.';
 }
 
-export function useCatalogOperations() {
+export interface UseCatalogOperationsOptions {
+  readonly enabled?: boolean;
+}
+
+export function useCatalogOperations(
+  options: UseCatalogOperationsOptions = {},
+) {
   const auth = useAuth();
   const company = useCompany();
   const accessToken = auth.session?.access_token ?? null;
@@ -35,7 +41,10 @@ export function useCatalogOperations() {
   const queryKey = ['company-scoped', companyId, 'core-catalog'] as const;
   const catalogQuery = useQuery<CoreCatalogSnapshot>({
     queryKey,
-    enabled: accessToken !== null && companyId !== null,
+    enabled:
+      options.enabled !== false &&
+      accessToken !== null &&
+      companyId !== null,
     queryFn: ({ signal }) => {
       if (accessToken === null || companyId === null) {
         throw new Error('A selected company and authenticated session are required.');

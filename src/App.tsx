@@ -159,6 +159,14 @@ export default function App() {
             element={<Navigate replace to="/domains/manage" />}
           />
           <Route
+            path="domain-approvals"
+            element={
+              <LazyRoute>
+                <TrackingDomainsPage mode="approvals" />
+              </LazyRoute>
+            }
+          />
+          <Route
             path="domains/add"
             element={
               <LazyRoute>

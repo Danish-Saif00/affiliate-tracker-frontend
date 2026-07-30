@@ -11,6 +11,7 @@ const PLATFORM_ROUTE_PREFIXES = [
   '/dashboard',
   '/companies',
   '/company-admins',
+  '/domain-approvals',
   '/billing',
   '/account',
 ] as const;
