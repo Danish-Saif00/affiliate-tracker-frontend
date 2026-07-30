@@ -11,6 +11,7 @@ import { useCatalogOperations } from "../../features/catalog/use-catalog";
 import { usePostbackEndpointCreator } from "../../features/control-plane/use-control-plane";
 import { environment } from "../../lib/environment";
 import { InlineProviderCreator } from "./inline-provider-creator";
+import { NetworkPostbackManager } from "./network-postback-manager";
 import {
   CatalogPagination,
   CatalogToolbar,
@@ -89,6 +90,7 @@ function NetworkForm({
   onChange,
   onSubmit,
   onCancel,
+  networkAccountId,
 }: {
   form: NetworkFormState;
   mode: "create" | "edit";
@@ -97,6 +99,7 @@ function NetworkForm({
   onChange: (form: NetworkFormState) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onCancel?: () => void;
+  networkAccountId: string | null;
 }) {
   const selectedProvider = providers.find(
     (provider) => provider.id === form.providerId,
@@ -251,26 +254,13 @@ function NetworkForm({
             </div>
           )}
         </div>
-      ) : (
-        <div className="catalog-form-grid">
-          <label className="catalog-field--wide">
-            <span>Stored postback URL</span>
-            <input
-              disabled={disabled}
-              onChange={(event) =>
-                onChange({ ...form, postbackUrl: event.currentTarget.value })
-              }
-              placeholder="Optional provider postback reference"
-              type="url"
-              value={form.postbackUrl}
-            />
-            <small>
-              Existing metadata only. Secure conversion endpoints are linked to
-              the Network account separately.
-            </small>
-          </label>
-        </div>
-      )}
+      ) : networkAccountId !== null ? (
+        <NetworkPostbackManager
+          key={networkAccountId}
+          networkAccountId={networkAccountId}
+          networkName={form.name}
+        />
+      ) : null}
 
       <ToggleField
         checked={form.duplicateAllowed}
@@ -696,6 +686,7 @@ export function NetworkAccountsPage({
               mode={editingId === null ? "create" : "edit"}
               onCancel={mode === "manage" ? closeEditor : undefined}
               onChange={setForm}
+              networkAccountId={editingId}
               onSubmit={(event) => void handleSubmit(event)}
               providers={providers}
             />

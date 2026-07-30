@@ -1,0 +1,219 @@
+/* src/styles/components/network-postback-manager.css
+ * Secure endpoint lifecycle controls inside Edit Network.
+ */
+
+.network-postback-manager {
+  display: grid;
+  gap: 1rem;
+}
+
+.network-postback-manager__heading {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.network-postback-manager__heading > div {
+  display: grid;
+  gap: 0.18rem;
+}
+
+.network-postback-manager__heading span,
+.network-postback-manager__template > span,
+.network-postback-manager__create label > span,
+.network-postback-manager__secret-heading span {
+  color: #697691;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.network-postback-manager__heading strong,
+.network-postback-manager__secret-heading strong {
+  color: #1f2942;
+  font-size: 0.95rem;
+}
+
+.network-postback-manager__heading small,
+.network-postback-manager__secret-heading small,
+.network-postback-manager__template small {
+  color: #75819a;
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.network-postback-manager__warning {
+  align-items: flex-start;
+  background: rgba(255, 183, 61, 0.1);
+  border: 1px solid rgba(215, 145, 21, 0.24);
+  border-radius: 0.9rem;
+  color: #9b6412;
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.85rem;
+}
+
+.network-postback-manager__warning > div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.network-postback-manager__warning span {
+  color: #8a6a33;
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+.network-postback-manager__secret {
+  background: rgba(255, 255, 255, 0.48);
+  border: 1px solid rgba(65, 104, 245, 0.23);
+  border-radius: 1rem;
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.78),
+    0 14px 30px rgba(37, 53, 107, 0.06);
+  display: grid;
+  gap: 0.9rem;
+  padding: 1rem;
+}
+
+.network-postback-manager__secret-heading {
+  align-items: center;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.network-postback-manager__secret-heading > div {
+  display: grid;
+  gap: 0.18rem;
+}
+
+.network-postback-manager__secret > code,
+.network-postback-manager__template code {
+  background: rgba(59, 83, 173, 0.06);
+  border-radius: 0.7rem;
+  box-shadow: inset 0 0 0 1px rgba(59, 83, 173, 0.1);
+  color: #26324f;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.76rem;
+  overflow-wrap: anywhere;
+  padding: 0.75rem;
+  white-space: pre-wrap;
+}
+
+.network-postback-manager__template {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.network-postback-manager__list {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.network-postback-manager__endpoint {
+  background: rgba(255, 255, 255, 0.42);
+  border: 1px solid rgba(104, 121, 191, 0.16);
+  border-radius: 0.95rem;
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.74),
+    0 12px 28px rgba(43, 58, 112, 0.05);
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.9rem;
+}
+
+.network-postback-manager__endpoint-main {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.network-postback-manager__endpoint-main > div {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.network-postback-manager__endpoint-main > div > span,
+.network-postback-manager__endpoint-meta {
+  color: #75819a;
+  font-size: 0.73rem;
+}
+
+.network-postback-manager__endpoint code {
+  color: #33405f;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.network-postback-manager__endpoint-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 1rem;
+}
+
+.network-postback-manager__actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  justify-content: flex-end;
+}
+
+.network-postback-manager__create {
+  align-items: end;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.network-postback-manager__create label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.network-postback-manager__create input {
+  width: 100%;
+}
+
+.network-postback-manager__create--secondary {
+  border-top: 1px solid rgba(104, 121, 191, 0.14);
+  padding-top: 0.85rem;
+}
+
+.network-postback-manager__empty {
+  display: grid;
+  gap: 0.85rem;
+}
+
+@media (max-width: 760px) {
+  .network-postback-manager__heading,
+  .network-postback-manager__endpoint-main {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .network-postback-manager__secret-heading {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .network-postback-manager__secret-heading > button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .network-postback-manager__create {
+    grid-template-columns: 1fr;
+  }
+
+  .network-postback-manager__actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .network-postback-manager__actions button {
+    width: 100%;
+  }
+}
