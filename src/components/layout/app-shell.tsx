@@ -1,37 +1,38 @@
-import { useState } from 'react';
-import { Navigate, Outlet, useLocation } from 'react-router';
+import { useState } from "react";
+import { Navigate, Outlet, useLocation } from "react-router";
 
-import { useAuth } from '../../features/auth/use-auth';
-import { useCompany } from '../../features/companies/use-company';
-import { SubscriptionAccessPage } from '../../pages/billing/subscription-access-page';
-import { Sidebar } from './sidebar';
-import { Topbar } from './topbar';
+import { useAuth } from "../../features/auth/use-auth";
+import { useCompany } from "../../features/companies/use-company";
+import { SubscriptionAccessPage } from "../../pages/billing/subscription-access-page";
+import { Sidebar } from "./sidebar";
+import { Topbar } from "./topbar";
 
 const PLATFORM_ROUTE_PREFIXES = [
-  '/dashboard',
-  '/companies',
-  '/company-admins',
-  '/domain-approvals',
-  '/billing',
-  '/account',
+  "/dashboard",
+  "/companies",
+  "/company-admins",
+  "/domain-approvals",
+  "/billing",
+  "/account",
 ] as const;
 
 const COMPANY_ADMIN_ROUTE_PREFIXES = [
-  '/dashboard',
-  '/domains',
-  '/networks',
-  '/offers',
-  '/managers',
-  '/reports/networks',
-  '/reports/offers',
-  '/reports/managers',
-  '/logs/clicks',
-  '/logs/conversions',
-  '/logs/sessions',
-  '/logs/user-agents',
-  '/settings',
-  '/account',
-  '/billing',
+  "/dashboard",
+  "/domains",
+  "/networks",
+  "/offers",
+  "/managers",
+  "/reports/networks",
+  "/reports/offers",
+  "/reports/managers",
+  "/logs/clicks",
+  "/logs/conversions",
+  "/logs/sessions",
+  "/logs/user-agents",
+  "/postbacks",
+  "/settings",
+  "/account",
+  "/billing",
 ] as const;
 
 function isPlatformRouteAllowed(pathname: string): boolean {
@@ -52,9 +53,9 @@ export function AppShell() {
   const location = useLocation();
   const [navigationOpen, setNavigationOpen] = useState(false);
   const platformAdmin =
-    auth.identity?.authorization.platformRole === 'platform_super_admin';
+    auth.identity?.authorization.platformRole === "platform_super_admin";
   const companyRole =
-    auth.identity?.authorization.companyMembership?.status === 'active'
+    auth.identity?.authorization.companyMembership?.status === "active"
       ? auth.identity.authorization.companyMembership.role
       : null;
 
@@ -64,7 +65,7 @@ export function AppShell() {
 
   if (
     !platformAdmin &&
-    companyRole === 'company_admin' &&
+    companyRole === "company_admin" &&
     !isCompanyAdminRouteAllowed(location.pathname)
   ) {
     return <Navigate replace to="/dashboard" />;
@@ -73,7 +74,7 @@ export function AppShell() {
   const companyAccessRestricted =
     !platformAdmin && company.accessRestriction !== null;
   const showRestriction =
-    companyAccessRestricted && location.pathname !== '/account';
+    companyAccessRestricted && location.pathname !== "/account";
 
   return (
     <div className="app-shell">

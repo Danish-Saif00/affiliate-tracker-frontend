@@ -1,11 +1,12 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { useCallback } from 'react';
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useCallback } from "react";
 
-import { queryClient } from '../../app/query-client';
-import { useAuth } from '../auth/use-auth';
-import { useCompany } from '../companies/use-company';
+import { queryClient } from "../../app/query-client";
+import { useAuth } from "../auth/use-auth";
+import { useCompany } from "../companies/use-company";
 import {
   createNetworkAccount,
+  createCompanyNetworkProvider,
   createNetworkProvider,
   createTrackingDomain,
   fetchNetworkAccounts,
@@ -15,7 +16,7 @@ import {
   updateNetworkProvider,
   updatePlatformTrackingDomainStatus,
   updateTrackingDomain,
-} from './tracking-networks-api';
+} from "./tracking-networks-api";
 import type {
   CreateNetworkAccountInput,
   CreateNetworkProviderInput,
@@ -28,18 +29,18 @@ import type {
   UpdateNetworkProviderInput,
   UpdatePlatformTrackingDomainStatusInput,
   UpdateTrackingDomainInput,
-} from './tracking-networks.types';
+} from "./tracking-networks.types";
 
 const TRACKING_DOMAINS_QUERY_KEY = [
-  'company-scoped',
-  'tracking-networks',
-  'domains',
+  "company-scoped",
+  "tracking-networks",
+  "domains",
 ] as const;
-const NETWORK_PROVIDERS_QUERY_KEY = ['tracking-networks', 'providers'] as const;
+const NETWORK_PROVIDERS_QUERY_KEY = ["tracking-networks", "providers"] as const;
 const NETWORK_ACCOUNTS_QUERY_KEY = [
-  'company-scoped',
-  'tracking-networks',
-  'accounts',
+  "company-scoped",
+  "tracking-networks",
+  "accounts",
 ] as const;
 
 const EMPTY_DOMAINS: readonly TrackingDomain[] = Object.freeze([]);
@@ -54,9 +55,10 @@ function readPermissions(
   platformRole: string | null | undefined,
   companyRole: string | null | undefined,
 ) {
-  const platformAdmin = platformRole === 'platform_super_admin';
-  const companyReader = companyRole === 'company_admin' || companyRole === 'manager';
-  const companyManager = companyRole === 'company_admin';
+  const platformAdmin = platformRole === "platform_super_admin";
+  const companyReader =
+    companyRole === "company_admin" || companyRole === "manager";
+  const companyManager = companyRole === "company_admin";
 
   return {
     platformAdmin,
@@ -72,18 +74,18 @@ function resolveLoadStatus(
   failed: boolean,
 ): TrackingModuleLoadStatus {
   if (!allowed) {
-    return 'forbidden';
+    return "forbidden";
   }
 
   if (!enabled) {
-    return 'idle';
+    return "idle";
   }
 
   if (loading) {
-    return 'loading';
+    return "loading";
   }
 
-  return failed ? 'error' : 'ready';
+  return failed ? "error" : "ready";
 }
 
 export function useTrackingDomains() {
@@ -106,7 +108,7 @@ export function useTrackingDomains() {
     enabled,
     queryFn: ({ signal }) => {
       if (session === null || companyId === null) {
-        throw new Error('An active authenticated company context is required.');
+        throw new Error("An active authenticated company context is required.");
       }
 
       return fetchTrackingDomains(
@@ -120,9 +122,11 @@ export function useTrackingDomains() {
   const refetch = domainsQuery.refetch;
 
   const invalidate = useCallback(async (): Promise<void> => {
-    await queryClient.invalidateQueries({ queryKey: TRACKING_DOMAINS_QUERY_KEY });
     await queryClient.invalidateQueries({
-      queryKey: ['company-scoped', 'tenant-administration', 'audit'],
+      queryKey: TRACKING_DOMAINS_QUERY_KEY,
+    });
+    await queryClient.invalidateQueries({
+      queryKey: ["company-scoped", "tenant-administration", "audit"],
     });
   }, []);
 
@@ -133,7 +137,7 @@ export function useTrackingDomains() {
   >({
     mutationFn: async (input) => {
       if (session === null || companyId === null || !permissions.canManage) {
-        throw new Error('Company administrator access is required.');
+        throw new Error("Company administrator access is required.");
       }
 
       return createTrackingDomain(session.access_token, companyId, input);
@@ -148,7 +152,7 @@ export function useTrackingDomains() {
   >({
     mutationFn: async (input) => {
       if (session === null || companyId === null || !permissions.canManage) {
-        throw new Error('Company administrator access is required.');
+        throw new Error("Company administrator access is required.");
       }
 
       return updateTrackingDomain(session.access_token, companyId, input);
@@ -167,7 +171,7 @@ export function useTrackingDomains() {
         companyId === null ||
         !permissions.platformAdmin
       ) {
-        throw new Error('Platform Super Admin access is required.');
+        throw new Error("Platform Super Admin access is required.");
       }
 
       return updatePlatformTrackingDomainStatus(
@@ -197,7 +201,7 @@ export function useTrackingDomains() {
     error:
       firstError === null
         ? null
-        : getErrorMessage(firstError, 'Tracking domains could not be loaded.'),
+        : getErrorMessage(firstError, "Tracking domains could not be loaded."),
     isMutating:
       createMutation.isPending ||
       updateMutation.isPending ||
@@ -235,11 +239,11 @@ export function useNetworkProviders() {
     enabled,
     queryFn: ({ signal }) => {
       if (session === null) {
-        throw new Error('An authenticated session is required.');
+        throw new Error("An authenticated session is required.");
       }
 
       if (!permissions.platformAdmin && companyId === null) {
-        throw new Error('An active company context is required.');
+        throw new Error("An active company context is required.");
       }
 
       return fetchNetworkProviders(
@@ -253,8 +257,12 @@ export function useNetworkProviders() {
   const refetch = providersQuery.refetch;
 
   const invalidate = useCallback(async (): Promise<void> => {
-    await queryClient.invalidateQueries({ queryKey: NETWORK_PROVIDERS_QUERY_KEY });
-    await queryClient.invalidateQueries({ queryKey: NETWORK_ACCOUNTS_QUERY_KEY });
+    await queryClient.invalidateQueries({
+      queryKey: NETWORK_PROVIDERS_QUERY_KEY,
+    });
+    await queryClient.invalidateQueries({
+      queryKey: NETWORK_ACCOUNTS_QUERY_KEY,
+    });
   }, []);
 
   const createMutation = useMutation<
@@ -263,11 +271,27 @@ export function useNetworkProviders() {
     CreateNetworkProviderInput
   >({
     mutationFn: async (input) => {
-      if (session === null || !permissions.platformAdmin) {
-        throw new Error('Platform Super Admin access is required.');
+      if (session === null || !permissions.canManage) {
+        throw new Error(
+          "Company Admin or Platform Super Admin access is required to create a network provider.",
+        );
       }
 
-      return createNetworkProvider(session.access_token, input);
+      if (permissions.platformAdmin) {
+        return createNetworkProvider(session.access_token, input);
+      }
+
+      if (companyId === null) {
+        throw new Error(
+          "An active company is required to create a network provider.",
+        );
+      }
+
+      return createCompanyNetworkProvider(
+        session.access_token,
+        companyId,
+        input,
+      );
     },
     onSettled: invalidate,
   });
@@ -279,7 +303,7 @@ export function useNetworkProviders() {
   >({
     mutationFn: async (input) => {
       if (session === null || !permissions.platformAdmin) {
-        throw new Error('Platform Super Admin access is required.');
+        throw new Error("Platform Super Admin access is required.");
       }
 
       return updateNetworkProvider(session.access_token, input);
@@ -301,7 +325,7 @@ export function useNetworkProviders() {
     error:
       firstError === null
         ? null
-        : getErrorMessage(firstError, 'Network providers could not be loaded.'),
+        : getErrorMessage(firstError, "Network providers could not be loaded."),
     isMutating: createMutation.isPending || updateMutation.isPending,
     permissions,
     createProvider: createMutation.mutateAsync,
@@ -332,7 +356,7 @@ export function useNetworkAccounts() {
     enabled,
     queryFn: ({ signal }) => {
       if (session === null || companyId === null) {
-        throw new Error('An active authenticated company context is required.');
+        throw new Error("An active authenticated company context is required.");
       }
 
       return fetchNetworkAccounts(
@@ -346,9 +370,11 @@ export function useNetworkAccounts() {
   const refetch = accountsQuery.refetch;
 
   const invalidate = useCallback(async (): Promise<void> => {
-    await queryClient.invalidateQueries({ queryKey: NETWORK_ACCOUNTS_QUERY_KEY });
     await queryClient.invalidateQueries({
-      queryKey: ['company-scoped', 'reporting'],
+      queryKey: NETWORK_ACCOUNTS_QUERY_KEY,
+    });
+    await queryClient.invalidateQueries({
+      queryKey: ["company-scoped", "reporting"],
     });
   }, []);
 
@@ -359,7 +385,7 @@ export function useNetworkAccounts() {
   >({
     mutationFn: async (input) => {
       if (session === null || companyId === null || !permissions.canManage) {
-        throw new Error('Company administrator access is required.');
+        throw new Error("Company administrator access is required.");
       }
 
       return createNetworkAccount(session.access_token, companyId, input);
@@ -374,7 +400,7 @@ export function useNetworkAccounts() {
   >({
     mutationFn: async (input) => {
       if (session === null || companyId === null || !permissions.canManage) {
-        throw new Error('Company administrator access is required.');
+        throw new Error("Company administrator access is required.");
       }
 
       return updateNetworkAccount(session.access_token, companyId, input);
@@ -397,7 +423,7 @@ export function useNetworkAccounts() {
     error:
       firstError === null
         ? null
-        : getErrorMessage(firstError, 'Network accounts could not be loaded.'),
+        : getErrorMessage(firstError, "Network accounts could not be loaded."),
     isMutating: createMutation.isPending || updateMutation.isPending,
     permissions,
     createAccount: createMutation.mutateAsync,

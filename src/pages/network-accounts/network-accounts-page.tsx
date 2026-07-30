@@ -1,19 +1,22 @@
-import { type FormEvent, useMemo, useState } from 'react';
+import { type FormEvent, useMemo, useState } from "react";
 
-import { MaterialIcon } from '../../components/icons/material-icon';
-import { GlassPanel } from '../../components/ui/glass-panel';
+import { MaterialIcon } from "../../components/icons/material-icon";
+import { GlassPanel } from "../../components/ui/glass-panel";
 import type {
   CatalogNetwork,
   CatalogNetworkStatus,
   CreateCatalogNetworkInput,
-} from '../../features/catalog/catalog.types';
-import { useCatalogOperations } from '../../features/catalog/use-catalog';
+} from "../../features/catalog/catalog.types";
+import { useCatalogOperations } from "../../features/catalog/use-catalog";
+import { usePostbackEndpointCreator } from "../../features/control-plane/use-control-plane";
+import { environment } from "../../lib/environment";
+import { InlineProviderCreator } from "./inline-provider-creator";
 import {
   CatalogPagination,
   CatalogToolbar,
   RowActions,
   ToggleField,
-} from '../control-plane/catalog-page-ui';
+} from "../control-plane/catalog-page-ui";
 import {
   ControlAccessDenied,
   ControlCardHeading,
@@ -23,12 +26,12 @@ import {
   ControlModuleHeader,
   ControlStatus,
   RefreshButton,
-} from '../control-plane/control-plane-ui';
-import { formatDateTime } from '../control-plane/control-plane-formatters';
+} from "../control-plane/control-plane-ui";
+import { formatDateTime } from "../control-plane/control-plane-formatters";
 
 const PAGE_SIZE = 10;
 
-export type NetworkAccountsPageMode = 'add' | 'manage';
+export type NetworkAccountsPageMode = "add" | "manage";
 
 type NetworkFormState = {
   providerId: string;
@@ -37,18 +40,30 @@ type NetworkFormState = {
   trackingParameter: string;
   postbackUrl: string;
   duplicateAllowed: boolean;
+  createPostbackEndpoint: boolean;
+  postbackEndpointName: string;
   status: CatalogNetworkStatus;
+};
+
+type CreatedPostbackSetup = {
+  networkName: string;
+  endpointName: string;
+  endpointKey: string;
+  baseUrl: string;
+  templateUrl: string;
 };
 
 function emptyForm(): NetworkFormState {
   return {
-    providerId: '',
-    name: '',
-    externalAccountId: '',
-    trackingParameter: '',
-    postbackUrl: '',
+    providerId: "",
+    name: "",
+    externalAccountId: "",
+    trackingParameter: "",
+    postbackUrl: "",
     duplicateAllowed: false,
-    status: 'active',
+    createPostbackEndpoint: true,
+    postbackEndpointName: "",
+    status: "active",
   };
 }
 
@@ -56,10 +71,12 @@ function formFromNetwork(network: CatalogNetwork): NetworkFormState {
   return {
     providerId: network.providerId,
     name: network.name,
-    externalAccountId: network.externalAccountId ?? '',
-    trackingParameter: network.trackingParameter ?? '',
-    postbackUrl: network.postbackUrl ?? '',
+    externalAccountId: network.externalAccountId ?? "",
+    trackingParameter: network.trackingParameter ?? "",
+    postbackUrl: network.postbackUrl ?? "",
     duplicateAllowed: network.duplicateAllowed,
+    createPostbackEndpoint: false,
+    postbackEndpointName: `${network.name} Conversions`,
     status: network.status,
   };
 }
@@ -74,15 +91,17 @@ function NetworkForm({
   onCancel,
 }: {
   form: NetworkFormState;
-  mode: 'create' | 'edit';
+  mode: "create" | "edit";
   providers: readonly { id: string; code: string; name: string }[];
   disabled: boolean;
   onChange: (form: NetworkFormState) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onCancel?: () => void;
 }) {
-  const selectedProvider = providers.find((provider) => provider.id === form.providerId);
-  const customProvider = selectedProvider?.code === 'custom';
+  const selectedProvider = providers.find(
+    (provider) => provider.id === form.providerId,
+  );
+  const customProvider = selectedProvider?.code === "custom";
 
   return (
     <form className="catalog-form network-combined-form" onSubmit={onSubmit}>
@@ -90,7 +109,9 @@ function NetworkForm({
         <MaterialIcon name="account_tree" />
         <div>
           <strong>Network configuration</strong>
-          <small>Provider account identity and tracking identifier settings.</small>
+          <small>
+            Provider account identity and tracking identifier settings.
+          </small>
         </div>
       </div>
 
@@ -100,7 +121,9 @@ function NetworkForm({
           <input
             disabled={disabled}
             maxLength={160}
-            onChange={(event) => onChange({ ...form, name: event.currentTarget.value })}
+            onChange={(event) =>
+              onChange({ ...form, name: event.currentTarget.value })
+            }
             placeholder="Network name"
             required
             value={form.name}
@@ -109,8 +132,10 @@ function NetworkForm({
         <label>
           <span>Software / provider</span>
           <select
-            disabled={disabled || mode === 'edit'}
-            onChange={(event) => onChange({ ...form, providerId: event.currentTarget.value })}
+            disabled={disabled || mode === "edit"}
+            onChange={(event) =>
+              onChange({ ...form, providerId: event.currentTarget.value })
+            }
             required
             value={form.providerId}
           >
@@ -122,12 +147,19 @@ function NetworkForm({
             ))}
           </select>
         </label>
+
+        {mode === "create" && <InlineProviderCreator />}
         <label>
           <span>External account ID</span>
           <input
             autoComplete="off"
             disabled={disabled}
-            onChange={(event) => onChange({ ...form, externalAccountId: event.currentTarget.value })}
+            onChange={(event) =>
+              onChange({
+                ...form,
+                externalAccountId: event.currentTarget.value,
+              })
+            }
             placeholder="Optional provider account ID"
             value={form.externalAccountId}
           />
@@ -136,12 +168,21 @@ function NetworkForm({
           <span>Tracking parameter</span>
           <input
             disabled={disabled}
-            onChange={(event) => onChange({ ...form, trackingParameter: event.currentTarget.value })}
-            placeholder={customProvider ? 'aff_click_id' : 'Optional provider click parameter'}
+            onChange={(event) =>
+              onChange({
+                ...form,
+                trackingParameter: event.currentTarget.value,
+              })
+            }
+            placeholder={
+              customProvider
+                ? "aff_click_id"
+                : "Optional provider click parameter"
+            }
             value={form.trackingParameter}
           />
         </label>
-        {mode === 'edit' && (
+        {mode === "edit" && (
           <label>
             <span>Status</span>
             <select
@@ -166,25 +207,70 @@ function NetworkForm({
         <MaterialIcon name="webhook" />
         <div>
           <strong>Postback configuration</strong>
-          <small>Postback belongs to this Network and is not managed as a separate module.</small>
+          <small>
+            Postback belongs to this Network and is not managed as a separate
+            module.
+          </small>
         </div>
       </div>
 
-      <div className="catalog-form-grid">
-        <label className="catalog-field--wide">
-          <span>Postback URL</span>
-          <input
+      {mode === "create" ? (
+        <div className="network-postback-inline">
+          <ToggleField
+            checked={form.createPostbackEndpoint}
             disabled={disabled}
-            onChange={(event) => onChange({ ...form, postbackUrl: event.currentTarget.value })}
-            placeholder="https://network.example/postback?click_id={click_id}"
-            type="url"
-            value={form.postbackUrl}
+            hint="Generate a secure conversion URL immediately after this Network is created."
+            label="Create secure postback endpoint"
+            onChange={(createPostbackEndpoint) =>
+              onChange({ ...form, createPostbackEndpoint })
+            }
           />
-          <small>
-            Use the provider click parameter above to map conversion callbacks. Secrets must not be placed in visible labels.
-          </small>
-        </label>
-      </div>
+
+          {form.createPostbackEndpoint && (
+            <div className="catalog-form-grid">
+              <label className="catalog-field--wide">
+                <span>Endpoint name</span>
+                <input
+                  disabled={disabled}
+                  maxLength={160}
+                  onChange={(event) =>
+                    onChange({
+                      ...form,
+                      postbackEndpointName: event.currentTarget.value,
+                    })
+                  }
+                  placeholder={`${form.name.trim() || "Network"} Conversions`}
+                  value={form.postbackEndpointName}
+                />
+                <small>
+                  The secure URL and one-time key will appear after Add Network
+                  succeeds. You will paste that generated URL into the provider
+                  dashboard.
+                </small>
+              </label>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="catalog-form-grid">
+          <label className="catalog-field--wide">
+            <span>Stored postback URL</span>
+            <input
+              disabled={disabled}
+              onChange={(event) =>
+                onChange({ ...form, postbackUrl: event.currentTarget.value })
+              }
+              placeholder="Optional provider postback reference"
+              type="url"
+              value={form.postbackUrl}
+            />
+            <small>
+              Existing metadata only. Secure conversion endpoints are linked to
+              the Network account separately.
+            </small>
+          </label>
+        </div>
+      )}
 
       <ToggleField
         checked={form.duplicateAllowed}
@@ -210,30 +296,39 @@ function NetworkForm({
           disabled={disabled}
           type="submit"
         >
-          <MaterialIcon name={mode === 'create' ? 'add' : 'save'} />
-          {mode === 'create' ? 'Add Network' : 'Save Network'}
+          <MaterialIcon name={mode === "create" ? "add" : "save"} />
+          {mode === "create" ? "Add Network" : "Save Network"}
         </button>
       </div>
     </form>
   );
 }
 
-export function NetworkAccountsPage({ mode }: { mode: NetworkAccountsPageMode }) {
+export function NetworkAccountsPage({
+  mode,
+}: {
+  mode: NetworkAccountsPageMode;
+}) {
   const catalog = useCatalogOperations();
+  const postbackCreator = usePostbackEndpointCreator();
   const [form, setForm] = useState<NetworkFormState>(() => emptyForm());
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
-  const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<CatalogNetworkStatus | 'all'>('all');
-  const [providerId, setProviderId] = useState('');
-  const [createdAfter, setCreatedAfter] = useState('');
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<CatalogNetworkStatus | "all">("all");
+  const [providerId, setProviderId] = useState("");
+  const [createdAfter, setCreatedAfter] = useState("");
   const [page, setPage] = useState(1);
   const [message, setMessage] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [createdPostback, setCreatedPostback] =
+    useState<CreatedPostbackSetup | null>(null);
   const snapshot = catalog.snapshot;
 
   const providers = useMemo(
-    () => snapshot?.providers.filter((provider) => provider.status === 'active') ?? [],
+    () =>
+      snapshot?.providers.filter((provider) => provider.status === "active") ??
+      [],
     [snapshot],
   );
 
@@ -252,11 +347,12 @@ export function NetworkAccountsPage({ mode }: { mode: NetworkAccountsPageMode })
         network.externalAccountId?.toLowerCase().includes(needle) === true;
       const matchesCreatedAfter =
         createdAfter.length === 0 ||
-        new Date(network.createdAt).getTime() >= new Date(`${createdAfter}T00:00:00`).getTime();
+        new Date(network.createdAt).getTime() >=
+          new Date(`${createdAfter}T00:00:00`).getTime();
 
       return (
         matchesSearch &&
-        (status === 'all' || network.status === status) &&
+        (status === "all" || network.status === status) &&
         (providerId.length === 0 || network.providerId === providerId) &&
         matchesCreatedAfter
       );
@@ -265,12 +361,49 @@ export function NetworkAccountsPage({ mode }: { mode: NetworkAccountsPageMode })
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, pageCount);
-  const pageRows = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
-  const editorVisible = mode === 'add' || editorOpen;
+  const pageRows = filtered.slice(
+    (safePage - 1) * PAGE_SIZE,
+    safePage * PAGE_SIZE,
+  );
+  const editorVisible = mode === "add" || editorOpen;
 
   function resetFeedback(): void {
     setMessage(null);
     setActionError(null);
+  }
+
+  function buildPostbackSetup(
+    networkName: string,
+    endpointName: string,
+    endpointKey: string,
+  ): CreatedPostbackSetup {
+    const baseUrl = `${environment.apiOrigin}/postbacks/${encodeURIComponent(endpointKey)}`;
+    const templateUrl =
+      `${baseUrl}?click_id={CLICK_ID}` +
+      "&conversion_id={CONVERSION_ID}" +
+      "&idempotency_key={CONVERSION_ID}" +
+      "&status=approved";
+
+    return {
+      networkName,
+      endpointName,
+      endpointKey,
+      baseUrl,
+      templateUrl,
+    };
+  }
+
+  async function copyPostbackValue(
+    value: string,
+    label: string,
+  ): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(value);
+      setMessage(`${label} copied.`);
+      setActionError(null);
+    } catch {
+      setActionError(`The browser could not copy the ${label.toLowerCase()}.`);
+    }
   }
 
   function createInput(current: NetworkFormState): CreateCatalogNetworkInput {
@@ -290,14 +423,50 @@ export function NetworkAccountsPage({ mode }: { mode: NetworkAccountsPageMode })
     setForm(emptyForm());
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
+  async function handleSubmit(
+    event: FormEvent<HTMLFormElement>,
+  ): Promise<void> {
     event.preventDefault();
     resetFeedback();
 
     try {
       if (editingId === null) {
-        await catalog.createNetwork(createInput(form));
-        setMessage(`${form.name.trim()} was added with its Postback configuration.`);
+        const createdNetwork = await catalog.createNetwork(createInput(form));
+
+        if (form.createPostbackEndpoint) {
+          try {
+            const endpointName =
+              form.postbackEndpointName.trim() ||
+              `${createdNetwork.name} Conversions`;
+            const result = await postbackCreator.createEndpoint({
+              networkAccountId: createdNetwork.id,
+              name: endpointName,
+              status: "active",
+            });
+
+            setCreatedPostback(
+              buildPostbackSetup(
+                createdNetwork.name,
+                result.endpoint.name,
+                result.endpointKey,
+              ),
+            );
+            setMessage(
+              `${createdNetwork.name} and its secure postback endpoint were created.`,
+            );
+          } catch (endpointError: unknown) {
+            setCreatedPostback(null);
+            setMessage(`${createdNetwork.name} was created.`);
+            setActionError(
+              endpointError instanceof Error
+                ? `The Network was saved, but its secure postback endpoint could not be created: ${endpointError.message}`
+                : "The Network was saved, but its secure postback endpoint could not be created.",
+            );
+          }
+        } else {
+          setCreatedPostback(null);
+          setMessage(`${createdNetwork.name} was added.`);
+        }
       } else {
         await catalog.updateNetwork({
           accountId: editingId,
@@ -313,7 +482,11 @@ export function NetworkAccountsPage({ mode }: { mode: NetworkAccountsPageMode })
 
       closeEditor();
     } catch (error: unknown) {
-      setActionError(error instanceof Error ? error.message : 'The Network could not be saved.');
+      setActionError(
+        error instanceof Error
+          ? error.message
+          : "The Network could not be saved.",
+      );
     }
   }
 
@@ -322,9 +495,9 @@ export function NetworkAccountsPage({ mode }: { mode: NetworkAccountsPageMode })
     setEditingId(network.id);
     setForm(formFromNetwork(network));
     setEditorOpen(true);
-    document.querySelector('.catalog-editor-panel')?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'start',
+    document.querySelector(".catalog-editor-panel")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
     });
   }
 
@@ -336,13 +509,15 @@ export function NetworkAccountsPage({ mode }: { mode: NetworkAccountsPageMode })
     setForm({
       ...formFromNetwork(network),
       name: `${network.name} Copy ${suffix}`,
-      externalAccountId: '',
-      status: 'active',
+      externalAccountId: "",
+      createPostbackEndpoint: true,
+      postbackEndpointName: `${network.name} Copy ${suffix} Conversions`,
+      status: "active",
     });
     setEditorOpen(true);
-    document.querySelector('.catalog-editor-panel')?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'start',
+    document.querySelector(".catalog-editor-panel")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
     });
   }
 
@@ -363,15 +538,17 @@ export function NetworkAccountsPage({ mode }: { mode: NetworkAccountsPageMode })
         duplicateAllowed: network.duplicateAllowed,
       });
       setMessage(
-        nextStatus === 'active'
+        nextStatus === "active"
           ? `${network.name} is active.`
-          : nextStatus === 'suspended'
+          : nextStatus === "suspended"
             ? `${network.name} is paused.`
             : `${network.name} was archived.`,
       );
     } catch (error: unknown) {
       setActionError(
-        error instanceof Error ? error.message : 'The Network status could not be updated.',
+        error instanceof Error
+          ? error.message
+          : "The Network status could not be updated.",
       );
     }
   }
@@ -393,31 +570,118 @@ export function NetworkAccountsPage({ mode }: { mode: NetworkAccountsPageMode })
     <div className="page-stack catalog-page company-admin-network-page">
       <ControlModuleHeader
         description={
-          mode === 'add'
-            ? 'Add a Network and its Postback configuration in one operational form.'
-            : 'Edit, clone, activate, pause, or archive company Networks.'
+          mode === "add"
+            ? "Add a Network and its Postback configuration in one operational form."
+            : "Edit, clone, activate, pause, or archive company Networks."
         }
         eyebrow="Network Operations"
         icon="account_tree"
         stats={[
-          { label: 'Total', value: snapshot.summary.networks },
+          { label: "Total", value: snapshot.summary.networks },
           {
-            label: 'Active',
-            value: snapshot.networks.filter((network) => network.status === 'active').length,
+            label: "Active",
+            value: snapshot.networks.filter(
+              (network) => network.status === "active",
+            ).length,
           },
-          { label: 'Offers', value: snapshot.summary.offers },
+          { label: "Offers", value: snapshot.summary.offers },
         ]}
-        title={mode === 'add' ? 'Add Network' : 'Manage Networks'}
+        title={mode === "add" ? "Add Network" : "Manage Networks"}
       />
 
-      <ControlFeedback error={actionError ?? catalog.error} message={message} />
+      <ControlFeedback
+        error={actionError ?? postbackCreator.error ?? catalog.error}
+        message={message}
+      />
+
+      {createdPostback !== null && (
+        <GlassPanel
+          as="section"
+          className="control-card network-postback-result"
+        >
+          <div className="network-postback-result__heading">
+            <span className="network-postback-result__icon">
+              <MaterialIcon name="key" />
+            </span>
+            <div>
+              <span>One-time secure endpoint</span>
+              <strong>{createdPostback.networkName} is ready</strong>
+              <small>
+                Copy this URL now. The endpoint key is only returned when the
+                endpoint is created or rotated.
+              </small>
+            </div>
+            <button
+              aria-label="Dismiss generated postback details"
+              className="control-secondary-button"
+              onClick={() => setCreatedPostback(null)}
+              type="button"
+            >
+              <MaterialIcon name="close" />
+              Dismiss
+            </button>
+          </div>
+
+          <div className="network-postback-result__grid">
+            <div>
+              <span>Endpoint name</span>
+              <strong>{createdPostback.endpointName}</strong>
+            </div>
+            <div>
+              <span>Endpoint key</span>
+              <code>{createdPostback.endpointKey}</code>
+            </div>
+          </div>
+
+          <div className="network-postback-result__url">
+            <span>Provider postback template</span>
+            <code>{createdPostback.templateUrl}</code>
+            <small>
+              In Affizer, replace {"{CLICK_ID}"} with the Sub1 macro and both
+              {"{CONVERSION_ID}"} placeholders with the conversion or
+              transaction ID macro.
+            </small>
+          </div>
+
+          <div className="network-postback-result__actions">
+            <button
+              className="control-secondary-button"
+              onClick={() =>
+                void copyPostbackValue(
+                  createdPostback.baseUrl,
+                  "Base postback URL",
+                )
+              }
+              type="button"
+            >
+              <MaterialIcon name="link" />
+              Copy base URL
+            </button>
+            <button
+              className="primary-gradient-button primary-gradient-button--compact"
+              onClick={() =>
+                void copyPostbackValue(
+                  createdPostback.templateUrl,
+                  "Postback template",
+                )
+              }
+              type="button"
+            >
+              <MaterialIcon name="content_copy" />
+              Copy Affizer template
+            </button>
+          </div>
+        </GlassPanel>
+      )}
 
       {catalog.permissions.canManageCatalog && editorVisible && (
         <GlassPanel as="section" className="control-card catalog-editor-panel">
           <ControlCardHeading
             description="Network and Postback settings remain attached to one record."
-            eyebrow={editingId === null ? 'Add Network' : 'Edit Network'}
-            title={editingId === null ? 'Connect a Network' : `Update ${form.name}`}
+            eyebrow={editingId === null ? "Add Network" : "Edit Network"}
+            title={
+              editingId === null ? "Connect a Network" : `Update ${form.name}`
+            }
           />
           {providers.length === 0 ? (
             <ControlEmpty
@@ -427,10 +691,10 @@ export function NetworkAccountsPage({ mode }: { mode: NetworkAccountsPageMode })
             />
           ) : (
             <NetworkForm
-              disabled={catalog.isMutating}
+              disabled={catalog.isMutating || postbackCreator.isMutating}
               form={form}
-              mode={editingId === null ? 'create' : 'edit'}
-              onCancel={mode === 'manage' ? closeEditor : undefined}
+              mode={editingId === null ? "create" : "edit"}
+              onCancel={mode === "manage" ? closeEditor : undefined}
               onChange={setForm}
               onSubmit={(event) => void handleSubmit(event)}
               providers={providers}
@@ -439,7 +703,7 @@ export function NetworkAccountsPage({ mode }: { mode: NetworkAccountsPageMode })
         </GlassPanel>
       )}
 
-      {mode === 'manage' && (
+      {mode === "manage" && (
         <GlassPanel as="section" className="control-card catalog-table-panel">
           <ControlCardHeading
             action={
@@ -468,12 +732,16 @@ export function NetworkAccountsPage({ mode }: { mode: NetworkAccountsPageMode })
             >
               <option value="">All providers</option>
               {snapshot.providers.map((provider) => (
-                <option key={provider.id} value={provider.id}>{provider.name}</option>
+                <option key={provider.id} value={provider.id}>
+                  {provider.name}
+                </option>
               ))}
             </select>
             <select
               onChange={(event) => {
-                setStatus(event.currentTarget.value as CatalogNetworkStatus | 'all');
+                setStatus(
+                  event.currentTarget.value as CatalogNetworkStatus | "all",
+                );
                 setPage(1);
               }}
               value={status}
@@ -520,29 +788,42 @@ export function NetworkAccountsPage({ mode }: { mode: NetworkAccountsPageMode })
                     <tr key={network.id}>
                       <td>
                         <strong>{network.name}</strong>
-                        <small>{network.externalAccountId ?? 'No external ID'}</small>
+                        <small>
+                          {network.externalAccountId ?? "No external ID"}
+                        </small>
                       </td>
                       <td>
                         {network.providerName}
                         <small>{network.providerCode}</small>
                       </td>
                       <td>{network.offerCount}</td>
-                      <td><code>{network.trackingParameter ?? 'Not configured'}</code></td>
-                      <td>{network.postbackUrl === null ? 'Not configured' : 'Configured'}</td>
-                      <td><ControlStatus status={network.status} /></td>
+                      <td>
+                        <code>
+                          {network.trackingParameter ?? "Not configured"}
+                        </code>
+                      </td>
+                      <td>
+                        {network.postbackUrl === null
+                          ? "Not configured"
+                          : "Configured"}
+                      </td>
+                      <td>
+                        <ControlStatus status={network.status} />
+                      </td>
                       <td>{formatDateTime(network.createdAt)}</td>
                       <td>
                         <RowActions>
-                          {catalog.permissions.canManageCatalog && network.status !== 'archived' && (
-                            <button
-                              aria-label={`Edit ${network.name}`}
-                              onClick={() => editNetwork(network)}
-                              title="Edit"
-                              type="button"
-                            >
-                              <MaterialIcon name="edit" />
-                            </button>
-                          )}
+                          {catalog.permissions.canManageCatalog &&
+                            network.status !== "archived" && (
+                              <button
+                                aria-label={`Edit ${network.name}`}
+                                onClick={() => editNetwork(network)}
+                                title="Edit"
+                                type="button"
+                              >
+                                <MaterialIcon name="edit" />
+                              </button>
+                            )}
                           {catalog.permissions.canManageCatalog && (
                             <button
                               aria-label={`Clone ${network.name}`}
@@ -553,36 +834,46 @@ export function NetworkAccountsPage({ mode }: { mode: NetworkAccountsPageMode })
                               <MaterialIcon name="content_copy" />
                             </button>
                           )}
-                          {catalog.permissions.canManageCatalog && network.status !== 'active' && network.status !== 'archived' && (
-                            <button
-                              aria-label={`Activate ${network.name}`}
-                              onClick={() => void updateNetworkStatus(network, 'active')}
-                              title="Activate"
-                              type="button"
-                            >
-                              <MaterialIcon name="play_arrow" />
-                            </button>
-                          )}
-                          {catalog.permissions.canManageCatalog && network.status === 'active' && (
-                            <button
-                              aria-label={`Pause ${network.name}`}
-                              onClick={() => void updateNetworkStatus(network, 'suspended')}
-                              title="Pause"
-                              type="button"
-                            >
-                              <MaterialIcon name="pause" />
-                            </button>
-                          )}
-                          {catalog.permissions.canManageCatalog && network.status !== 'archived' && (
-                            <button
-                              aria-label={`Delete ${network.name}`}
-                              onClick={() => void updateNetworkStatus(network, 'archived')}
-                              title="Delete / archive"
-                              type="button"
-                            >
-                              <MaterialIcon name="delete" />
-                            </button>
-                          )}
+                          {catalog.permissions.canManageCatalog &&
+                            network.status !== "active" &&
+                            network.status !== "archived" && (
+                              <button
+                                aria-label={`Activate ${network.name}`}
+                                onClick={() =>
+                                  void updateNetworkStatus(network, "active")
+                                }
+                                title="Activate"
+                                type="button"
+                              >
+                                <MaterialIcon name="play_arrow" />
+                              </button>
+                            )}
+                          {catalog.permissions.canManageCatalog &&
+                            network.status === "active" && (
+                              <button
+                                aria-label={`Pause ${network.name}`}
+                                onClick={() =>
+                                  void updateNetworkStatus(network, "suspended")
+                                }
+                                title="Pause"
+                                type="button"
+                              >
+                                <MaterialIcon name="pause" />
+                              </button>
+                            )}
+                          {catalog.permissions.canManageCatalog &&
+                            network.status !== "archived" && (
+                              <button
+                                aria-label={`Delete ${network.name}`}
+                                onClick={() =>
+                                  void updateNetworkStatus(network, "archived")
+                                }
+                                title="Delete / archive"
+                                type="button"
+                              >
+                                <MaterialIcon name="delete" />
+                              </button>
+                            )}
                         </RowActions>
                       </td>
                     </tr>
@@ -591,7 +882,11 @@ export function NetworkAccountsPage({ mode }: { mode: NetworkAccountsPageMode })
               </table>
             </div>
           )}
-          <CatalogPagination onPage={setPage} page={safePage} pageCount={pageCount} />
+          <CatalogPagination
+            onPage={setPage}
+            page={safePage}
+            pageCount={pageCount}
+          />
         </GlassPanel>
       )}
     </div>

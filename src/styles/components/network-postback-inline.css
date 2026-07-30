@@ -1,0 +1,134 @@
+/* src/styles/components/network-postback-inline.css
+ * Secure postback endpoint creation inside the Add Network workflow.
+ */
+
+.network-postback-inline {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.network-postback-inline .catalog-form-grid {
+  margin-top: 0;
+}
+
+.network-postback-result {
+  border: 1px solid rgba(74, 112, 255, 0.24);
+  display: grid;
+  gap: 1rem;
+  overflow: hidden;
+}
+
+.network-postback-result__heading {
+  align-items: center;
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.network-postback-result__heading > div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.network-postback-result__heading > div > span,
+.network-postback-result__grid span,
+.network-postback-result__url > span {
+  color: #65728e;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.network-postback-result__heading strong {
+  color: #202a44;
+  font-size: 1rem;
+}
+
+.network-postback-result__heading small,
+.network-postback-result__url small {
+  color: #6f7b94;
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.network-postback-result__icon {
+  align-items: center;
+  background: rgba(56, 105, 246, 0.1);
+  border-radius: 0.9rem;
+  box-shadow: inset 0 0 0 1px rgba(56, 105, 246, 0.18);
+  color: #2d69e8;
+  display: inline-flex;
+  height: 2.8rem;
+  justify-content: center;
+  width: 2.8rem;
+}
+
+.network-postback-result__grid {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.network-postback-result__grid > div,
+.network-postback-result__url {
+  background: rgba(255, 255, 255, 0.42);
+  border: 1px solid rgba(104, 121, 191, 0.16);
+  border-radius: 0.9rem;
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.76),
+    0 12px 28px rgba(43, 58, 112, 0.05);
+  display: grid;
+  gap: 0.45rem;
+  min-width: 0;
+  padding: 0.9rem;
+}
+
+.network-postback-result__grid code,
+.network-postback-result__url code {
+  color: #25304b;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.76rem;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.network-postback-result__url code {
+  background: rgba(68, 91, 178, 0.06);
+  border-radius: 0.7rem;
+  box-shadow: inset 0 0 0 1px rgba(68, 91, 178, 0.1);
+  padding: 0.75rem;
+}
+
+.network-postback-result__actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  justify-content: flex-end;
+}
+
+@media (max-width: 760px) {
+  .network-postback-result__heading {
+    align-items: stretch;
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .network-postback-result__heading > button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .network-postback-result__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .network-postback-result__actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .network-postback-result__actions button {
+    width: 100%;
+  }
+}
