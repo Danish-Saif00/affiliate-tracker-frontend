@@ -13,6 +13,7 @@ import type {
   CatalogOfferStatus,
   CatalogRedirectType,
   CatalogReferrerMode,
+  CloneCatalogOfferInput,
   CreateCatalogOfferInput,
   UpdateCatalogOfferInput,
 } from "../../features/catalog/catalog.types";
@@ -234,7 +235,7 @@ function OfferForm({
   onCancel,
 }: {
   form: OfferFormState;
-  mode: "create" | "edit";
+  mode: "create" | "clone" | "edit";
   disabled: boolean;
   networks: readonly { id: string; name: string; providerName: string }[];
   domains: readonly { id: string; hostname: string }[];
@@ -308,7 +309,7 @@ function OfferForm({
         <label>
           <span>Network</span>
           <select
-            disabled={disabled || mode === "edit"}
+            disabled={disabled}
             onChange={(event) =>
               onChange({ ...form, networkAccountId: event.currentTarget.value })
             }
@@ -322,6 +323,18 @@ function OfferForm({
               </option>
             ))}
           </select>
+        </label>
+        <label>
+          <span>External Offer ID</span>
+          <input
+            disabled={disabled}
+            maxLength={255}
+            onChange={(event) =>
+              onChange({ ...form, externalOfferId: event.currentTarget.value })
+            }
+            placeholder="Optional Network Offer ID"
+            value={form.externalOfferId}
+          />
         </label>
         <div className="catalog-field catalog-field--wide">
           <span>Managers</span>
@@ -384,7 +397,7 @@ function OfferForm({
         <label>
           <span>Status</span>
           <select
-            disabled={disabled}
+            disabled={disabled || mode === "clone"}
             onChange={(event) =>
               onChange({
                 ...form,
@@ -394,7 +407,7 @@ function OfferForm({
             value={form.status}
           >
             <option value="draft">Draft</option>
-            <option value="active">Active</option>
+            {mode !== "clone" && <option value="active">Active</option>}
             {mode === "edit" && <option value="paused">Paused</option>}
             {mode === "edit" && <option value="archived">Archived</option>}
           </select>
@@ -698,8 +711,20 @@ function OfferForm({
           disabled={disabled}
           type="submit"
         >
-          <MaterialIcon name={mode === "create" ? "add" : "save"} />
-          {mode === "create" ? "Add Offer" : "Save Offer"}
+          <MaterialIcon
+            name={
+              mode === "edit"
+                ? "save"
+                : mode === "clone"
+                  ? "content_copy"
+                  : "add"
+            }
+          />
+          {mode === "edit"
+            ? "Save Offer"
+            : mode === "clone"
+              ? "Clone Offer"
+              : "Add Offer"}
         </button>
       </div>
     </form>
@@ -718,6 +743,7 @@ function updateInputFromOffer(
 
   return {
     offerId: offer.id,
+    networkAccountId: offer.networkAccountId,
     trackingDomainId: offer.trackingDomainId,
     externalOfferId: offer.externalOfferId,
     name: offer.name,
@@ -748,6 +774,7 @@ export function OffersPage({ mode }: { mode: OffersPageMode }) {
   const catalog = useCatalogOperations();
   const [form, setForm] = useState<OfferFormState>(() => emptyForm());
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [cloningSourceId, setCloningSourceId] = useState<string | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<CatalogOfferStatus | "all">("all");
@@ -851,6 +878,7 @@ export function OffersPage({ mode }: { mode: OffersPageMode }) {
 
   function closeEditor(): void {
     setEditingId(null);
+    setCloningSourceId(null);
     setEditorOpen(false);
     setForm(emptyForm());
   }
@@ -915,7 +943,16 @@ export function OffersPage({ mode }: { mode: OffersPageMode }) {
     try {
       const input = createInput(form);
 
-      if (editingId === null) {
+      if (cloningSourceId !== null) {
+        const { status: ignoredStatus, ...cloneValues } = input;
+        void ignoredStatus;
+        const cloneInput: CloneCatalogOfferInput = {
+          ...cloneValues,
+          sourceOfferId: cloningSourceId,
+        };
+        await catalog.cloneOffer(cloneInput);
+        setMessage(`${form.name.trim()} was cloned as a new draft.`);
+      } else if (editingId === null) {
         await catalog.createOffer(input);
         setMessage(
           `${form.name.trim()} was added and assigned to its Managers.`,
@@ -941,6 +978,7 @@ export function OffersPage({ mode }: { mode: OffersPageMode }) {
 
   function editOffer(offer: CatalogOffer): void {
     resetFeedback();
+    setCloningSourceId(null);
     setEditingId(offer.id);
     setForm(formFromOffer(offer));
     setEditorOpen(true);
@@ -956,6 +994,7 @@ export function OffersPage({ mode }: { mode: OffersPageMode }) {
 
     resetFeedback();
     setEditingId(null);
+    setCloningSourceId(offer.id);
     setForm({
       ...formFromOffer(offer),
       code: `${baseCode}-copy-${suffix}`,
@@ -990,6 +1029,29 @@ export function OffersPage({ mode }: { mode: OffersPageMode }) {
         error instanceof Error
           ? error.message
           : "The Offer status could not be updated.",
+      );
+    }
+  }
+
+  async function permanentlyDeleteOffer(offer: CatalogOffer): Promise<void> {
+    resetFeedback();
+
+    if (
+      !window.confirm(
+        `Permanently delete archived Offer "${offer.name}"? This cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await catalog.deleteOffer({ offerId: offer.id });
+      setMessage(`${offer.name} was permanently deleted.`);
+    } catch (error: unknown) {
+      setActionError(
+        error instanceof Error
+          ? error.message
+          : "The Offer could not be permanently deleted.",
       );
     }
   }
@@ -1035,11 +1097,19 @@ export function OffersPage({ mode }: { mode: OffersPageMode }) {
         <GlassPanel as="section" className="control-card catalog-editor-panel">
           <ControlCardHeading
             description="Tracking Link, payout, and fraud controls are embedded in this Offer form."
-            eyebrow={editingId === null ? "Add Offer" : "Edit Offer"}
+            eyebrow={
+              editingId !== null
+                ? "Edit Offer"
+                : cloningSourceId !== null
+                  ? "Clone Offer"
+                  : "Add Offer"
+            }
             title={
-              editingId === null
-                ? "Create a complete operational Offer"
-                : `Update ${form.name}`
+              editingId !== null
+                ? `Update ${form.name}`
+                : cloningSourceId !== null
+                  ? `Clone ${form.name}`
+                  : "Create a complete operational Offer"
             }
           />
           {activeNetworks.length === 0 ||
@@ -1056,7 +1126,13 @@ export function OffersPage({ mode }: { mode: OffersPageMode }) {
               domains={activeDomains}
               form={form}
               managers={activeManagers}
-              mode={editingId === null ? "create" : "edit"}
+              mode={
+                editingId !== null
+                  ? "edit"
+                  : cloningSourceId !== null
+                    ? "clone"
+                    : "create"
+              }
               networks={activeNetworks}
               onCancel={mode === "manage" ? closeEditor : undefined}
               onChange={setForm}
@@ -1317,6 +1393,10 @@ export function OffersPage({ mode }: { mode: OffersPageMode }) {
                           </dd>
                         </div>
                         <div>
+                          <dt>External Offer ID</dt>
+                          <dd>{offer.externalOfferId ?? "Not set"}</dd>
+                        </div>
+                        <div>
                           <dt>Clicks</dt>
                           <dd>{offer.clicks.toLocaleString()}</dd>
                         </div>
@@ -1410,14 +1490,25 @@ export function OffersPage({ mode }: { mode: OffersPageMode }) {
                         {catalog.permissions.canManageCatalog &&
                           offer.status !== "archived" && (
                             <button
-                              aria-label={`Delete ${offer.name}`}
+                              aria-label={`Archive ${offer.name}`}
                               onClick={() =>
                                 void updateOfferStatus(offer, "archived")
                               }
-                              title="Delete / archive"
+                              title="Archive Offer"
                               type="button"
                             >
                               <MaterialIcon name="delete" />
+                            </button>
+                          )}
+                        {catalog.permissions.canManageCatalog &&
+                          offer.status === "archived" && (
+                            <button
+                              aria-label={`Permanently delete ${offer.name}`}
+                              onClick={() => void permanentlyDeleteOffer(offer)}
+                              title="Permanently delete unused Offer"
+                              type="button"
+                            >
+                              <MaterialIcon name="delete_forever" />
                             </button>
                           )}
                       </RowActions>

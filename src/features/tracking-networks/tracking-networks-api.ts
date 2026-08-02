@@ -11,6 +11,7 @@ import type {
   NetworkAccount,
   NetworkAccountStatus,
   NetworkProvider,
+  NetworkProviderIntegration,
   NetworkProviderStatus,
   TrackingDomain,
   TrackingDomainStatus,
@@ -106,6 +107,58 @@ function parseTrackingDomain(value: unknown): TrackingDomain {
   };
 }
 
+function parseNetworkProviderIntegration(
+  value: unknown,
+): NetworkProviderIntegration {
+  if (!isRecord(value)) {
+    throw new Error(
+      "The API returned an invalid Provider integration profile.",
+    );
+  }
+
+  const postbackConversionStatus = readRequiredString(
+    value.postbackConversionStatus,
+    "Provider postback conversion status",
+  );
+
+  if (
+    postbackConversionStatus !== "pending" &&
+    postbackConversionStatus !== "approved"
+  ) {
+    throw new Error(
+      "The API returned an unsupported Provider postback status.",
+    );
+  }
+
+  return {
+    defaultTrackingParameter: readNullableString(
+      value.defaultTrackingParameter,
+      "Provider default tracking parameter",
+    ),
+    postbackClickIdToken: readNullableString(
+      value.postbackClickIdToken,
+      "Provider click ID token",
+    ),
+    postbackConversionIdToken: readNullableString(
+      value.postbackConversionIdToken,
+      "Provider conversion ID token",
+    ),
+    postbackRevenueAmountToken: readNullableString(
+      value.postbackRevenueAmountToken,
+      "Provider revenue amount token",
+    ),
+    postbackRevenueCurrencyToken: readNullableString(
+      value.postbackRevenueCurrencyToken,
+      "Provider revenue currency token",
+    ),
+    postbackConversionStatus,
+    configured: readBoolean(
+      value.configured,
+      "Provider integration configured flag",
+    ),
+  };
+}
+
 function parseNetworkProvider(value: unknown): NetworkProvider {
   if (!isRecord(value)) {
     throw new Error("The API returned an invalid network provider.");
@@ -113,6 +166,10 @@ function parseNetworkProvider(value: unknown): NetworkProvider {
 
   return {
     id: readRequiredString(value.id, "network provider id"),
+    companyId: readRequiredString(
+      value.companyId,
+      "network provider company id",
+    ),
     code: readRequiredString(value.code, "network provider code"),
     name: readRequiredString(value.name, "network provider name"),
     status: readNetworkProviderStatus(value.status),
@@ -124,6 +181,7 @@ function parseNetworkProvider(value: unknown): NetworkProvider {
       value.documentationUrl,
       "network provider documentation",
     ),
+    integration: parseNetworkProviderIntegration(value.integration),
     createdBy: readNullableString(value.createdBy, "network provider creator"),
     createdAt: readRequiredString(
       value.createdAt,
@@ -274,52 +332,19 @@ export async function updatePlatformTrackingDomainStatus(
 
 export async function fetchNetworkProviders(
   accessToken: string,
-  companyId: string | null,
-  platformAdmin: boolean,
+  companyId: string,
   signal?: AbortSignal,
 ): Promise<readonly NetworkProvider[]> {
-  const path = platformAdmin
-    ? "/platform/network-providers"
-    : `/companies/${companyId ?? ""}/network-providers`;
-  const payload = await authenticatedApiRequest(accessToken, path, {
-    ...(companyId !== null ? { companyId } : {}),
-    ...(signal !== undefined ? { signal } : {}),
-  });
-
-  return readCollection(payload, parseNetworkProvider);
-}
-
-export async function createNetworkProvider(
-  accessToken: string,
-  input: CreateNetworkProviderInput,
-): Promise<NetworkProvider> {
   const payload = await authenticatedApiRequest(
     accessToken,
-    "/platform/network-providers",
+    `/companies/${encodeURIComponent(companyId)}/network-providers`,
     {
-      method: "POST",
-      body: {
-        code: input.code.trim().toLowerCase(),
-        name: input.name.trim(),
-        ...(input.websiteUrl !== undefined
-          ? {
-              websiteUrl:
-                input.websiteUrl === null ? null : input.websiteUrl.trim(),
-            }
-          : {}),
-        ...(input.documentationUrl !== undefined
-          ? {
-              documentationUrl:
-                input.documentationUrl === null
-                  ? null
-                  : input.documentationUrl.trim(),
-            }
-          : {}),
-      },
+      companyId,
+      ...(signal !== undefined ? { signal } : {}),
     },
   );
 
-  return parseNetworkProvider(readData(payload));
+  return readCollection(payload, parseNetworkProvider);
 }
 
 export async function createCompanyNetworkProvider(
@@ -350,6 +375,9 @@ export async function createCompanyNetworkProvider(
                   : input.documentationUrl.trim(),
             }
           : {}),
+        ...(input.integration !== undefined
+          ? { integration: input.integration }
+          : {}),
       },
     },
   );
@@ -357,15 +385,19 @@ export async function createCompanyNetworkProvider(
   return parseNetworkProvider(readData(payload));
 }
 
-export async function updateNetworkProvider(
+export async function updateCompanyNetworkProvider(
   accessToken: string,
+  companyId: string,
   input: UpdateNetworkProviderInput,
 ): Promise<NetworkProvider> {
   const payload = await authenticatedApiRequest(
     accessToken,
-    `/platform/network-providers/${input.providerId}`,
+    `/companies/${encodeURIComponent(companyId)}/network-providers/${encodeURIComponent(
+      input.providerId,
+    )}`,
     {
       method: "PATCH",
+      companyId,
       body: {
         ...(input.name !== undefined ? { name: input.name.trim() } : {}),
         ...(input.status !== undefined ? { status: input.status } : {}),
@@ -383,6 +415,9 @@ export async function updateNetworkProvider(
                   : input.documentationUrl.trim(),
             }
           : {}),
+        ...(input.integration !== undefined
+          ? { integration: input.integration }
+          : {}),
       },
     },
   );
@@ -393,16 +428,16 @@ export async function updateNetworkProvider(
 export async function fetchNetworkAccounts(
   accessToken: string,
   companyId: string,
-  platformAdmin: boolean,
   signal?: AbortSignal,
 ): Promise<readonly NetworkAccount[]> {
-  const path = platformAdmin
-    ? `/platform/network-accounts?companyId=${encodeURIComponent(companyId)}`
-    : `/companies/${companyId}/network-accounts`;
-  const payload = await authenticatedApiRequest(accessToken, path, {
-    companyId,
-    ...(signal !== undefined ? { signal } : {}),
-  });
+  const payload = await authenticatedApiRequest(
+    accessToken,
+    `/companies/${encodeURIComponent(companyId)}/network-accounts`,
+    {
+      companyId,
+      ...(signal !== undefined ? { signal } : {}),
+    },
+  );
 
   return readCollection(payload, parseNetworkAccount);
 }
@@ -448,6 +483,9 @@ export async function updateNetworkAccount(
       method: "PATCH",
       companyId,
       body: {
+        ...(input.providerId !== undefined
+          ? { providerId: input.providerId }
+          : {}),
         ...(input.name !== undefined ? { name: input.name.trim() } : {}),
         ...(input.externalAccountId !== undefined
           ? {

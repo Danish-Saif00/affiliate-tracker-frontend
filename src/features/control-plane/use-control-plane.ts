@@ -11,7 +11,10 @@ import {
   createOffer,
   createOfferAssignment,
   createPostbackEndpoint,
+  archiveTrackingLink,
+  cloneTrackingLink,
   createTrackingLink,
+  deleteTrackingLink,
   fetchBillingPlans,
   fetchCompanyBilling,
   fetchConversions,
@@ -48,6 +51,7 @@ import type {
   CreateOfferInput,
   CreateSubscriptionInput,
   CreateTrackingLinkInput,
+  DeleteTrackingLinkResult,
   DuplicateProtectionRule,
   FraudClick,
   ModuleLoadStatus,
@@ -116,9 +120,8 @@ export function useControlPlaneContext() {
   const membership = auth.identity?.authorization.companyMembership ?? null;
   const companyRole = membership?.role ?? null;
   const activeMembership = membership?.status === "active";
-  const canRead = platformAdmin || activeMembership;
-  const canManage =
-    platformAdmin || (activeMembership && companyRole === "company_admin");
+  const canRead = activeMembership;
+  const canManage = activeMembership && companyRole === "company_admin";
   const permissions: ControlPlanePermissions = {
     platformAdmin,
     companyRole,
@@ -131,15 +134,13 @@ export function useControlPlaneContext() {
       (activeMembership &&
         (companyRole === "manager" || companyRole === "publisher")),
     canViewFinancials:
-      platformAdmin ||
-      (activeMembership &&
-        (companyRole === "company_admin" ||
-          companyRole === "manager" ||
-          companyRole === "publisher")),
+      activeMembership &&
+      (companyRole === "company_admin" ||
+        companyRole === "manager" ||
+        companyRole === "publisher"),
     canViewOperations:
-      platformAdmin ||
-      (activeMembership &&
-        (companyRole === "company_admin" || companyRole === "manager")),
+      activeMembership &&
+      (companyRole === "company_admin" || companyRole === "manager"),
     canCustomize: canManage,
   };
 
@@ -468,21 +469,33 @@ export function useTrackingLinks(
     },
   });
   const invalidate = useInvalidateControlPlane();
+  const requireTrackingContext = () => {
+    if (
+      context.accessToken === null ||
+      context.companyId === null ||
+      !context.permissions.canManageTracking
+    ) {
+      throw new Error("Tracking-link management access is required.");
+    }
+
+    return {
+      accessToken: context.accessToken,
+      companyId: context.companyId,
+    } as const;
+  };
   const createMutation = useMutation<
     TrackingLink,
     Error,
     CreateTrackingLinkInput
   >({
     mutationFn: async (input) => {
-      if (
-        context.accessToken === null ||
-        context.companyId === null ||
-        !context.permissions.canManageTracking
-      ) {
-        throw new Error("Tracking-link management access is required.");
-      }
+      const trackingContext = requireTrackingContext();
 
-      return createTrackingLink(context.accessToken, context.companyId, input);
+      return createTrackingLink(
+        trackingContext.accessToken,
+        trackingContext.companyId,
+        input,
+      );
     },
     onSettled: invalidate,
   });
@@ -492,18 +505,70 @@ export function useTrackingLinks(
     UpdateTrackingLinkInput
   >({
     mutationFn: async (input) => {
-      if (
-        context.accessToken === null ||
-        context.companyId === null ||
-        !context.permissions.canManageTracking
-      ) {
-        throw new Error("Tracking-link management access is required.");
-      }
+      const trackingContext = requireTrackingContext();
 
-      return updateTrackingLink(context.accessToken, context.companyId, input);
+      return updateTrackingLink(
+        trackingContext.accessToken,
+        trackingContext.companyId,
+        input,
+      );
     },
     onSettled: invalidate,
   });
+  const cloneMutation = useMutation<TrackingLink, Error, string>({
+    mutationFn: async (linkId) => {
+      const trackingContext = requireTrackingContext();
+
+      return cloneTrackingLink(
+        trackingContext.accessToken,
+        trackingContext.companyId,
+        linkId,
+      );
+    },
+    onSettled: invalidate,
+  });
+  const archiveMutation = useMutation<TrackingLink, Error, string>({
+    mutationFn: async (linkId) => {
+      const trackingContext = requireTrackingContext();
+
+      return archiveTrackingLink(
+        trackingContext.accessToken,
+        trackingContext.companyId,
+        linkId,
+      );
+    },
+    onSettled: invalidate,
+  });
+  const deleteMutation = useMutation<DeleteTrackingLinkResult, Error, string>({
+    mutationFn: async (linkId) => {
+      const trackingContext = requireTrackingContext();
+
+      if (!context.permissions.canManage) {
+        throw new Error(
+          "Only a Company Admin can permanently delete a tracking link.",
+        );
+      }
+
+      return deleteTrackingLink(
+        trackingContext.accessToken,
+        trackingContext.companyId,
+        linkId,
+      );
+    },
+    onSettled: invalidate,
+  });
+  const mutationError =
+    createMutation.error ??
+    updateMutation.error ??
+    cloneMutation.error ??
+    archiveMutation.error ??
+    deleteMutation.error;
+  const isMutating =
+    createMutation.isPending ||
+    updateMutation.isPending ||
+    cloneMutation.isPending ||
+    archiveMutation.isPending ||
+    deleteMutation.isPending;
 
   return {
     ...context,
@@ -515,12 +580,15 @@ export function useTrackingLinks(
       query.isError,
     ),
     error: errorMessage(
-      query.error ?? createMutation.error ?? updateMutation.error,
+      query.error ?? mutationError,
       "Tracking links could not be loaded.",
     ),
-    isMutating: createMutation.isPending || updateMutation.isPending,
+    isMutating,
     createLink: createMutation.mutateAsync,
     updateLink: updateMutation.mutateAsync,
+    cloneLink: cloneMutation.mutateAsync,
+    archiveLink: archiveMutation.mutateAsync,
+    deleteLink: deleteMutation.mutateAsync,
     refresh: async (): Promise<void> => {
       await query.refetch();
     },

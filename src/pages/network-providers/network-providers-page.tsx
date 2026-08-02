@@ -1,25 +1,22 @@
-import {
-  formatTrackingDate,
-} from '../tracking-networks/tracking-network-formatters';
+import { type FormEvent, useMemo, useState } from "react";
+
+import { MaterialIcon } from "../../components/icons/material-icon";
+import { GlassPanel } from "../../components/ui/glass-panel";
+import { useCompany } from "../../features/companies/use-company";
+import type {
+  NetworkProvider,
+  NetworkProviderIntegrationInput,
+  NetworkProviderStatus,
+} from "../../features/tracking-networks/tracking-networks.types";
+import { useNetworkProviders } from "../../features/tracking-networks/use-tracking-networks";
+import { formatTrackingDate } from "../tracking-networks/tracking-network-formatters";
 import {
   ModuleAccessState,
   ModuleFeedback,
   ModuleLoadingState,
   StatusPill,
-} from '../tracking-networks/tracking-network-ui';
-import {
-  type FormEvent,
-  useMemo,
-  useState } from 'react';
+} from "../tracking-networks/tracking-network-ui";
 
-import { MaterialIcon } from '../../components/icons/material-icon';
-import { GlassPanel } from '../../components/ui/glass-panel';
-import { useCompany } from '../../features/companies/use-company';
-import type {
-  NetworkProvider,
-  NetworkProviderStatus,
-  } from '../../features/tracking-networks/tracking-networks.types';
-import { useNetworkProviders } from '../../features/tracking-networks/use-tracking-networks';
 const CODE_PATTERN = /^[a-z0-9]+(?:_[a-z0-9]+)*$/u;
 
 function normalizeOptionalUrl(value: string): string | null {
@@ -36,7 +33,7 @@ function validateOptionalUrl(value: string): boolean {
 
   try {
     const url = new URL(normalized);
-    return url.protocol === 'http:' || url.protocol === 'https:';
+    return url.protocol === "http:" || url.protocol === "https:";
   } catch {
     return false;
   }
@@ -45,12 +42,12 @@ function validateOptionalUrl(value: string): boolean {
 function ProviderEditor({
   provider,
   disabled,
-  platformAdmin,
+  editable,
   onUpdate,
 }: {
   provider: NetworkProvider;
   disabled: boolean;
-  platformAdmin: boolean;
+  editable: boolean;
   onUpdate: (
     provider: NetworkProvider,
     input: {
@@ -58,22 +55,40 @@ function ProviderEditor({
       websiteUrl: string | null;
       documentationUrl: string | null;
       status: NetworkProviderStatus;
+      integration: NetworkProviderIntegrationInput;
     },
   ) => Promise<void>;
 }) {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const name = formData.get('name');
-    const websiteUrl = formData.get('websiteUrl');
-    const documentationUrl = formData.get('documentationUrl');
-    const status = formData.get('status');
+    const name = formData.get("name");
+    const websiteUrl = formData.get("websiteUrl");
+    const documentationUrl = formData.get("documentationUrl");
+    const status = formData.get("status");
+    const defaultTrackingParameter = formData.get("defaultTrackingParameter");
+    const postbackClickIdToken = formData.get("postbackClickIdToken");
+    const postbackConversionIdToken = formData.get("postbackConversionIdToken");
+    const postbackRevenueAmountToken = formData.get(
+      "postbackRevenueAmountToken",
+    );
+    const postbackRevenueCurrencyToken = formData.get(
+      "postbackRevenueCurrencyToken",
+    );
+    const postbackConversionStatus = formData.get("postbackConversionStatus");
 
     if (
-      typeof name !== 'string' ||
-      typeof websiteUrl !== 'string' ||
-      typeof documentationUrl !== 'string' ||
-      (status !== 'active' && status !== 'archived')
+      typeof name !== "string" ||
+      typeof websiteUrl !== "string" ||
+      typeof documentationUrl !== "string" ||
+      typeof defaultTrackingParameter !== "string" ||
+      typeof postbackClickIdToken !== "string" ||
+      typeof postbackConversionIdToken !== "string" ||
+      typeof postbackRevenueAmountToken !== "string" ||
+      typeof postbackRevenueCurrencyToken !== "string" ||
+      (postbackConversionStatus !== "pending" &&
+        postbackConversionStatus !== "approved") ||
+      (status !== "active" && status !== "archived")
     ) {
       return;
     }
@@ -83,6 +98,22 @@ function ProviderEditor({
       websiteUrl: normalizeOptionalUrl(websiteUrl),
       documentationUrl: normalizeOptionalUrl(documentationUrl),
       status,
+      integration: {
+        defaultTrackingParameter: normalizeOptionalUrl(
+          defaultTrackingParameter,
+        ),
+        postbackClickIdToken: normalizeOptionalUrl(postbackClickIdToken),
+        postbackConversionIdToken: normalizeOptionalUrl(
+          postbackConversionIdToken,
+        ),
+        postbackRevenueAmountToken: normalizeOptionalUrl(
+          postbackRevenueAmountToken,
+        ),
+        postbackRevenueCurrencyToken: normalizeOptionalUrl(
+          postbackRevenueCurrencyToken,
+        ),
+        postbackConversionStatus,
+      },
     });
   }
 
@@ -98,14 +129,14 @@ function ProviderEditor({
             <code className="tracking-code-badge">{provider.code}</code>
           </div>
           <span>
-            Created {formatTrackingDate(provider.createdAt)} · Updated{' '}
+            Created {formatTrackingDate(provider.createdAt)} · Updated{" "}
             {formatTrackingDate(provider.updatedAt)}
           </span>
         </div>
         <StatusPill status={provider.status} />
       </div>
 
-      {!platformAdmin ? (
+      {!editable ? (
         <div className="tracking-record-meta tracking-record-meta--two">
           <div>
             <span>Website</span>
@@ -122,10 +153,54 @@ function ProviderEditor({
             {provider.documentationUrl === null ? (
               <strong>Not configured</strong>
             ) : (
-              <a href={provider.documentationUrl} rel="noreferrer" target="_blank">
+              <a
+                href={provider.documentationUrl}
+                rel="noreferrer"
+                target="_blank"
+              >
                 Open provider docs
               </a>
             )}
+          </div>
+          <div>
+            <span>Tracking and global postback</span>
+            <strong>
+              {provider.integration.configured
+                ? "Integration configured"
+                : "Integration incomplete"}
+            </strong>
+          </div>
+          <div>
+            <span>Default click-ID parameter</span>
+            <code>
+              {provider.integration.defaultTrackingParameter ??
+                "click_id fallback"}
+            </code>
+          </div>
+          <div>
+            <span>Click-ID macro/token</span>
+            <code>
+              {provider.integration.postbackClickIdToken ?? "Not configured"}
+            </code>
+          </div>
+          <div>
+            <span>Conversion-ID macro/token</span>
+            <code>
+              {provider.integration.postbackConversionIdToken ??
+                "Not configured"}
+            </code>
+          </div>
+          <div>
+            <span>Revenue mapping</span>
+            <code>
+              {provider.integration.postbackRevenueAmountToken === null
+                ? "Not configured"
+                : `${provider.integration.postbackRevenueAmountToken} / ${provider.integration.postbackRevenueCurrencyToken ?? ""}`}
+            </code>
+          </div>
+          <div>
+            <span>Initial conversion status</span>
+            <strong>{provider.integration.postbackConversionStatus}</strong>
           </div>
         </div>
       ) : (
@@ -136,12 +211,16 @@ function ProviderEditor({
         >
           <label>
             <span>Provider name</span>
-            <input defaultValue={provider.name} disabled={disabled} name="name" />
+            <input
+              defaultValue={provider.name}
+              disabled={disabled}
+              name="name"
+            />
           </label>
           <label>
             <span>Website URL</span>
             <input
-              defaultValue={provider.websiteUrl ?? ''}
+              defaultValue={provider.websiteUrl ?? ""}
               disabled={disabled}
               name="websiteUrl"
               placeholder="https://provider.example"
@@ -151,21 +230,92 @@ function ProviderEditor({
           <label>
             <span>Documentation URL</span>
             <input
-              defaultValue={provider.documentationUrl ?? ''}
+              defaultValue={provider.documentationUrl ?? ""}
               disabled={disabled}
               name="documentationUrl"
               placeholder="https://docs.provider.example"
               type="url"
             />
           </label>
+          <div className="tracking-record-meta">
+            <strong>Tracking and Global Postback</strong>
+          </div>
+          <label>
+            <span>Default Provider click-ID parameter</span>
+            <input
+              defaultValue={provider.integration.defaultTrackingParameter ?? ""}
+              disabled={disabled}
+              name="defaultTrackingParameter"
+              placeholder="click_id"
+            />
+          </label>
+          <label>
+            <span>Provider click-ID macro/token</span>
+            <input
+              defaultValue={provider.integration.postbackClickIdToken ?? ""}
+              disabled={disabled}
+              name="postbackClickIdToken"
+              placeholder="{SUB1}"
+            />
+          </label>
+          <label>
+            <span>Provider conversion-ID macro/token</span>
+            <input
+              defaultValue={
+                provider.integration.postbackConversionIdToken ?? ""
+              }
+              disabled={disabled}
+              name="postbackConversionIdToken"
+              placeholder="{CONVERSION_ID}"
+            />
+          </label>
+          <label>
+            <span>Revenue amount macro/token</span>
+            <input
+              defaultValue={
+                provider.integration.postbackRevenueAmountToken ?? ""
+              }
+              disabled={disabled}
+              name="postbackRevenueAmountToken"
+            />
+          </label>
+          <label>
+            <span>Revenue currency macro/token</span>
+            <input
+              defaultValue={
+                provider.integration.postbackRevenueCurrencyToken ?? ""
+              }
+              disabled={disabled}
+              name="postbackRevenueCurrencyToken"
+            />
+          </label>
+          <label>
+            <span>Initial conversion status</span>
+            <select
+              defaultValue={provider.integration.postbackConversionStatus}
+              disabled={disabled}
+              name="postbackConversionStatus"
+            >
+              <option value="approved">Approved</option>
+              <option value="pending">Pending</option>
+            </select>
+          </label>
           <label>
             <span>Status</span>
-            <select defaultValue={provider.status} disabled={disabled} name="status">
+            <select
+              defaultValue={provider.status}
+              disabled={disabled}
+              name="status"
+            >
               <option value="active">Active</option>
               <option value="archived">Archived</option>
             </select>
           </label>
-          <button className="tracking-secondary-button" disabled={disabled} type="submit">
+          <button
+            className="tracking-secondary-button"
+            disabled={disabled}
+            type="submit"
+          >
             <MaterialIcon name="save" />
             Save provider
           </button>
@@ -178,12 +328,23 @@ function ProviderEditor({
 export function NetworkProvidersPage() {
   const company = useCompany();
   const providers = useNetworkProviders();
-  const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<NetworkProviderStatus | 'all'>('all');
-  const [code, setCode] = useState('');
-  const [name, setName] = useState('');
-  const [websiteUrl, setWebsiteUrl] = useState('');
-  const [documentationUrl, setDocumentationUrl] = useState('');
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<NetworkProviderStatus | "all">("all");
+  const [code, setCode] = useState("");
+  const [name, setName] = useState("");
+  const [websiteUrl, setWebsiteUrl] = useState("");
+  const [documentationUrl, setDocumentationUrl] = useState("");
+  const [defaultTrackingParameter, setDefaultTrackingParameter] = useState("");
+  const [postbackClickIdToken, setPostbackClickIdToken] = useState("");
+  const [postbackConversionIdToken, setPostbackConversionIdToken] =
+    useState("");
+  const [postbackRevenueAmountToken, setPostbackRevenueAmountToken] =
+    useState("");
+  const [postbackRevenueCurrencyToken, setPostbackRevenueCurrencyToken] =
+    useState("");
+  const [postbackConversionStatus, setPostbackConversionStatus] = useState<
+    "pending" | "approved"
+  >("approved");
   const [feedback, setFeedback] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -195,14 +356,16 @@ export function NetworkProvidersPage() {
         normalizedSearch.length === 0 ||
         provider.name.toLowerCase().includes(normalizedSearch) ||
         provider.code.includes(normalizedSearch);
-      const matchesStatus = status === 'all' || provider.status === status;
+      const matchesStatus = status === "all" || provider.status === status;
 
       return matchesSearch && matchesStatus;
     });
   }, [providers.providers, search, status]);
 
   const activeCount = useMemo(
-    () => providers.providers.filter((provider) => provider.status === 'active').length,
+    () =>
+      providers.providers.filter((provider) => provider.status === "active")
+        .length,
     [providers.providers],
   );
 
@@ -218,17 +381,22 @@ export function NetworkProvidersPage() {
     const normalizedName = name.trim();
 
     if (!CODE_PATTERN.test(normalizedCode) || normalizedCode.length < 2) {
-      setActionError('Provider code must use lowercase letters, numbers, and underscores.');
+      setActionError(
+        "Provider code must use lowercase letters, numbers, and underscores.",
+      );
       return;
     }
 
     if (normalizedName.length < 2) {
-      setActionError('Provider name must contain at least two characters.');
+      setActionError("Provider name must contain at least two characters.");
       return;
     }
 
-    if (!validateOptionalUrl(websiteUrl) || !validateOptionalUrl(documentationUrl)) {
-      setActionError('Provider links must be valid HTTP or HTTPS URLs.');
+    if (
+      !validateOptionalUrl(websiteUrl) ||
+      !validateOptionalUrl(documentationUrl)
+    ) {
+      setActionError("Provider links must be valid HTTP or HTTPS URLs.");
       return;
     }
 
@@ -238,15 +406,41 @@ export function NetworkProvidersPage() {
         name: normalizedName,
         websiteUrl: normalizeOptionalUrl(websiteUrl),
         documentationUrl: normalizeOptionalUrl(documentationUrl),
+        integration: {
+          defaultTrackingParameter: normalizeOptionalUrl(
+            defaultTrackingParameter,
+          ),
+          postbackClickIdToken: normalizeOptionalUrl(postbackClickIdToken),
+          postbackConversionIdToken: normalizeOptionalUrl(
+            postbackConversionIdToken,
+          ),
+          postbackRevenueAmountToken: normalizeOptionalUrl(
+            postbackRevenueAmountToken,
+          ),
+          postbackRevenueCurrencyToken: normalizeOptionalUrl(
+            postbackRevenueCurrencyToken,
+          ),
+          postbackConversionStatus,
+        },
       });
-      setCode('');
-      setName('');
-      setWebsiteUrl('');
-      setDocumentationUrl('');
-      setFeedback(`${normalizedName} was added to the provider registry.`);
+      setCode("");
+      setName("");
+      setWebsiteUrl("");
+      setDocumentationUrl("");
+      setDefaultTrackingParameter("");
+      setPostbackClickIdToken("");
+      setPostbackConversionIdToken("");
+      setPostbackRevenueAmountToken("");
+      setPostbackRevenueCurrencyToken("");
+      setPostbackConversionStatus("approved");
+      setFeedback(
+        `${normalizedName} was added to ${company.activeCompany?.name ?? "this company"}.`,
+      );
     } catch (error: unknown) {
       setActionError(
-        error instanceof Error ? error.message : 'The network provider could not be created.',
+        error instanceof Error
+          ? error.message
+          : "The network provider could not be created.",
       );
     }
   }
@@ -258,21 +452,22 @@ export function NetworkProvidersPage() {
       websiteUrl: string | null;
       documentationUrl: string | null;
       status: NetworkProviderStatus;
+      integration: NetworkProviderIntegrationInput;
     },
   ) {
     resetFeedback();
     const normalizedName = input.name.trim();
 
     if (normalizedName.length < 2) {
-      setActionError('Provider name must contain at least two characters.');
+      setActionError("Provider name must contain at least two characters.");
       return;
     }
 
     if (
-      !validateOptionalUrl(input.websiteUrl ?? '') ||
-      !validateOptionalUrl(input.documentationUrl ?? '')
+      !validateOptionalUrl(input.websiteUrl ?? "") ||
+      !validateOptionalUrl(input.documentationUrl ?? "")
     ) {
-      setActionError('Provider links must be valid HTTP or HTTPS URLs.');
+      setActionError("Provider links must be valid HTTP or HTTPS URLs.");
       return;
     }
 
@@ -280,10 +475,22 @@ export function NetworkProvidersPage() {
       normalizedName !== provider.name ||
       input.websiteUrl !== provider.websiteUrl ||
       input.documentationUrl !== provider.documentationUrl ||
-      input.status !== provider.status;
+      input.status !== provider.status ||
+      input.integration.defaultTrackingParameter !==
+        provider.integration.defaultTrackingParameter ||
+      input.integration.postbackClickIdToken !==
+        provider.integration.postbackClickIdToken ||
+      input.integration.postbackConversionIdToken !==
+        provider.integration.postbackConversionIdToken ||
+      input.integration.postbackRevenueAmountToken !==
+        provider.integration.postbackRevenueAmountToken ||
+      input.integration.postbackRevenueCurrencyToken !==
+        provider.integration.postbackRevenueCurrencyToken ||
+      input.integration.postbackConversionStatus !==
+        provider.integration.postbackConversionStatus;
 
     if (!changed) {
-      setActionError('The provider configuration has not changed.');
+      setActionError("The provider configuration has not changed.");
       return;
     }
 
@@ -294,48 +501,57 @@ export function NetworkProvidersPage() {
         websiteUrl: input.websiteUrl,
         documentationUrl: input.documentationUrl,
         status: input.status,
+        integration: input.integration,
       });
       setFeedback(`${normalizedName} was updated successfully.`);
     } catch (error: unknown) {
       setActionError(
-        error instanceof Error ? error.message : 'The network provider could not be updated.',
+        error instanceof Error
+          ? error.message
+          : "The network provider could not be updated.",
       );
     }
   }
 
-  if (providers.status === 'forbidden') {
+  if (providers.status === "forbidden") {
     return (
       <ModuleAccessState icon="lock" title="Network providers are restricted">
-        Company Admin, Manager, or Platform Super Admin access is required.
+        Only Company Admins and Managers can access their company provider
+        directory.
       </ModuleAccessState>
     );
   }
 
-  if (!providers.permissions.platformAdmin && company.activeCompany === null) {
+  if (company.activeCompany === null) {
     return (
-      <ModuleAccessState icon="domain_disabled" title="Select an active company">
-        The tenant provider directory requires an active company context.
+      <ModuleAccessState
+        icon="domain_disabled"
+        title="Select an active company"
+      >
+        The provider directory requires an active company context.
       </ModuleAccessState>
     );
   }
 
-  if (providers.status === 'loading') {
+  if (providers.status === "loading") {
     return <ModuleLoadingState label="network providers" />;
   }
 
   return (
     <div className="tracking-module-page page-stack">
-      <GlassPanel as="section" className="page-heading-panel tracking-heading-panel">
+      <GlassPanel
+        as="section"
+        className="page-heading-panel tracking-heading-panel"
+      >
         <div>
           <span className="eyebrow-chip">
             <MaterialIcon name="hub" filled />
-            Integration Catalog
+            Company Integrations
           </span>
           <h1>Network Providers</h1>
           <p>
-            {providers.permissions.platformAdmin
-              ? 'Maintain the global affiliate-network registry used by every company.'
-              : `View providers available to ${company.activeCompany?.name ?? 'this company'}.`}
+            Manage providers owned exclusively by {company.activeCompany.name}.
+            Other companies and Platform Super Admins cannot access them.
           </p>
         </div>
         <div className="tracking-heading-stats">
@@ -348,27 +564,36 @@ export function NetworkProvidersPage() {
             <strong>{activeCount}</strong>
           </div>
           <div>
-            <span>Mode</span>
-            <strong>{providers.permissions.platformAdmin ? 'Platform' : 'Tenant'}</strong>
+            <span>Scope</span>
+            <strong>Company</strong>
           </div>
         </div>
       </GlassPanel>
 
-      <ModuleFeedback error={actionError ?? providers.error} message={feedback} />
+      <ModuleFeedback
+        error={actionError ?? providers.error}
+        message={feedback}
+      />
 
       <div className="tracking-module-grid">
-        {providers.permissions.platformAdmin && (
+        {providers.permissions.canManage && (
           <GlassPanel as="section" className="tracking-create-card">
             <div className="tracking-section-heading">
               <div>
-                <span className="eyebrow-chip">Platform Registry</span>
+                <span className="eyebrow-chip">Company Provider</span>
                 <h2>Add provider</h2>
-                <p>Create a reusable provider definition for company accounts.</p>
+                <p>
+                  Create a provider available only to this company&apos;s
+                  networks.
+                </p>
               </div>
               <MaterialIcon name="add_business" />
             </div>
 
-            <form className="tracking-form" onSubmit={(event) => void handleCreate(event)}>
+            <form
+              className="tracking-form"
+              onSubmit={(event) => void handleCreate(event)}
+            >
               <label>
                 <span>Provider code</span>
                 <input
@@ -408,6 +633,74 @@ export function NetworkProvidersPage() {
                   value={documentationUrl}
                 />
               </label>
+              <label>
+                <span>Default Provider click-ID parameter</span>
+                <input
+                  disabled={providers.isMutating}
+                  onChange={(event) =>
+                    setDefaultTrackingParameter(event.target.value)
+                  }
+                  placeholder="click_id"
+                  value={defaultTrackingParameter}
+                />
+              </label>
+              <label>
+                <span>Provider click-ID macro/token</span>
+                <input
+                  disabled={providers.isMutating}
+                  onChange={(event) =>
+                    setPostbackClickIdToken(event.target.value)
+                  }
+                  placeholder="{SUB1}"
+                  value={postbackClickIdToken}
+                />
+              </label>
+              <label>
+                <span>Provider conversion-ID macro/token</span>
+                <input
+                  disabled={providers.isMutating}
+                  onChange={(event) =>
+                    setPostbackConversionIdToken(event.target.value)
+                  }
+                  placeholder="{CONVERSION_ID}"
+                  value={postbackConversionIdToken}
+                />
+              </label>
+              <label>
+                <span>Revenue amount macro/token</span>
+                <input
+                  disabled={providers.isMutating}
+                  onChange={(event) =>
+                    setPostbackRevenueAmountToken(event.target.value)
+                  }
+                  value={postbackRevenueAmountToken}
+                />
+              </label>
+              <label>
+                <span>Revenue currency macro/token</span>
+                <input
+                  disabled={providers.isMutating}
+                  onChange={(event) =>
+                    setPostbackRevenueCurrencyToken(event.target.value)
+                  }
+                  value={postbackRevenueCurrencyToken}
+                />
+              </label>
+              <label>
+                <span>Initial conversion status</span>
+                <select
+                  disabled={providers.isMutating}
+                  onChange={(event) =>
+                    setPostbackConversionStatus(
+                      event.target.value as "pending" | "approved",
+                    )
+                  }
+                  value={postbackConversionStatus}
+                >
+                  <option value="approved">Approved</option>
+                  <option value="pending">Pending</option>
+                </select>
+              </label>
               <button
                 className="tracking-primary-button tracking-primary-button--wide"
                 disabled={providers.isMutating}
@@ -423,15 +716,15 @@ export function NetworkProvidersPage() {
         <GlassPanel
           as="section"
           className={
-            providers.permissions.platformAdmin
-              ? 'tracking-list-card'
-              : 'tracking-list-card tracking-list-card--full'
+            providers.permissions.canManage
+              ? "tracking-list-card"
+              : "tracking-list-card tracking-list-card--full"
           }
         >
           <div className="tracking-section-heading tracking-section-heading--toolbar">
             <div>
-              <span className="eyebrow-chip">Provider Directory</span>
-              <h2>Available networks</h2>
+              <span className="eyebrow-chip">Company Directory</span>
+              <h2>Available providers</h2>
               <p>{filteredProviders.length} matching providers.</p>
             </div>
             <button
@@ -454,25 +747,23 @@ export function NetworkProvidersPage() {
                 value={search}
               />
             </div>
-            {providers.permissions.platformAdmin && (
-              <select
-                aria-label="Filter network providers by status"
-                onChange={(event) =>
-                  setStatus(event.target.value as NetworkProviderStatus | 'all')
-                }
-                value={status}
-              >
-                <option value="all">All statuses</option>
-                <option value="active">Active</option>
-                <option value="archived">Archived</option>
-              </select>
-            )}
+            <select
+              aria-label="Filter network providers by status"
+              onChange={(event) =>
+                setStatus(event.target.value as NetworkProviderStatus | "all")
+              }
+              value={status}
+            >
+              <option value="all">All statuses</option>
+              <option value="active">Active</option>
+              <option value="archived">Archived</option>
+            </select>
           </div>
 
-          {providers.status === 'error' && filteredProviders.length === 0 ? (
+          {providers.status === "error" && filteredProviders.length === 0 ? (
             <div className="tracking-empty-state tracking-empty-state--error">
               <MaterialIcon name="cloud_off" />
-              <strong>Provider registry could not be loaded</strong>
+              <strong>Provider directory could not be loaded</strong>
               <span>{providers.error}</span>
             </div>
           ) : filteredProviders.length === 0 ? (
@@ -486,9 +777,9 @@ export function NetworkProvidersPage() {
               {filteredProviders.map((provider) => (
                 <ProviderEditor
                   disabled={providers.isMutating}
+                  editable={providers.permissions.canManage}
                   key={provider.id}
                   onUpdate={handleUpdate}
-                  platformAdmin={providers.permissions.platformAdmin}
                   provider={provider}
                 />
               ))}

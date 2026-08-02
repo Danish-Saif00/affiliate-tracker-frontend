@@ -1,12 +1,13 @@
 import { useState } from "react";
 
 import { MaterialIcon } from "../../components/icons/material-icon";
-import type {
-  NetworkPostbackEndpointSecret,
-  NetworkPostbackEndpointStatus,
-} from "../../features/control-plane/control-plane.types";
+import type { NetworkPostbackEndpointStatus } from "../../features/control-plane/control-plane.types";
 import { usePostbackEndpoints } from "../../features/control-plane/use-control-plane";
 import { environment } from "../../lib/environment";
+import {
+  buildProviderPostbackSetup,
+  type ProviderPostbackSetup,
+} from "../../features/tracking-networks/provider-postback-setup";
 import {
   ControlEmpty,
   ControlFeedback,
@@ -15,33 +16,6 @@ import {
   RefreshButton,
 } from "../control-plane/control-plane-ui";
 import { formatDateTime } from "../control-plane/control-plane-formatters";
-
-type GeneratedEndpointSetup = {
-  endpointName: string;
-  endpointKey: string;
-  baseUrl: string;
-  templateUrl: string;
-};
-
-function buildEndpointSetup(
-  secret: NetworkPostbackEndpointSecret,
-): GeneratedEndpointSetup {
-  const baseUrl = `${environment.apiOrigin}/postbacks/${encodeURIComponent(
-    secret.endpointKey,
-  )}`;
-  const templateUrl =
-    `${baseUrl}?click_id={CLICK_ID}` +
-    "&conversion_id={CONVERSION_ID}" +
-    "&idempotency_key={CONVERSION_ID}" +
-    "&status=approved";
-
-  return {
-    endpointName: secret.endpoint.name,
-    endpointKey: secret.endpointKey,
-    baseUrl,
-    templateUrl,
-  };
-}
 
 function isLoopbackOrigin(origin: string): boolean {
   try {
@@ -64,7 +38,7 @@ export function NetworkPostbackManager({
   const [endpointName, setEndpointName] = useState(
     `${networkName.trim() || "Network"} Conversions`,
   );
-  const [generated, setGenerated] = useState<GeneratedEndpointSetup | null>(
+  const [generated, setGenerated] = useState<ProviderPostbackSetup | null>(
     null,
   );
   const [message, setMessage] = useState<string | null>(null);
@@ -95,7 +69,7 @@ export function NetworkPostbackManager({
         status: "active",
       });
 
-      setGenerated(buildEndpointSetup(result));
+      setGenerated(buildProviderPostbackSetup(result));
       setMessage(
         `${result.endpoint.name} was created. Copy the new endpoint key now.`,
       );
@@ -140,7 +114,7 @@ export function NetworkPostbackManager({
 
     try {
       const result = await endpoints.rotateKey(endpointId);
-      setGenerated(buildEndpointSetup(result));
+      setGenerated(buildProviderPostbackSetup(result));
       setMessage(
         `${result.endpoint.name} was rotated. Replace the old provider URL now.`,
       );
@@ -183,7 +157,8 @@ export function NetworkPostbackManager({
             <span>
               URLs generated from {environment.apiOrigin} work only on this
               computer. Deploy the runtime and configure VITE_API_ORIGIN with
-              its public HTTPS origin before adding the URL in Affizer.
+              its public HTTPS origin before adding the URL in the Provider
+              dashboard.
             </span>
           </div>
         </div>
@@ -214,13 +189,22 @@ export function NetworkPostbackManager({
           <code>{generated.endpointKey}</code>
 
           <div className="network-postback-manager__template">
-            <span>Affizer postback template</span>
-            <code>{generated.templateUrl}</code>
-            <small>
-              Replace {"{CLICK_ID}"} with Affizer Sub1 and both
-              {"{CONVERSION_ID}"} values with Affizer Conversion ID or
-              Transaction ID.
-            </small>
+            <span>{generated.providerName} global postback template</span>
+            {generated.templateUrl === null ? (
+              <small>
+                Configure the Provider integration profile before generating a
+                provider-ready template.
+              </small>
+            ) : (
+              <>
+                <code>{generated.templateUrl}</code>
+                <small>
+                  Effective click parameter:{" "}
+                  {generated.effectiveTrackingParameter}. Provider macros are
+                  already mapped to the normalized callback fields.
+                </small>
+              </>
+            )}
           </div>
 
           <div className="network-postback-manager__actions">
@@ -234,16 +218,21 @@ export function NetworkPostbackManager({
               <MaterialIcon name="link" />
               Copy base URL
             </button>
-            <button
-              className="primary-gradient-button primary-gradient-button--compact"
-              onClick={() =>
-                void copyValue(generated.templateUrl, "Affizer template")
-              }
-              type="button"
-            >
-              <MaterialIcon name="content_copy" />
-              Copy Affizer template
-            </button>
+            {generated.templateUrl !== null && (
+              <button
+                className="primary-gradient-button primary-gradient-button--compact"
+                onClick={() =>
+                  void copyValue(
+                    generated.templateUrl ?? "",
+                    "Provider postback template",
+                  )
+                }
+                type="button"
+              >
+                <MaterialIcon name="content_copy" />
+                Copy provider template
+              </button>
+            )}
           </div>
         </div>
       )}

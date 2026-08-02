@@ -1,6 +1,5 @@
-import { Navigate } from "react-router";
-
 import { useAuth } from "../../features/auth/use-auth";
+import { PublisherTrackingLinksPage } from "./publisher-tracking-links-page";
 import { TrackingLinksPage as AdministrativeTrackingLinksPage } from "./tracking-links-page";
 
 export function TrackingLinksPage() {
@@ -10,7 +9,7 @@ export function TrackingLinksPage() {
     membership?.status === "active" && membership.role === "publisher";
 
   return isPublisher ? (
-    <Navigate replace to="/offers/manage" />
+    <PublisherTrackingLinksPage />
   ) : (
     <AdministrativeTrackingLinksPage />
   );

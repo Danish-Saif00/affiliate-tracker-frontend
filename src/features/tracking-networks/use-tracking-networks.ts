@@ -7,13 +7,12 @@ import { useCompany } from "../companies/use-company";
 import {
   createNetworkAccount,
   createCompanyNetworkProvider,
-  createNetworkProvider,
   createTrackingDomain,
   fetchNetworkAccounts,
   fetchNetworkProviders,
   fetchTrackingDomains,
+  updateCompanyNetworkProvider,
   updateNetworkAccount,
-  updateNetworkProvider,
   updatePlatformTrackingDomainStatus,
   updateTrackingDomain,
 } from "./tracking-networks-api";
@@ -64,6 +63,22 @@ function readPermissions(
     platformAdmin,
     canRead: platformAdmin || companyReader,
     canManage: platformAdmin || companyManager,
+  } as const;
+}
+
+function readTenantPermissions(
+  platformRole: string | null | undefined,
+  companyRole: string | null | undefined,
+) {
+  const platformAdmin = platformRole === "platform_super_admin";
+  const companyReader =
+    companyRole === "company_admin" || companyRole === "manager";
+  const companyManager = companyRole === "company_admin";
+
+  return {
+    platformAdmin,
+    canRead: !platformAdmin && companyReader,
+    canManage: !platformAdmin && companyManager,
   } as const;
 }
 
@@ -221,37 +236,21 @@ export function useNetworkProviders() {
   const company = useCompany();
   const session = auth.session;
   const companyId = company.activeCompanyId;
-  const permissions = readPermissions(
+  const permissions = readTenantPermissions(
     auth.identity?.authorization.platformRole,
     auth.identity?.authorization.companyMembership?.role,
   );
-  const enabled =
-    session !== null &&
-    permissions.canRead &&
-    (permissions.platformAdmin || companyId !== null);
+  const enabled = session !== null && companyId !== null && permissions.canRead;
 
   const providersQuery = useQuery({
-    queryKey: [
-      ...NETWORK_PROVIDERS_QUERY_KEY,
-      companyId,
-      permissions.platformAdmin,
-    ],
+    queryKey: [...NETWORK_PROVIDERS_QUERY_KEY, companyId],
     enabled,
     queryFn: ({ signal }) => {
-      if (session === null) {
-        throw new Error("An authenticated session is required.");
+      if (session === null || companyId === null) {
+        throw new Error("An active authenticated company context is required.");
       }
 
-      if (!permissions.platformAdmin && companyId === null) {
-        throw new Error("An active company context is required.");
-      }
-
-      return fetchNetworkProviders(
-        session.access_token,
-        companyId,
-        permissions.platformAdmin,
-        signal,
-      );
+      return fetchNetworkProviders(session.access_token, companyId, signal);
     },
   });
   const refetch = providersQuery.refetch;
@@ -271,20 +270,8 @@ export function useNetworkProviders() {
     CreateNetworkProviderInput
   >({
     mutationFn: async (input) => {
-      if (session === null || !permissions.canManage) {
-        throw new Error(
-          "Company Admin or Platform Super Admin access is required to create a network provider.",
-        );
-      }
-
-      if (permissions.platformAdmin) {
-        return createNetworkProvider(session.access_token, input);
-      }
-
-      if (companyId === null) {
-        throw new Error(
-          "An active company is required to create a network provider.",
-        );
+      if (session === null || companyId === null || !permissions.canManage) {
+        throw new Error("Company administrator access is required.");
       }
 
       return createCompanyNetworkProvider(
@@ -302,11 +289,15 @@ export function useNetworkProviders() {
     UpdateNetworkProviderInput
   >({
     mutationFn: async (input) => {
-      if (session === null || !permissions.platformAdmin) {
-        throw new Error("Platform Super Admin access is required.");
+      if (session === null || companyId === null || !permissions.canManage) {
+        throw new Error("Company administrator access is required.");
       }
 
-      return updateNetworkProvider(session.access_token, input);
+      return updateCompanyNetworkProvider(
+        session.access_token,
+        companyId,
+        input,
+      );
     },
     onSettled: invalidate,
   });
@@ -315,6 +306,7 @@ export function useNetworkProviders() {
     providersQuery.error ?? createMutation.error ?? updateMutation.error;
 
   return {
+    companyId,
     providers: providersQuery.data ?? EMPTY_PROVIDERS,
     status: resolveLoadStatus(
       enabled,
@@ -341,30 +333,21 @@ export function useNetworkAccounts() {
   const company = useCompany();
   const session = auth.session;
   const companyId = company.activeCompanyId;
-  const permissions = readPermissions(
+  const permissions = readTenantPermissions(
     auth.identity?.authorization.platformRole,
     auth.identity?.authorization.companyMembership?.role,
   );
   const enabled = session !== null && companyId !== null && permissions.canRead;
 
   const accountsQuery = useQuery({
-    queryKey: [
-      ...NETWORK_ACCOUNTS_QUERY_KEY,
-      companyId,
-      permissions.platformAdmin,
-    ],
+    queryKey: [...NETWORK_ACCOUNTS_QUERY_KEY, companyId],
     enabled,
     queryFn: ({ signal }) => {
       if (session === null || companyId === null) {
         throw new Error("An active authenticated company context is required.");
       }
 
-      return fetchNetworkAccounts(
-        session.access_token,
-        companyId,
-        permissions.platformAdmin,
-        signal,
-      );
+      return fetchNetworkAccounts(session.access_token, companyId, signal);
     },
   });
   const refetch = accountsQuery.refetch;

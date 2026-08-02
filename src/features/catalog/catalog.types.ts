@@ -12,6 +12,15 @@ export type CatalogProvider = {
   code: string;
   name: string;
   status: "active" | "archived";
+  integration: {
+    defaultTrackingParameter: string | null;
+    postbackClickIdToken: string | null;
+    postbackConversionIdToken: string | null;
+    postbackRevenueAmountToken: string | null;
+    postbackRevenueCurrencyToken: string | null;
+    postbackConversionStatus: "pending" | "approved";
+    configured: boolean;
+  };
 };
 
 export type CatalogDomain = {
@@ -35,6 +44,8 @@ export type CatalogNetwork = {
   externalAccountId: string | null;
   status: CatalogNetworkStatus;
   trackingParameter: string | null;
+  effectiveTrackingParameter: string;
+  providerIntegrationConfigured: boolean;
   postbackUrl: string | null;
   duplicateAllowed: boolean;
   offerCount: number;
@@ -172,12 +183,31 @@ export type CreateCatalogOfferInput = CatalogOfferConfigurationInput & {
   status: Extract<CatalogOfferStatus, "draft" | "active">;
 };
 
+export type CloneCatalogOfferInput = CatalogOfferConfigurationInput & {
+  sourceOfferId: string;
+  networkAccountId: string;
+  code: string;
+  externalOfferId: string | null;
+  name: string;
+  description: string | null;
+};
+
 export type UpdateCatalogOfferInput = CatalogOfferConfigurationInput & {
   offerId: string;
+  networkAccountId: string;
   externalOfferId: string | null;
   name: string;
   description: string | null;
   status: CatalogOfferStatus;
+};
+
+export type DeleteCatalogOfferInput = {
+  offerId: string;
+};
+
+export type DeleteCatalogOfferResult = {
+  id: string;
+  deleted: true;
 };
 
 export type CreateCatalogNetworkInput = {
@@ -189,14 +219,34 @@ export type CreateCatalogNetworkInput = {
   duplicateAllowed: boolean;
 };
 
+export type CloneCatalogNetworkInput = {
+  sourceAccountId: string;
+  providerId?: string;
+  name: string;
+  externalAccountId?: string | null;
+  trackingParameter?: string | null;
+  postbackUrl?: string | null;
+  duplicateAllowed?: boolean;
+};
+
 export type UpdateCatalogNetworkInput = {
   accountId: string;
+  providerId: string;
   name: string;
   externalAccountId: string | null;
   status: CatalogNetworkStatus;
   trackingParameter: string | null;
   postbackUrl: string | null;
   duplicateAllowed: boolean;
+};
+
+export type DeleteCatalogNetworkInput = {
+  accountId: string;
+};
+
+export type DeleteCatalogNetworkResult = {
+  id: string;
+  deleted: true;
 };
 
 export type UpdateCatalogPublisherInput = {

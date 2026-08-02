@@ -1,5 +1,5 @@
 // src/pages/network-accounts/inline-provider-creator.tsx
-// Creates a missing global provider from the Company Admin Add Network flow.
+// Creates a missing company-scoped provider from the Company Admin Add Network flow.
 
 import { useState } from "react";
 
@@ -47,6 +47,10 @@ export function InlineProviderCreator() {
   const [codeEdited, setCodeEdited] = useState(false);
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [documentationUrl, setDocumentationUrl] = useState("");
+  const [defaultTrackingParameter, setDefaultTrackingParameter] = useState("");
+  const [postbackClickIdToken, setPostbackClickIdToken] = useState("");
+  const [postbackConversionIdToken, setPostbackConversionIdToken] =
+    useState("");
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -58,6 +62,9 @@ export function InlineProviderCreator() {
     setCodeEdited(false);
     setWebsiteUrl("");
     setDocumentationUrl("");
+    setDefaultTrackingParameter("");
+    setPostbackClickIdToken("");
+    setPostbackConversionIdToken("");
   }
 
   function handleNameChange(value: string) {
@@ -105,6 +112,18 @@ export function InlineProviderCreator() {
         name: normalizedName,
         websiteUrl: normalizeOptionalUrl(websiteUrl),
         documentationUrl: normalizeOptionalUrl(documentationUrl),
+        integration: {
+          defaultTrackingParameter: normalizeOptionalUrl(
+            defaultTrackingParameter,
+          ),
+          postbackClickIdToken: normalizeOptionalUrl(postbackClickIdToken),
+          postbackConversionIdToken: normalizeOptionalUrl(
+            postbackConversionIdToken,
+          ),
+          postbackRevenueAmountToken: null,
+          postbackRevenueCurrencyToken: null,
+          postbackConversionStatus: "approved",
+        },
       });
 
       await catalog.refresh();
@@ -164,7 +183,7 @@ export function InlineProviderCreator() {
                 disabled={disabled}
                 maxLength={160}
                 onChange={(event) => handleNameChange(event.target.value)}
-                placeholder="Affizer"
+                placeholder="Example Provider"
                 type="text"
                 value={name}
               />
@@ -180,7 +199,7 @@ export function InlineProviderCreator() {
                   setCodeEdited(true);
                   setCode(event.target.value.toLowerCase());
                 }}
-                placeholder="affizer"
+                placeholder="example_provider"
                 spellCheck={false}
                 type="text"
                 value={code}
@@ -192,7 +211,7 @@ export function InlineProviderCreator() {
               <input
                 disabled={disabled}
                 onChange={(event) => setWebsiteUrl(event.target.value)}
-                placeholder="https://affizer.com"
+                placeholder="https://provider.example"
                 type="url"
                 value={websiteUrl}
               />
@@ -208,6 +227,42 @@ export function InlineProviderCreator() {
                 value={documentationUrl}
               />
             </label>
+
+            <label>
+              <span>Default click-ID parameter</span>
+              <input
+                disabled={disabled}
+                onChange={(event) =>
+                  setDefaultTrackingParameter(event.target.value)
+                }
+                placeholder="click_id"
+                value={defaultTrackingParameter}
+              />
+            </label>
+
+            <label>
+              <span>Provider click-ID token</span>
+              <input
+                disabled={disabled}
+                onChange={(event) =>
+                  setPostbackClickIdToken(event.target.value)
+                }
+                placeholder="{SUB1}"
+                value={postbackClickIdToken}
+              />
+            </label>
+
+            <label>
+              <span>Provider conversion-ID token</span>
+              <input
+                disabled={disabled}
+                onChange={(event) =>
+                  setPostbackConversionIdToken(event.target.value)
+                }
+                placeholder="{CONVERSION_ID}"
+                value={postbackConversionIdToken}
+              />
+            </label>
           </div>
 
           {error !== null && (
@@ -219,7 +274,8 @@ export function InlineProviderCreator() {
 
           <div className="inline-provider-creator__actions">
             <span>
-              The provider code is unique and cannot be changed after creation.
+              The provider code is unique inside this company and cannot be
+              changed after creation.
             </span>
             <button
               className="inline-provider-creator__submit"
