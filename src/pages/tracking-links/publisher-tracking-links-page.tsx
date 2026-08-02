@@ -39,6 +39,8 @@ function PublisherTrackingLinkCard({
   restrictedSharePlatforms,
   onCopy,
   onUpdate,
+  onClone,
+  onArchive,
 }: {
   link: TrackingLink;
   disabled: boolean;
@@ -51,8 +53,10 @@ function PublisherTrackingLinkCard({
     readonly customSlug: string | null;
     readonly destinationUrl: string;
     readonly queryParameters: Readonly<Record<string, string>>;
-    readonly status: TrackingLinkStatus;
+    readonly status: Exclude<TrackingLinkStatus, "archived">;
   }) => Promise<void>;
+  onClone: (linkId: string) => Promise<void>;
+  onArchive: (linkId: string) => Promise<void>;
 }) {
   const publicUrl = trackingLinkUrl(
     link.hostname,
@@ -85,9 +89,10 @@ function PublisherTrackingLinkCard({
       queryParameters: parseQueryParameterLines(
         String(formData.get("queryParameters") ?? ""),
       ),
-      status: String(
-        formData.get("status") ?? link.status,
-      ) as TrackingLinkStatus,
+      status: String(formData.get("status") ?? link.status) as Exclude<
+        TrackingLinkStatus,
+        "archived"
+      >,
     });
   }
 
@@ -100,7 +105,9 @@ function PublisherTrackingLinkCard({
         <span>
           <strong>{link.offerName}</strong>
           <small>
-            {link.hostname} · Updated {formatDateTime(link.updatedAt)}
+            {link.hostname} ·{" "}
+            {link.source === "manual" ? "Manual" : "Assignment generated"} ·
+            Updated {formatDateTime(link.updatedAt)}
           </small>
         </span>
         <ControlStatus status={link.status} />
@@ -134,6 +141,43 @@ function PublisherTrackingLinkCard({
         </div>
       )}
 
+      {link.source === "publisher_assignment" && link.status !== "archived" && (
+        <small>
+          Assignment synchronization may update this link&apos;s domain and
+          destination. Pausing or archiving the link remains durable.
+        </small>
+      )}
+
+      {link.source === "publisher_assignment" && link.status === "archived" && (
+        <small>
+          This assignment-generated link is retained to prevent automatic
+          recreation.
+        </small>
+      )}
+
+      <div className="control-action-row">
+        <button
+          className="control-secondary-button"
+          disabled={disabled}
+          onClick={() => void onClone(link.id)}
+          type="button"
+        >
+          <MaterialIcon name="content_copy" />
+          Clone
+        </button>
+        {link.status !== "archived" && (
+          <button
+            className="control-secondary-button"
+            disabled={disabled}
+            onClick={() => void onArchive(link.id)}
+            type="button"
+          >
+            <MaterialIcon name="archive" />
+            Archive
+          </button>
+        )}
+      </div>
+
       {link.status !== "archived" && (
         <form
           className="control-inline-editor"
@@ -157,7 +201,6 @@ function PublisherTrackingLinkCard({
               <option value="draft">Draft</option>
               <option value="active">Active</option>
               <option value="paused">Paused</option>
-              <option value="archived">Archived</option>
             </select>
           </label>
           <label className="control-field--wide">
@@ -183,7 +226,6 @@ function PublisherTrackingLinkCard({
     </article>
   );
 }
-
 export function PublisherTrackingLinksPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<TrackingLinkStatus | "all">("all");
@@ -269,7 +311,7 @@ export function PublisherTrackingLinksPage() {
     readonly customSlug: string | null;
     readonly destinationUrl: string;
     readonly queryParameters: Readonly<Record<string, string>>;
-    readonly status: TrackingLinkStatus;
+    readonly status: Exclude<TrackingLinkStatus, "archived">;
   }) {
     setFeedback(null);
     setActionError(null);
@@ -282,6 +324,44 @@ export function PublisherTrackingLinksPage() {
         error instanceof Error
           ? error.message
           : "The tracking link could not be updated.",
+      );
+    }
+  }
+
+  async function handleClone(linkId: string) {
+    setFeedback(null);
+    setActionError(null);
+
+    try {
+      const cloned = await links.cloneLink(linkId);
+      setFeedback(
+        `Tracking link for ${cloned.offerName} was cloned as a fresh draft.`,
+      );
+    } catch (error) {
+      setActionError(
+        error instanceof Error
+          ? error.message
+          : "The tracking link could not be cloned.",
+      );
+    }
+  }
+
+  async function handleArchive(linkId: string) {
+    if (!window.confirm("Archive this tracking link?")) {
+      return;
+    }
+
+    setFeedback(null);
+    setActionError(null);
+
+    try {
+      const archived = await links.archiveLink(linkId);
+      setFeedback(`Tracking link for ${archived.offerName} was archived.`);
+    } catch (error) {
+      setActionError(
+        error instanceof Error
+          ? error.message
+          : "The tracking link could not be archived.",
       );
     }
   }
@@ -502,6 +582,8 @@ export function PublisherTrackingLinksPage() {
                   key={link.id}
                   link={link}
                   linkIdentifierMode={linkIdentifierMode}
+                  onArchive={handleArchive}
+                  onClone={handleClone}
                   onCopy={handleCopy}
                   onUpdate={handleUpdate}
                   plainTextSharingEnabled={plainTextSharingEnabled}

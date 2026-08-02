@@ -1,19 +1,14 @@
 export type TrackingDomainStatus =
-  | 'pending_verification'
-  | 'active'
-  | 'suspended'
-  | 'archived';
+  "pending_verification" | "active" | "suspended" | "archived";
 
-export type NetworkProviderStatus = 'active' | 'archived';
+export type NetworkProviderStatus = "active" | "archived";
 
-export type NetworkAccountStatus = 'active' | 'suspended' | 'archived';
+export type ProviderPostbackConversionStatus = "pending" | "approved";
+
+export type NetworkAccountStatus = "active" | "suspended" | "archived";
 
 export type TrackingModuleLoadStatus =
-  | 'idle'
-  | 'loading'
-  | 'ready'
-  | 'error'
-  | 'forbidden';
+  "idle" | "loading" | "ready" | "error" | "forbidden";
 
 export type TrackingDomain = {
   id: string;
@@ -29,13 +24,30 @@ export type TrackingDomain = {
   updatedAt: string;
 };
 
+export type NetworkProviderIntegration = {
+  defaultTrackingParameter: string | null;
+  postbackClickIdToken: string | null;
+  postbackConversionIdToken: string | null;
+  postbackRevenueAmountToken: string | null;
+  postbackRevenueCurrencyToken: string | null;
+  postbackConversionStatus: ProviderPostbackConversionStatus;
+  configured: boolean;
+};
+
+export type NetworkProviderIntegrationInput = Omit<
+  NetworkProviderIntegration,
+  "configured"
+>;
+
 export type NetworkProvider = {
   id: string;
+  companyId: string;
   code: string;
   name: string;
   status: NetworkProviderStatus;
   websiteUrl: string | null;
   documentationUrl: string | null;
+  integration: NetworkProviderIntegration;
   createdBy: string | null;
   createdAt: string;
   updatedAt: string;
@@ -63,13 +75,13 @@ export type CreateTrackingDomainInput = {
 export type UpdateTrackingDomainInput = {
   domainId: string;
   hostname?: string;
-  status?: 'active' | 'suspended' | 'archived';
+  status?: "active" | "suspended" | "archived";
   isPrimary?: boolean;
 };
 
 export type UpdatePlatformTrackingDomainStatusInput = {
   domainId: string;
-  status: 'active' | 'suspended' | 'archived';
+  status: "active" | "suspended" | "archived";
 };
 
 export type CreateNetworkProviderInput = {
@@ -77,6 +89,7 @@ export type CreateNetworkProviderInput = {
   name: string;
   websiteUrl?: string | null;
   documentationUrl?: string | null;
+  integration?: NetworkProviderIntegrationInput;
 };
 
 export type UpdateNetworkProviderInput = {
@@ -85,6 +98,7 @@ export type UpdateNetworkProviderInput = {
   status?: NetworkProviderStatus;
   websiteUrl?: string | null;
   documentationUrl?: string | null;
+  integration?: NetworkProviderIntegrationInput;
 };
 
 export type CreateNetworkAccountInput = {
@@ -95,6 +109,7 @@ export type CreateNetworkAccountInput = {
 
 export type UpdateNetworkAccountInput = {
   accountId: string;
+  providerId?: string;
   name?: string;
   externalAccountId?: string | null;
   status?: NetworkAccountStatus;

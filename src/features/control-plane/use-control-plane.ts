@@ -1,9 +1,9 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { useCallback } from 'react';
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useCallback } from "react";
 
-import { queryClient } from '../../app/query-client';
-import { useAuth } from '../auth/use-auth';
-import { useCompany } from '../companies/use-company';
+import { queryClient } from "../../app/query-client";
+import { useAuth } from "../auth/use-auth";
+import { useCompany } from "../companies/use-company";
 import {
   createBillingPlan,
   createCompanySubscription,
@@ -11,7 +11,10 @@ import {
   createOffer,
   createOfferAssignment,
   createPostbackEndpoint,
+  archiveTrackingLink,
+  cloneTrackingLink,
   createTrackingLink,
+  deleteTrackingLink,
   fetchBillingPlans,
   fetchCompanyBilling,
   fetchConversions,
@@ -35,7 +38,7 @@ import {
   updatePostbackEndpoint,
   updateTrackingLink,
   upsertPayoutProfile,
-} from './control-plane-api';
+} from "./control-plane-api";
 import type {
   BillingPlan,
   CompanyBillingSnapshot,
@@ -48,6 +51,7 @@ import type {
   CreateOfferInput,
   CreateSubscriptionInput,
   CreateTrackingLinkInput,
+  DeleteTrackingLinkResult,
   DuplicateProtectionRule,
   FraudClick,
   ModuleLoadStatus,
@@ -66,7 +70,7 @@ import type {
   UpdateSubscriptionInput,
   UpdateTrackingLinkInput,
   UpsertPayoutProfileInput,
-} from './control-plane.types';
+} from "./control-plane.types";
 
 const EMPTY_OFFERS: readonly Offer[] = Object.freeze([]);
 const EMPTY_PAYOUTS: readonly PayoutProfile[] = Object.freeze([]);
@@ -80,7 +84,11 @@ const EMPTY_PLANS: readonly BillingPlan[] = Object.freeze([]);
 const EMPTY_EVENTS: readonly OperationalEvent[] = Object.freeze([]);
 
 function errorMessage(error: unknown, fallback: string): string | null {
-  return error === null ? null : error instanceof Error ? error.message : fallback;
+  return error === null
+    ? null
+    : error instanceof Error
+      ? error.message
+      : fallback;
 }
 
 function resolveStatus(
@@ -90,29 +98,30 @@ function resolveStatus(
   failed: boolean,
 ): ModuleLoadStatus {
   if (!allowed) {
-    return 'forbidden';
+    return "forbidden";
   }
 
   if (!enabled) {
-    return 'idle';
+    return "idle";
   }
 
   if (loading) {
-    return 'loading';
+    return "loading";
   }
 
-  return failed ? 'error' : 'ready';
+  return failed ? "error" : "ready";
 }
 
 export function useControlPlaneContext() {
   const auth = useAuth();
   const company = useCompany();
-  const platformAdmin = auth.identity?.authorization.platformRole === 'platform_super_admin';
+  const platformAdmin =
+    auth.identity?.authorization.platformRole === "platform_super_admin";
   const membership = auth.identity?.authorization.companyMembership ?? null;
   const companyRole = membership?.role ?? null;
-  const activeMembership = membership?.status === 'active';
-  const canRead = platformAdmin || activeMembership;
-  const canManage = platformAdmin || (activeMembership && companyRole === 'company_admin');
+  const activeMembership = membership?.status === "active";
+  const canRead = activeMembership;
+  const canManage = activeMembership && companyRole === "company_admin";
   const permissions: ControlPlanePermissions = {
     platformAdmin,
     companyRole,
@@ -123,23 +132,22 @@ export function useControlPlaneContext() {
     canManageTracking:
       canManage ||
       (activeMembership &&
-        (companyRole === 'manager' || companyRole === 'publisher')),
+        (companyRole === "manager" || companyRole === "publisher")),
     canViewFinancials:
-      platformAdmin ||
-      (activeMembership &&
-        (companyRole === 'company_admin' ||
-          companyRole === 'manager' ||
-          companyRole === 'publisher')),
+      activeMembership &&
+      (companyRole === "company_admin" ||
+        companyRole === "manager" ||
+        companyRole === "publisher"),
     canViewOperations:
-      platformAdmin ||
-      (activeMembership && (companyRole === 'company_admin' || companyRole === 'manager')),
+      activeMembership &&
+      (companyRole === "company_admin" || companyRole === "manager"),
     canCustomize: canManage,
   };
 
   return {
     accessToken: auth.session?.access_token ?? null,
     companyId: company.activeCompanyId,
-    companyName: company.activeCompany?.name ?? 'Selected company',
+    companyName: company.activeCompany?.name ?? "Selected company",
     membershipId: membership?.membershipId ?? null,
     permissions,
   } as const;
@@ -148,27 +156,50 @@ export function useControlPlaneContext() {
 function useInvalidateControlPlane() {
   return useCallback(async (): Promise<void> => {
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ['company-scoped', 'control-plane'] }),
-      queryClient.invalidateQueries({ queryKey: ['company-scoped', 'reporting'] }),
-      queryClient.invalidateQueries({ queryKey: ['company-scoped', 'reporting-dashboard'] }),
-      queryClient.invalidateQueries({ queryKey: ['company-scoped', 'operational-events'] }),
+      queryClient.invalidateQueries({
+        queryKey: ["company-scoped", "control-plane"],
+      }),
+      queryClient.invalidateQueries({
+        queryKey: ["company-scoped", "reporting"],
+      }),
+      queryClient.invalidateQueries({
+        queryKey: ["company-scoped", "reporting-dashboard"],
+      }),
+      queryClient.invalidateQueries({
+        queryKey: ["company-scoped", "operational-events"],
+      }),
     ]);
   }, []);
 }
 
-export function useOffers(filters: { networkAccountId?: string; status?: string } = {}) {
+export function useOffers(
+  filters: { networkAccountId?: string; status?: string } = {},
+) {
   const context = useControlPlaneContext();
   const enabled =
-    context.accessToken !== null && context.companyId !== null && context.permissions.canRead;
+    context.accessToken !== null &&
+    context.companyId !== null &&
+    context.permissions.canRead;
   const query = useQuery({
-    queryKey: ['company-scoped', 'control-plane', 'offers', context.companyId, filters],
+    queryKey: [
+      "company-scoped",
+      "control-plane",
+      "offers",
+      context.companyId,
+      filters,
+    ],
     enabled,
     queryFn: ({ signal }) => {
       if (context.accessToken === null || context.companyId === null) {
-        throw new Error('An authenticated company context is required.');
+        throw new Error("An authenticated company context is required.");
       }
 
-      return fetchOffers(context.accessToken, context.companyId, filters, signal);
+      return fetchOffers(
+        context.accessToken,
+        context.companyId,
+        filters,
+        signal,
+      );
     },
   });
   const invalidate = useInvalidateControlPlane();
@@ -179,7 +210,9 @@ export function useOffers(filters: { networkAccountId?: string; status?: string 
         context.companyId === null ||
         !context.permissions.canManageOffers
       ) {
-        throw new Error('Company administrator access is required to create offers.');
+        throw new Error(
+          "Company administrator access is required to create offers.",
+        );
       }
 
       return createOffer(context.accessToken, context.companyId, input);
@@ -193,20 +226,28 @@ export function useOffers(filters: { networkAccountId?: string; status?: string 
         context.companyId === null ||
         !context.permissions.canManageOffers
       ) {
-        throw new Error('Company administrator access is required to update offers.');
+        throw new Error(
+          "Company administrator access is required to update offers.",
+        );
       }
 
       return updateOffer(context.accessToken, context.companyId, input);
     },
     onSettled: invalidate,
   });
-  const firstError = query.error ?? createMutation.error ?? updateMutation.error;
+  const firstError =
+    query.error ?? createMutation.error ?? updateMutation.error;
 
   return {
     ...context,
     offers: query.data ?? EMPTY_OFFERS,
-    status: resolveStatus(enabled, context.permissions.canRead, query.isLoading, query.isError),
-    error: errorMessage(firstError, 'Offers could not be loaded.'),
+    status: resolveStatus(
+      enabled,
+      context.permissions.canRead,
+      query.isLoading,
+      query.isError,
+    ),
+    error: errorMessage(firstError, "Offers could not be loaded."),
     isMutating: createMutation.isPending || updateMutation.isPending,
     createOffer: createMutation.mutateAsync,
     updateOffer: updateMutation.mutateAsync,
@@ -219,24 +260,24 @@ export function useOffers(filters: { networkAccountId?: string; status?: string 
 export function usePayoutProfiles() {
   const context = useControlPlaneContext();
   const ownOnly =
-    context.permissions.companyRole === 'manager' ||
-    context.permissions.companyRole === 'publisher';
+    context.permissions.companyRole === "manager" ||
+    context.permissions.companyRole === "publisher";
   const enabled =
     context.accessToken !== null &&
     context.companyId !== null &&
     context.permissions.canViewFinancials;
   const query = useQuery({
     queryKey: [
-      'company-scoped',
-      'control-plane',
-      'payout-profiles',
+      "company-scoped",
+      "control-plane",
+      "payout-profiles",
       context.companyId,
       ownOnly,
     ],
     enabled,
     queryFn: ({ signal }) => {
       if (context.accessToken === null || context.companyId === null) {
-        throw new Error('An authenticated company context is required.');
+        throw new Error("An authenticated company context is required.");
       }
 
       return fetchPayoutProfiles(
@@ -255,7 +296,9 @@ export function usePayoutProfiles() {
         context.companyId === null ||
         !context.permissions.canManageOffers
       ) {
-        throw new Error('Company administrator access is required to configure payouts.');
+        throw new Error(
+          "Company administrator access is required to configure payouts.",
+        );
       }
 
       return upsertPayoutProfile(context.accessToken, context.companyId, input);
@@ -272,7 +315,10 @@ export function usePayoutProfiles() {
       query.isLoading,
       query.isError,
     ),
-    error: errorMessage(query.error ?? mutation.error, 'Payout profiles could not be loaded.'),
+    error: errorMessage(
+      query.error ?? mutation.error,
+      "Payout profiles could not be loaded.",
+    ),
     isMutating: mutation.isPending,
     upsertProfile: mutation.mutateAsync,
     refresh: async (): Promise<void> => {
@@ -289,42 +335,79 @@ export function useOfferAssignments(offerId: string | null) {
     offerId !== null &&
     context.permissions.canRead;
   const query = useQuery({
-    queryKey: ['company-scoped', 'control-plane', 'assignments', context.companyId, offerId],
+    queryKey: [
+      "company-scoped",
+      "control-plane",
+      "assignments",
+      context.companyId,
+      offerId,
+    ],
     enabled,
     queryFn: ({ signal }) => {
-      if (context.accessToken === null || context.companyId === null || offerId === null) {
-        throw new Error('An offer and authenticated company context are required.');
+      if (
+        context.accessToken === null ||
+        context.companyId === null ||
+        offerId === null
+      ) {
+        throw new Error(
+          "An offer and authenticated company context are required.",
+        );
       }
 
-      return fetchOfferAssignments(context.accessToken, context.companyId, offerId, signal);
+      return fetchOfferAssignments(
+        context.accessToken,
+        context.companyId,
+        offerId,
+        signal,
+      );
     },
   });
   const invalidate = useInvalidateControlPlane();
-  const createMutation = useMutation<OfferAssignment, Error, CreateOfferAssignmentInput>({
+  const createMutation = useMutation<
+    OfferAssignment,
+    Error,
+    CreateOfferAssignmentInput
+  >({
     mutationFn: async (input) => {
       if (
         context.accessToken === null ||
         context.companyId === null ||
         !context.permissions.canManageOffers
       ) {
-        throw new Error('Company administrator access is required to assign offers.');
+        throw new Error(
+          "Company administrator access is required to assign offers.",
+        );
       }
 
-      return createOfferAssignment(context.accessToken, context.companyId, input);
+      return createOfferAssignment(
+        context.accessToken,
+        context.companyId,
+        input,
+      );
     },
     onSettled: invalidate,
   });
-  const updateMutation = useMutation<OfferAssignment, Error, UpdateOfferAssignmentInput>({
+  const updateMutation = useMutation<
+    OfferAssignment,
+    Error,
+    UpdateOfferAssignmentInput
+  >({
     mutationFn: async (input) => {
       if (
         context.accessToken === null ||
         context.companyId === null ||
         !context.permissions.canManageOffers
       ) {
-        throw new Error('Company administrator access is required to update assignments.');
+        throw new Error(
+          "Company administrator access is required to update assignments.",
+        );
       }
 
-      return updateOfferAssignment(context.accessToken, context.companyId, input);
+      return updateOfferAssignment(
+        context.accessToken,
+        context.companyId,
+        input,
+      );
     },
     onSettled: invalidate,
   });
@@ -332,10 +415,15 @@ export function useOfferAssignments(offerId: string | null) {
   return {
     ...context,
     assignments: query.data ?? EMPTY_ASSIGNMENTS,
-    status: resolveStatus(enabled, context.permissions.canRead, query.isLoading, query.isError),
+    status: resolveStatus(
+      enabled,
+      context.permissions.canRead,
+      query.isLoading,
+      query.isError,
+    ),
     error: errorMessage(
       query.error ?? createMutation.error ?? updateMutation.error,
-      'Offer assignments could not be loaded.',
+      "Offer assignments could not be loaded.",
     ),
     isMutating: createMutation.isPending || updateMutation.isPending,
     createAssignment: createMutation.mutateAsync,
@@ -346,73 +434,218 @@ export function useOfferAssignments(offerId: string | null) {
   } as const;
 }
 
-export function useTrackingLinks(filters: {
-  offerId?: string;
-  ownerMembershipId?: string;
-  status?: string;
-} = {}) {
+export function useTrackingLinks(
+  filters: {
+    offerId?: string;
+    ownerMembershipId?: string;
+    status?: string;
+  } = {},
+) {
   const context = useControlPlaneContext();
   const enabled =
-    context.accessToken !== null && context.companyId !== null && context.permissions.canRead;
+    context.accessToken !== null &&
+    context.companyId !== null &&
+    context.permissions.canRead;
   const query = useQuery({
-    queryKey: ['company-scoped', 'control-plane', 'tracking-links', context.companyId, filters],
+    queryKey: [
+      "company-scoped",
+      "control-plane",
+      "tracking-links",
+      context.companyId,
+      filters,
+    ],
     enabled,
     queryFn: ({ signal }) => {
       if (context.accessToken === null || context.companyId === null) {
-        throw new Error('An authenticated company context is required.');
+        throw new Error("An authenticated company context is required.");
       }
 
-      return fetchTrackingLinks(context.accessToken, context.companyId, filters, signal);
+      return fetchTrackingLinks(
+        context.accessToken,
+        context.companyId,
+        filters,
+        signal,
+      );
     },
   });
   const invalidate = useInvalidateControlPlane();
-  const createMutation = useMutation<TrackingLink, Error, CreateTrackingLinkInput>({
-    mutationFn: async (input) => {
-      if (
-        context.accessToken === null ||
-        context.companyId === null ||
-        !context.permissions.canManageTracking
-      ) {
-        throw new Error('Tracking-link management access is required.');
-      }
+  const requireTrackingContext = () => {
+    if (
+      context.accessToken === null ||
+      context.companyId === null ||
+      !context.permissions.canManageTracking
+    ) {
+      throw new Error("Tracking-link management access is required.");
+    }
 
-      return createTrackingLink(context.accessToken, context.companyId, input);
+    return {
+      accessToken: context.accessToken,
+      companyId: context.companyId,
+    } as const;
+  };
+  const createMutation = useMutation<
+    TrackingLink,
+    Error,
+    CreateTrackingLinkInput
+  >({
+    mutationFn: async (input) => {
+      const trackingContext = requireTrackingContext();
+
+      return createTrackingLink(
+        trackingContext.accessToken,
+        trackingContext.companyId,
+        input,
+      );
     },
     onSettled: invalidate,
   });
-  const updateMutation = useMutation<TrackingLink, Error, UpdateTrackingLinkInput>({
+  const updateMutation = useMutation<
+    TrackingLink,
+    Error,
+    UpdateTrackingLinkInput
+  >({
     mutationFn: async (input) => {
-      if (
-        context.accessToken === null ||
-        context.companyId === null ||
-        !context.permissions.canManageTracking
-      ) {
-        throw new Error('Tracking-link management access is required.');
-      }
+      const trackingContext = requireTrackingContext();
 
-      return updateTrackingLink(context.accessToken, context.companyId, input);
+      return updateTrackingLink(
+        trackingContext.accessToken,
+        trackingContext.companyId,
+        input,
+      );
     },
     onSettled: invalidate,
   });
+  const cloneMutation = useMutation<TrackingLink, Error, string>({
+    mutationFn: async (linkId) => {
+      const trackingContext = requireTrackingContext();
+
+      return cloneTrackingLink(
+        trackingContext.accessToken,
+        trackingContext.companyId,
+        linkId,
+      );
+    },
+    onSettled: invalidate,
+  });
+  const archiveMutation = useMutation<TrackingLink, Error, string>({
+    mutationFn: async (linkId) => {
+      const trackingContext = requireTrackingContext();
+
+      return archiveTrackingLink(
+        trackingContext.accessToken,
+        trackingContext.companyId,
+        linkId,
+      );
+    },
+    onSettled: invalidate,
+  });
+  const deleteMutation = useMutation<DeleteTrackingLinkResult, Error, string>({
+    mutationFn: async (linkId) => {
+      const trackingContext = requireTrackingContext();
+
+      if (!context.permissions.canManage) {
+        throw new Error(
+          "Only a Company Admin can permanently delete a tracking link.",
+        );
+      }
+
+      return deleteTrackingLink(
+        trackingContext.accessToken,
+        trackingContext.companyId,
+        linkId,
+      );
+    },
+    onSettled: invalidate,
+  });
+  const mutationError =
+    createMutation.error ??
+    updateMutation.error ??
+    cloneMutation.error ??
+    archiveMutation.error ??
+    deleteMutation.error;
+  const isMutating =
+    createMutation.isPending ||
+    updateMutation.isPending ||
+    cloneMutation.isPending ||
+    archiveMutation.isPending ||
+    deleteMutation.isPending;
 
   return {
     ...context,
     links: query.data ?? EMPTY_LINKS,
-    status: resolveStatus(enabled, context.permissions.canRead, query.isLoading, query.isError),
-    error: errorMessage(
-      query.error ?? createMutation.error ?? updateMutation.error,
-      'Tracking links could not be loaded.',
+    status: resolveStatus(
+      enabled,
+      context.permissions.canRead,
+      query.isLoading,
+      query.isError,
     ),
-    isMutating: createMutation.isPending || updateMutation.isPending,
+    error: errorMessage(
+      query.error ?? mutationError,
+      "Tracking links could not be loaded.",
+    ),
+    isMutating,
     createLink: createMutation.mutateAsync,
     updateLink: updateMutation.mutateAsync,
+    cloneLink: cloneMutation.mutateAsync,
+    archiveLink: archiveMutation.mutateAsync,
+    deleteLink: deleteMutation.mutateAsync,
     refresh: async (): Promise<void> => {
       await query.refetch();
     },
   } as const;
 }
 
-export function usePostbackEndpoints(networkAccountId: string | null, status?: string) {
+export function usePostbackEndpointCreator() {
+  const context = useControlPlaneContext();
+  const invalidate = useInvalidateControlPlane();
+  const createMutation = useMutation<
+    NetworkPostbackEndpointSecret,
+    Error,
+    {
+      networkAccountId: string;
+      name: string;
+      status?: "active" | "paused";
+    }
+  >({
+    mutationFn: async (input) => {
+      if (
+        context.accessToken === null ||
+        context.companyId === null ||
+        !context.permissions.canManage
+      ) {
+        throw new Error(
+          "Company administrator access is required to configure postbacks.",
+        );
+      }
+
+      return createPostbackEndpoint(
+        context.accessToken,
+        context.companyId,
+        input.networkAccountId,
+        {
+          name: input.name,
+          ...(input.status !== undefined ? { status: input.status } : {}),
+        },
+      );
+    },
+    onSettled: invalidate,
+  });
+
+  return {
+    ...context,
+    error: errorMessage(
+      createMutation.error,
+      "The secure postback endpoint could not be created.",
+    ),
+    isMutating: createMutation.isPending,
+    createEndpoint: createMutation.mutateAsync,
+  } as const;
+}
+
+export function usePostbackEndpoints(
+  networkAccountId: string | null,
+  status?: string,
+) {
   const context = useControlPlaneContext();
   const enabled =
     context.accessToken !== null &&
@@ -421,9 +654,9 @@ export function usePostbackEndpoints(networkAccountId: string | null, status?: s
     context.permissions.canViewOperations;
   const query = useQuery({
     queryKey: [
-      'company-scoped',
-      'control-plane',
-      'postback-endpoints',
+      "company-scoped",
+      "control-plane",
+      "postback-endpoints",
       context.companyId,
       networkAccountId,
       status,
@@ -435,7 +668,9 @@ export function usePostbackEndpoints(networkAccountId: string | null, status?: s
         context.companyId === null ||
         networkAccountId === null
       ) {
-        throw new Error('A network account and authenticated company context are required.');
+        throw new Error(
+          "A network account and authenticated company context are required.",
+        );
       }
 
       return fetchPostbackEndpoints(
@@ -451,7 +686,7 @@ export function usePostbackEndpoints(networkAccountId: string | null, status?: s
   const createMutation = useMutation<
     NetworkPostbackEndpointSecret,
     Error,
-    { name: string; status?: 'active' | 'paused' }
+    { name: string; status?: "active" | "paused" }
   >({
     mutationFn: async (input) => {
       if (
@@ -460,7 +695,9 @@ export function usePostbackEndpoints(networkAccountId: string | null, status?: s
         networkAccountId === null ||
         !context.permissions.canManage
       ) {
-        throw new Error('Company administrator access is required to configure postbacks.');
+        throw new Error(
+          "Company administrator access is required to configure postbacks.",
+        );
       }
 
       return createPostbackEndpoint(
@@ -475,7 +712,11 @@ export function usePostbackEndpoints(networkAccountId: string | null, status?: s
   const updateMutation = useMutation<
     NetworkPostbackEndpoint,
     Error,
-    { endpointId: string; name?: string; status?: 'active' | 'paused' | 'archived' }
+    {
+      endpointId: string;
+      name?: string;
+      status?: "active" | "paused" | "archived";
+    }
   >({
     mutationFn: async (input) => {
       if (
@@ -484,7 +725,9 @@ export function usePostbackEndpoints(networkAccountId: string | null, status?: s
         networkAccountId === null ||
         !context.permissions.canManage
       ) {
-        throw new Error('Company administrator access is required to configure postbacks.');
+        throw new Error(
+          "Company administrator access is required to configure postbacks.",
+        );
       }
 
       return updatePostbackEndpoint(
@@ -497,7 +740,11 @@ export function usePostbackEndpoints(networkAccountId: string | null, status?: s
     },
     onSettled: invalidate,
   });
-  const rotateMutation = useMutation<NetworkPostbackEndpointSecret, Error, string>({
+  const rotateMutation = useMutation<
+    NetworkPostbackEndpointSecret,
+    Error,
+    string
+  >({
     mutationFn: async (endpointId) => {
       if (
         context.accessToken === null ||
@@ -505,7 +752,9 @@ export function usePostbackEndpoints(networkAccountId: string | null, status?: s
         networkAccountId === null ||
         !context.permissions.canManage
       ) {
-        throw new Error('Company administrator access is required to rotate postback keys.');
+        throw new Error(
+          "Company administrator access is required to rotate postback keys.",
+        );
       }
 
       return rotatePostbackEndpointKey(
@@ -528,11 +777,16 @@ export function usePostbackEndpoints(networkAccountId: string | null, status?: s
       query.isError,
     ),
     error: errorMessage(
-      query.error ?? createMutation.error ?? updateMutation.error ?? rotateMutation.error,
-      'Postback endpoints could not be loaded.',
+      query.error ??
+        createMutation.error ??
+        updateMutation.error ??
+        rotateMutation.error,
+      "Postback endpoints could not be loaded.",
     ),
     isMutating:
-      createMutation.isPending || updateMutation.isPending || rotateMutation.isPending,
+      createMutation.isPending ||
+      updateMutation.isPending ||
+      rotateMutation.isPending,
     createEndpoint: createMutation.mutateAsync,
     updateEndpoint: updateMutation.mutateAsync,
     rotateKey: rotateMutation.mutateAsync,
@@ -542,47 +796,69 @@ export function usePostbackEndpoints(networkAccountId: string | null, status?: s
   } as const;
 }
 
-export function useConversions(filters: {
-  networkAccountId?: string;
-  offerId?: string;
-  ownerMembershipId?: string;
-  status?: string;
-  limit?: number;
-} = {}) {
+export function useConversions(
+  filters: {
+    networkAccountId?: string;
+    offerId?: string;
+    ownerMembershipId?: string;
+    status?: string;
+    limit?: number;
+  } = {},
+) {
   const context = useControlPlaneContext();
   const enabled =
-    context.accessToken !== null && context.companyId !== null && context.permissions.canRead;
+    context.accessToken !== null &&
+    context.companyId !== null &&
+    context.permissions.canRead;
   const query = useQuery({
-    queryKey: ['company-scoped', 'control-plane', 'conversions', context.companyId, filters],
+    queryKey: [
+      "company-scoped",
+      "control-plane",
+      "conversions",
+      context.companyId,
+      filters,
+    ],
     enabled,
     queryFn: ({ signal }) => {
       if (context.accessToken === null || context.companyId === null) {
-        throw new Error('An authenticated company context is required.');
+        throw new Error("An authenticated company context is required.");
       }
 
-      return fetchConversions(context.accessToken, context.companyId, filters, signal);
+      return fetchConversions(
+        context.accessToken,
+        context.companyId,
+        filters,
+        signal,
+      );
     },
   });
 
   return {
     ...context,
     conversions: query.data ?? EMPTY_CONVERSIONS,
-    status: resolveStatus(enabled, context.permissions.canRead, query.isLoading, query.isError),
-    error: errorMessage(query.error, 'Conversions could not be loaded.'),
+    status: resolveStatus(
+      enabled,
+      context.permissions.canRead,
+      query.isLoading,
+      query.isError,
+    ),
+    error: errorMessage(query.error, "Conversions could not be loaded."),
     refresh: async (): Promise<void> => {
       await query.refetch();
     },
   } as const;
 }
 
-export function useFraudReview(filters: {
-  networkAccountId?: string;
-  offerId?: string;
-  ruleStatus?: string;
-  duplicateDecision?: string;
-  fraudRiskLevel?: string;
-  limit?: number;
-} = {}) {
+export function useFraudReview(
+  filters: {
+    networkAccountId?: string;
+    offerId?: string;
+    ruleStatus?: string;
+    duplicateDecision?: string;
+    fraudRiskLevel?: string;
+    limit?: number;
+  } = {},
+) {
   const context = useControlPlaneContext();
   const enabled =
     context.accessToken !== null &&
@@ -590,9 +866,9 @@ export function useFraudReview(filters: {
     context.permissions.canViewOperations;
   const rulesQuery = useQuery({
     queryKey: [
-      'company-scoped',
-      'control-plane',
-      'duplicate-rules',
+      "company-scoped",
+      "control-plane",
+      "duplicate-rules",
       context.companyId,
       filters.networkAccountId,
       filters.offerId,
@@ -601,7 +877,7 @@ export function useFraudReview(filters: {
     enabled,
     queryFn: ({ signal }) => {
       if (context.accessToken === null || context.companyId === null) {
-        throw new Error('An authenticated company context is required.');
+        throw new Error("An authenticated company context is required.");
       }
 
       return fetchDuplicateRules(
@@ -618,16 +894,16 @@ export function useFraudReview(filters: {
   });
   const clicksQuery = useQuery({
     queryKey: [
-      'company-scoped',
-      'control-plane',
-      'fraud-clicks',
+      "company-scoped",
+      "control-plane",
+      "fraud-clicks",
       context.companyId,
       filters,
     ],
     enabled,
     queryFn: ({ signal }) => {
       if (context.accessToken === null || context.companyId === null) {
-        throw new Error('An authenticated company context is required.');
+        throw new Error("An authenticated company context is required.");
       }
 
       return fetchFraudClicks(
@@ -656,7 +932,9 @@ export function useFraudReview(filters: {
         context.companyId === null ||
         !context.permissions.canManage
       ) {
-        throw new Error('Company administrator access is required to configure fraud rules.');
+        throw new Error(
+          "Company administrator access is required to configure fraud rules.",
+        );
       }
 
       return createDuplicateRule(context.accessToken, context.companyId, input);
@@ -674,7 +952,9 @@ export function useFraudReview(filters: {
         context.companyId === null ||
         !context.permissions.canManage
       ) {
-        throw new Error('Company administrator access is required to configure fraud rules.');
+        throw new Error(
+          "Company administrator access is required to configure fraud rules.",
+        );
       }
 
       return updateDuplicateRule(context.accessToken, context.companyId, input);
@@ -682,7 +962,10 @@ export function useFraudReview(filters: {
     onSettled: invalidate,
   });
   const firstError =
-    rulesQuery.error ?? clicksQuery.error ?? createMutation.error ?? updateMutation.error;
+    rulesQuery.error ??
+    clicksQuery.error ??
+    createMutation.error ??
+    updateMutation.error;
 
   return {
     ...context,
@@ -694,7 +977,7 @@ export function useFraudReview(filters: {
       rulesQuery.isLoading || clicksQuery.isLoading,
       rulesQuery.isError || clicksQuery.isError,
     ),
-    error: errorMessage(firstError, 'Fraud review data could not be loaded.'),
+    error: errorMessage(firstError, "Fraud review data could not be loaded."),
     isMutating: createMutation.isPending || updateMutation.isPending,
     createRule: createMutation.mutateAsync,
     updateRule: updateMutation.mutateAsync,
@@ -708,22 +991,23 @@ export function useBilling() {
   const context = useControlPlaneContext();
   const enabled = context.accessToken !== null && context.companyId !== null;
   const plansQuery = useQuery({
-    queryKey: ['control-plane', 'billing-plans'],
-    enabled: context.accessToken !== null && context.permissions.canManagePlatform,
+    queryKey: ["control-plane", "billing-plans"],
+    enabled:
+      context.accessToken !== null && context.permissions.canManagePlatform,
     queryFn: ({ signal }) => {
       if (context.accessToken === null) {
-        throw new Error('An authenticated session is required.');
+        throw new Error("An authenticated session is required.");
       }
 
       return fetchBillingPlans(context.accessToken, undefined, signal);
     },
   });
   const snapshotQuery = useQuery({
-    queryKey: ['company-scoped', 'control-plane', 'billing', context.companyId],
+    queryKey: ["company-scoped", "control-plane", "billing", context.companyId],
     enabled,
     queryFn: ({ signal }) => {
       if (context.accessToken === null || context.companyId === null) {
-        throw new Error('An authenticated company context is required.');
+        throw new Error("An authenticated company context is required.");
       }
 
       return fetchCompanyBilling(
@@ -735,29 +1019,51 @@ export function useBilling() {
     },
   });
   const invalidate = useInvalidateControlPlane();
-  const createPlanMutation = useMutation<BillingPlan, Error, CreateBillingPlanInput>({
+  const createPlanMutation = useMutation<
+    BillingPlan,
+    Error,
+    CreateBillingPlanInput
+  >({
     mutationFn: async (input) => {
-      if (context.accessToken === null || !context.permissions.canManagePlatform) {
-        throw new Error('Platform Super Admin access is required to create billing plans.');
+      if (
+        context.accessToken === null ||
+        !context.permissions.canManagePlatform
+      ) {
+        throw new Error(
+          "Platform Super Admin access is required to create billing plans.",
+        );
       }
 
       return createBillingPlan(context.accessToken, input);
     },
     onSettled: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['control-plane', 'billing-plans'] });
+      await queryClient.invalidateQueries({
+        queryKey: ["control-plane", "billing-plans"],
+      });
       await invalidate();
     },
   });
-  const updatePlanMutation = useMutation<BillingPlan, Error, UpdateBillingPlanInput>({
+  const updatePlanMutation = useMutation<
+    BillingPlan,
+    Error,
+    UpdateBillingPlanInput
+  >({
     mutationFn: async (input) => {
-      if (context.accessToken === null || !context.permissions.canManagePlatform) {
-        throw new Error('Platform Super Admin access is required to update billing plans.');
+      if (
+        context.accessToken === null ||
+        !context.permissions.canManagePlatform
+      ) {
+        throw new Error(
+          "Platform Super Admin access is required to update billing plans.",
+        );
       }
 
       return updateBillingPlan(context.accessToken, input);
     },
     onSettled: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['control-plane', 'billing-plans'] });
+      await queryClient.invalidateQueries({
+        queryKey: ["control-plane", "billing-plans"],
+      });
       await invalidate();
     },
   });
@@ -772,10 +1078,16 @@ export function useBilling() {
         context.companyId === null ||
         !context.permissions.canManagePlatform
       ) {
-        throw new Error('Platform Super Admin access is required to create subscriptions.');
+        throw new Error(
+          "Platform Super Admin access is required to create subscriptions.",
+        );
       }
 
-      return createCompanySubscription(context.accessToken, context.companyId, input);
+      return createCompanySubscription(
+        context.accessToken,
+        context.companyId,
+        input,
+      );
     },
     onSettled: invalidate,
   });
@@ -790,10 +1102,16 @@ export function useBilling() {
         context.companyId === null ||
         !context.permissions.canManagePlatform
       ) {
-        throw new Error('Platform Super Admin access is required to update subscriptions.');
+        throw new Error(
+          "Platform Super Admin access is required to update subscriptions.",
+        );
       }
 
-      return updateCompanySubscription(context.accessToken, context.companyId, input);
+      return updateCompanySubscription(
+        context.accessToken,
+        context.companyId,
+        input,
+      );
     },
     onSettled: invalidate,
   });
@@ -809,8 +1127,13 @@ export function useBilling() {
     ...context,
     plans: plansQuery.data ?? EMPTY_PLANS,
     snapshot: snapshotQuery.data ?? null,
-    status: resolveStatus(enabled, true, snapshotQuery.isLoading, snapshotQuery.isError),
-    error: errorMessage(firstError, 'Billing data could not be loaded.'),
+    status: resolveStatus(
+      enabled,
+      true,
+      snapshotQuery.isLoading,
+      snapshotQuery.isError,
+    ),
+    error: errorMessage(firstError, "Billing data could not be loaded."),
     isMutating:
       createPlanMutation.isPending ||
       updatePlanMutation.isPending ||
@@ -826,60 +1149,93 @@ export function useBilling() {
   } as const;
 }
 
-export function useReporting(filters: {
-  from?: string;
-  to?: string;
-  offerId?: string;
-  networkAccountId?: string;
-  ownerMembershipId?: string;
-} = {}) {
+export function useReporting(
+  filters: {
+    from?: string;
+    to?: string;
+    offerId?: string;
+    networkAccountId?: string;
+    ownerMembershipId?: string;
+  } = {},
+) {
   const context = useControlPlaneContext();
   const enabled =
-    context.accessToken !== null && context.companyId !== null && context.permissions.canRead;
+    context.accessToken !== null &&
+    context.companyId !== null &&
+    context.permissions.canRead;
   const query = useQuery<ReportingDashboard>({
-    queryKey: ['company-scoped', 'control-plane', 'reporting', context.companyId, filters],
+    queryKey: [
+      "company-scoped",
+      "control-plane",
+      "reporting",
+      context.companyId,
+      filters,
+    ],
     enabled,
     queryFn: ({ signal }) => {
       if (context.accessToken === null || context.companyId === null) {
-        throw new Error('An authenticated company context is required.');
+        throw new Error("An authenticated company context is required.");
       }
 
-      return fetchReporting(context.accessToken, context.companyId, filters, signal);
+      return fetchReporting(
+        context.accessToken,
+        context.companyId,
+        filters,
+        signal,
+      );
     },
   });
 
   return {
     ...context,
     dashboard: query.data ?? null,
-    status: resolveStatus(enabled, context.permissions.canRead, query.isLoading, query.isError),
-    error: errorMessage(query.error, 'Reporting data could not be loaded.'),
+    status: resolveStatus(
+      enabled,
+      context.permissions.canRead,
+      query.isLoading,
+      query.isError,
+    ),
+    error: errorMessage(query.error, "Reporting data could not be loaded."),
     refresh: async (): Promise<void> => {
       await query.refetch();
     },
   } as const;
 }
 
-export function useOperations(filters: {
-  eventName?: string;
-  entityType?: string;
-  from?: string;
-  to?: string;
-  limit?: number;
-} = {}) {
+export function useOperations(
+  filters: {
+    eventName?: string;
+    entityType?: string;
+    from?: string;
+    to?: string;
+    limit?: number;
+  } = {},
+) {
   const context = useControlPlaneContext();
   const enabled =
     context.accessToken !== null &&
     context.companyId !== null &&
     context.permissions.canViewOperations;
   const query = useQuery<readonly OperationalEvent[]>({
-    queryKey: ['company-scoped', 'control-plane', 'operations', context.companyId, filters],
+    queryKey: [
+      "company-scoped",
+      "control-plane",
+      "operations",
+      context.companyId,
+      filters,
+    ],
     enabled,
     queryFn: ({ signal }) => {
       if (context.accessToken === null || context.companyId === null) {
-        throw new Error('An authenticated company context is required.');
+        throw new Error("An authenticated company context is required.");
       }
 
-      return fetchOperationalEvents(context.accessToken, context.companyId, filters, signal);
+      return fetchOperationalEvents(
+        context.accessToken,
+        context.companyId,
+        filters,
+        signal,
+      );
     },
   });
 
@@ -892,7 +1248,7 @@ export function useOperations(filters: {
       query.isLoading,
       query.isError,
     ),
-    error: errorMessage(query.error, 'Operational events could not be loaded.'),
+    error: errorMessage(query.error, "Operational events could not be loaded."),
     refresh: async (): Promise<void> => {
       await query.refetch();
     },
@@ -902,13 +1258,20 @@ export function useOperations(filters: {
 export function useCustomization() {
   const context = useControlPlaneContext();
   const enabled =
-    context.accessToken !== null && context.companyId !== null && context.permissions.canRead;
+    context.accessToken !== null &&
+    context.companyId !== null &&
+    context.permissions.canRead;
   const query = useQuery<CompanyCustomization | null>({
-    queryKey: ['company-scoped', 'control-plane', 'customization', context.companyId],
+    queryKey: [
+      "company-scoped",
+      "control-plane",
+      "customization",
+      context.companyId,
+    ],
     enabled,
     queryFn: ({ signal }) => {
       if (context.accessToken === null || context.companyId === null) {
-        throw new Error('An authenticated company context is required.');
+        throw new Error("An authenticated company context is required.");
       }
 
       return fetchCustomization(context.accessToken, context.companyId, signal);
@@ -927,14 +1290,11 @@ export function useCustomization() {
       supportEmail?: string | null;
       defaultCurrency?: string | null;
       defaultTimezone?: string | null;
-          linkIdentifierMode?:
-        CompanyCustomization['linkIdentifierMode'];
+      linkIdentifierMode?: CompanyCustomization["linkIdentifierMode"];
       plainTextSharingEnabled?: boolean;
-      restrictedSharePlatforms?:
-        CompanyCustomization['restrictedSharePlatforms'];
-      defaultLinkQueryParameters?:
-        CompanyCustomization['defaultLinkQueryParameters'];
-}
+      restrictedSharePlatforms?: CompanyCustomization["restrictedSharePlatforms"];
+      defaultLinkQueryParameters?: CompanyCustomization["defaultLinkQueryParameters"];
+    }
   >({
     mutationFn: async (input) => {
       if (
@@ -942,7 +1302,9 @@ export function useCustomization() {
         context.companyId === null ||
         !context.permissions.canCustomize
       ) {
-        throw new Error('Company administrator access is required to update settings.');
+        throw new Error(
+          "Company administrator access is required to update settings.",
+        );
       }
 
       return updateCustomization(context.accessToken, context.companyId, input);
@@ -953,8 +1315,16 @@ export function useCustomization() {
   return {
     ...context,
     customization: query.data ?? null,
-    status: resolveStatus(enabled, context.permissions.canRead, query.isLoading, query.isError),
-    error: errorMessage(query.error ?? mutation.error, 'Company settings could not be loaded.'),
+    status: resolveStatus(
+      enabled,
+      context.permissions.canRead,
+      query.isLoading,
+      query.isError,
+    ),
+    error: errorMessage(
+      query.error ?? mutation.error,
+      "Company settings could not be loaded.",
+    ),
     isMutating: mutation.isPending,
     updateCustomization: mutation.mutateAsync,
     refresh: async (): Promise<void> => {

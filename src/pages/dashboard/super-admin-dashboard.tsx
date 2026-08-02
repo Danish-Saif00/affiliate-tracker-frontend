@@ -51,6 +51,19 @@ export function SuperAdminDashboard() {
       path: '/company-admins',
     },
     {
+      label: 'Domain Approvals',
+      value:
+        company.activeCompany === null
+          ? 'Select company'
+          : 'Open queue',
+      detail:
+        company.activeCompany === null
+          ? 'Choose a company context'
+          : company.activeCompany.name,
+      icon: 'domain_verification',
+      path: '/domain-approvals',
+    },
+    {
       label: 'Subscription',
       value:
         subscription === null ? 'Unassigned' : formatLabel(subscription.status),
@@ -80,8 +93,8 @@ export function SuperAdminDashboard() {
           </span>
           <h1>Super Admin Dashboard</h1>
           <p>
-            Manage companies, Company Admin accounts, subscriptions, and your
-            personal profile.
+            Manage companies, Company Admin accounts, domain approvals,
+            subscriptions, and your personal profile.
           </p>
         </div>
         <ControlStatus status="active" />
@@ -114,9 +127,9 @@ export function SuperAdminDashboard() {
           <h2>Restricted platform scope</h2>
           <p>
             This account can create companies, manage only Company Admin
-            accounts, control subscriptions, and update its own profile. Catalog,
-            tracking, reporting, and publisher operations are not available to the
-            Platform Super Admin.
+            accounts, approve tracking domains, control subscriptions, and update
+            its own profile. Catalog editing, reporting, publisher operations, and
+            other tenant tracking operations remain unavailable.
           </p>
         </div>
       </GlassPanel>

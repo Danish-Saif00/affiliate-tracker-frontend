@@ -18,12 +18,11 @@ export function useReportingDashboard(
   const company = useCompany();
   const accessToken = auth.session?.access_token ?? null;
   const companyId = company.activeCompanyId;
-  const platformRole = auth.identity?.authorization.platformRole ?? null;
   const membership = auth.identity?.authorization.companyMembership ?? null;
+  const canReadDashboard = membership?.status === "active";
   const canReadOperationalEvents =
-    platformRole === "platform_super_admin" ||
-    (membership?.status === "active" &&
-      (membership.role === "company_admin" || membership.role === "manager"));
+    membership?.status === "active" &&
+    (membership.role === "company_admin" || membership.role === "manager");
 
   const dashboardQuery = useQuery<CompanyReportingDashboard>({
     queryKey: [
@@ -33,7 +32,7 @@ export function useReportingDashboard(
       filters.from ?? null,
       filters.to ?? null,
     ],
-    enabled: accessToken !== null && companyId !== null,
+    enabled: accessToken !== null && companyId !== null && canReadDashboard,
     queryFn: ({ signal }) => {
       if (accessToken === null || companyId === null) {
         throw new Error(

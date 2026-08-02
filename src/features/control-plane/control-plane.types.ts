@@ -1,10 +1,11 @@
-import type { CompanyRole } from '../auth/auth.types';
+import type { CompanyRole } from "../auth/auth.types";
 
-export type ModuleLoadStatus = 'idle' | 'loading' | 'ready' | 'error' | 'forbidden';
+export type ModuleLoadStatus =
+  "idle" | "loading" | "ready" | "error" | "forbidden";
 
-export type OfferStatus = 'draft' | 'active' | 'paused' | 'archived';
-export type PayoutMode = 'fixed_member' | 'per_offer';
-export type OfferAssignmentStatus = 'active' | 'paused' | 'revoked';
+export type OfferStatus = "draft" | "active" | "paused" | "archived";
+export type PayoutMode = "fixed_member" | "per_offer";
+export type OfferAssignmentStatus = "active" | "paused" | "revoked";
 
 export type Offer = {
   id: string;
@@ -31,8 +32,8 @@ export type PayoutProfile = {
   companyId: string;
   membershipId: string;
   userId: string;
-  role: Extract<CompanyRole, 'manager' | 'publisher'>;
-  membershipStatus: 'invited' | 'active' | 'suspended' | 'revoked';
+  role: Extract<CompanyRole, "manager" | "publisher">;
+  membershipStatus: "invited" | "active" | "suspended" | "revoked";
   mode: PayoutMode;
   fixedPayoutAmountMinor: number | null;
   payoutCurrency: string | null;
@@ -50,8 +51,8 @@ export type OfferAssignment = {
   offerName: string;
   membershipId: string;
   userId: string;
-  role: Extract<CompanyRole, 'manager' | 'publisher'>;
-  membershipStatus: 'invited' | 'active' | 'suspended' | 'revoked';
+  role: Extract<CompanyRole, "manager" | "publisher">;
+  membershipStatus: "invited" | "active" | "suspended" | "revoked";
   status: OfferAssignmentStatus;
   manualPayoutAmountMinor: number | null;
   manualPayoutCurrency: string | null;
@@ -75,6 +76,7 @@ export type CreateOfferInput = {
 
 export type UpdateOfferInput = {
   offerId: string;
+  networkAccountId?: string;
   externalOfferId?: string | null;
   name?: string;
   description?: string | null;
@@ -104,8 +106,16 @@ export type UpdateOfferAssignmentInput = {
   manualPayoutCurrency?: string | null;
 };
 
-export type TrackingLinkStatus = 'draft' | 'active' | 'paused' | 'archived';
-export type TrackingLinkOwnerRole = Extract<CompanyRole, 'manager' | 'publisher'>;
+export type TrackingLinkStatus = "draft" | "active" | "paused" | "archived";
+export type TrackingLinkWritableStatus = Exclude<
+  TrackingLinkStatus,
+  "archived"
+>;
+export type TrackingLinkSource = "manual" | "publisher_assignment";
+export type TrackingLinkOwnerRole = Extract<
+  CompanyRole,
+  "manager" | "publisher"
+>;
 
 export type TrackingLink = {
   id: string;
@@ -118,11 +128,12 @@ export type TrackingLink = {
   ownerMembershipId: string;
   ownerUserId: string;
   ownerRole: TrackingLinkOwnerRole;
-  ownerMembershipStatus: 'invited' | 'active' | 'suspended' | 'revoked';
+  ownerMembershipStatus: "invited" | "active" | "suspended" | "revoked";
   trackingCode: string;
   customSlug: string | null;
   destinationUrl: string;
   queryParameters: Readonly<Record<string, string>>;
+  source: TrackingLinkSource;
   status: TrackingLinkStatus;
   createdBy: string | null;
   updatedBy: string | null;
@@ -137,7 +148,7 @@ export type CreateTrackingLinkInput = {
   customSlug?: string;
   destinationUrl?: string;
   queryParameters?: Readonly<Record<string, string>>;
-  status?: Extract<TrackingLinkStatus, 'draft' | 'active'>;
+  status?: Extract<TrackingLinkStatus, "draft" | "active">;
 };
 
 export type UpdateTrackingLinkInput = {
@@ -146,11 +157,16 @@ export type UpdateTrackingLinkInput = {
   customSlug?: string | null;
   destinationUrl?: string;
   queryParameters?: Readonly<Record<string, string>>;
-  status?: TrackingLinkStatus;
+  status?: TrackingLinkWritableStatus;
 };
 
-export type NetworkPostbackEndpointStatus = 'active' | 'paused' | 'archived';
-export type ConversionStatus = 'pending' | 'approved' | 'rejected' | 'reversed';
+export type DeleteTrackingLinkResult = {
+  id: string;
+  deleted: true;
+};
+
+export type NetworkPostbackEndpointStatus = "active" | "paused" | "archived";
+export type ConversionStatus = "pending" | "approved" | "rejected" | "reversed";
 
 export type NetworkPostbackEndpoint = {
   id: string;
@@ -166,9 +182,20 @@ export type NetworkPostbackEndpoint = {
   updatedAt: string;
 };
 
+export type NetworkPostbackEndpointSetup = {
+  providerId: string;
+  providerCode: string;
+  providerName: string;
+  effectiveTrackingParameter: string;
+  basePath: string;
+  templatePath: string | null;
+  integrationConfigured: boolean;
+};
+
 export type NetworkPostbackEndpointSecret = {
   endpoint: NetworkPostbackEndpoint;
   endpointKey: string;
+  setup: NetworkPostbackEndpointSetup;
 };
 
 export type Conversion = {
@@ -189,7 +216,7 @@ export type Conversion = {
   postbackEndpointId: string | null;
   postbackEndpointName: string | null;
   externalConversionId: string;
-  source: 'provider_postback' | 'manual';
+  source: "provider_postback" | "manual";
   status: ConversionStatus;
   revenueAmountMinor: number | null;
   revenueCurrency: string | null;
@@ -201,15 +228,11 @@ export type Conversion = {
   updatedAt: string;
 };
 
-export type DuplicateProtectionRuleStatus = 'active' | 'paused' | 'archived';
+export type DuplicateProtectionRuleStatus = "active" | "paused" | "archived";
 export type DuplicateProtectionLockMode =
-  | 'session'
-  | 'duration'
-  | 'until_date'
-  | 'until_offer_expiry'
-  | 'permanent';
-export type FraudRiskLevel = 'low' | 'medium' | 'high';
-export type DuplicateDecision = 'accepted' | 'duplicate';
+  "session" | "duration" | "until_date" | "until_offer_expiry" | "permanent";
+export type FraudRiskLevel = "low" | "medium" | "high";
+export type DuplicateDecision = "accepted" | "duplicate";
 
 export type DuplicateProtectionRule = {
   id: string;
@@ -270,26 +293,21 @@ export type CreateDuplicateProtectionRuleInput = {
   matchIpAndUserAgent?: boolean;
   rapidRepeatWindowSeconds?: number;
   rapidRepeatThreshold?: number;
-  status?: Extract<DuplicateProtectionRuleStatus, 'active' | 'paused'>;
+  status?: Extract<DuplicateProtectionRuleStatus, "active" | "paused">;
 };
 
 export type UpdateDuplicateProtectionRuleInput = Omit<
   Partial<CreateDuplicateProtectionRuleInput>,
-  'networkAccountId' | 'offerId' | 'status'
+  "networkAccountId" | "offerId" | "status"
 > & {
   ruleId: string;
   status?: DuplicateProtectionRuleStatus;
 };
 
-export type BillingPlanStatus = 'active' | 'archived';
-export type BillingInterval = 'monthly' | 'annual';
+export type BillingPlanStatus = "active" | "archived";
+export type BillingInterval = "monthly" | "annual";
 export type CompanySubscriptionStatus =
-  | 'trialing'
-  | 'active'
-  | 'grace_period'
-  | 'suspended'
-  | 'canceled'
-  | 'expired';
+  "trialing" | "active" | "grace_period" | "suspended" | "canceled" | "expired";
 
 export type BillingPlanEntitlement = {
   id: string;
@@ -339,7 +357,7 @@ export type CompanySubscription = {
 
 export type CompanyBillingSnapshot = {
   companyId: string;
-  companyStatus: 'active' | 'suspended' | 'archived';
+  companyStatus: "active" | "suspended" | "archived";
   subscription: CompanySubscription | null;
   plan: BillingPlan | null;
   access: {
@@ -365,7 +383,9 @@ export type CreateBillingPlanInput = {
   }[];
 };
 
-export type UpdateBillingPlanInput = Partial<Omit<CreateBillingPlanInput, 'code'>> & {
+export type UpdateBillingPlanInput = Partial<
+  Omit<CreateBillingPlanInput, "code">
+> & {
   planId: string;
   status?: BillingPlanStatus;
 };
@@ -429,13 +449,9 @@ export type OperationalEvent = {
   createdAt: string;
 };
 
-export type CompanyLinkIdentifierMode =
-  | 'slug_or_code'
-  | 'tracking_code';
+export type CompanyLinkIdentifierMode = "slug_or_code" | "tracking_code";
 export type CompanyRestrictedSharePlatform =
-  | 'snapchat'
-  | 'instagram'
-  | 'facebook';
+  "snapchat" | "instagram" | "facebook";
 export type CompanyCustomization = {
   id: string;
   companyId: string;
@@ -447,13 +463,11 @@ export type CompanyCustomization = {
   supportEmail: string | null;
   defaultCurrency: string | null;
   defaultTimezone: string | null;
-    linkIdentifierMode: CompanyLinkIdentifierMode;
+  linkIdentifierMode: CompanyLinkIdentifierMode;
   plainTextSharingEnabled: boolean;
-  restrictedSharePlatforms:
-    readonly CompanyRestrictedSharePlatform[];
-  defaultLinkQueryParameters:
-    Readonly<Record<string, string>>;
-createdBy: string | null;
+  restrictedSharePlatforms: readonly CompanyRestrictedSharePlatform[];
+  defaultLinkQueryParameters: Readonly<Record<string, string>>;
+  createdBy: string | null;
   updatedBy: string | null;
   createdAt: string;
   updatedAt: string;

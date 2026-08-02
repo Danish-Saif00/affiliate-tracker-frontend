@@ -16,10 +16,15 @@ import type {
   CatalogPayoutType,
   CatalogProvider,
   CatalogPublisher,
+  CloneCatalogNetworkInput,
+  CloneCatalogOfferInput,
   CatalogRedirectType,
   CatalogReferrerMode,
   CoreCatalogSnapshot,
   CreateCatalogNetworkInput,
+  DeleteCatalogNetworkInput,
+  DeleteCatalogNetworkResult,
+  DeleteCatalogOfferResult,
   CreateCatalogOfferInput,
   UpdateCatalogNetworkInput,
   UpdateCatalogOfferInput,
@@ -85,11 +90,48 @@ function parseProvider(value: unknown): CatalogProvider {
     throw new Error("The API returned an invalid provider.");
   }
 
+  if (!isRecord(value.integration)) {
+    throw new Error(
+      "The API returned an invalid Provider integration profile.",
+    );
+  }
+
   return {
     id: readRequiredString(value.id, "provider id"),
     code: readRequiredString(value.code, "provider code"),
     name: readRequiredString(value.name, "provider name"),
     status: readStatus(value.status, "provider status", ["active", "archived"]),
+    integration: {
+      defaultTrackingParameter: readNullableString(
+        value.integration.defaultTrackingParameter,
+        "Provider default tracking parameter",
+      ),
+      postbackClickIdToken: readNullableString(
+        value.integration.postbackClickIdToken,
+        "Provider click ID token",
+      ),
+      postbackConversionIdToken: readNullableString(
+        value.integration.postbackConversionIdToken,
+        "Provider conversion ID token",
+      ),
+      postbackRevenueAmountToken: readNullableString(
+        value.integration.postbackRevenueAmountToken,
+        "Provider revenue amount token",
+      ),
+      postbackRevenueCurrencyToken: readNullableString(
+        value.integration.postbackRevenueCurrencyToken,
+        "Provider revenue currency token",
+      ),
+      postbackConversionStatus: readStatus(
+        value.integration.postbackConversionStatus,
+        "Provider postback conversion status",
+        ["pending", "approved"],
+      ),
+      configured: readBoolean(
+        value.integration.configured,
+        "Provider integration configured flag",
+      ),
+    },
   };
 }
 
@@ -149,6 +191,14 @@ function parseNetwork(value: unknown): CatalogNetwork {
       value.trackingParameter,
       "tracking parameter",
     ),
+    effectiveTrackingParameter: readRequiredString(
+      value.effectiveTrackingParameter,
+      "effective tracking parameter",
+    ),
+    providerIntegrationConfigured: readBoolean(
+      value.providerIntegrationConfigured,
+      "Provider integration configured flag",
+    ),
     postbackUrl: readNullableString(value.postbackUrl, "postback URL"),
     duplicateAllowed: readBoolean(
       value.duplicateAllowed,
@@ -157,6 +207,23 @@ function parseNetwork(value: unknown): CatalogNetwork {
     offerCount: readRequiredNumber(value.offerCount, "network offer count"),
     createdAt: readRequiredString(value.createdAt, "network creation time"),
     updatedAt: readRequiredString(value.updatedAt, "network update time"),
+  };
+}
+
+function parseDeleteCatalogNetworkResult(
+  value: unknown,
+): DeleteCatalogNetworkResult {
+  if (!isRecord(value)) {
+    throw new Error("The API returned an invalid Network deletion result.");
+  }
+
+  if (value.deleted !== true) {
+    throw new Error("The API did not confirm Network deletion.");
+  }
+
+  return {
+    id: readRequiredString(value.id, "deleted Network id"),
+    deleted: true,
   };
 }
 
@@ -440,6 +507,22 @@ export function createCatalogOffer(
   );
 }
 
+export function cloneCatalogOffer(
+  accessToken: string,
+  companyId: string,
+  input: CloneCatalogOfferInput,
+): Promise<CatalogOffer> {
+  const { sourceOfferId, ...body } = input;
+  return writeCatalogEntity(
+    accessToken,
+    companyId,
+    `/companies/${encodeURIComponent(companyId)}/catalog/offers/${encodeURIComponent(sourceOfferId)}/clone`,
+    "POST",
+    body,
+    parseOffer,
+  );
+}
+
 export function updateCatalogOffer(
   accessToken: string,
   companyId: string,
@@ -456,6 +539,25 @@ export function updateCatalogOffer(
   );
 }
 
+export async function deleteCatalogOffer(
+  accessToken: string,
+  companyId: string,
+  offerId: string,
+): Promise<DeleteCatalogOfferResult> {
+  const payload = await authenticatedApiRequest(
+    accessToken,
+    `/companies/${encodeURIComponent(companyId)}/catalog/offers/${encodeURIComponent(offerId)}`,
+    { companyId, method: "DELETE" },
+  );
+
+  const data = readData(payload);
+  if (!isRecord(data) || data.deleted !== true) {
+    throw new Error("The API returned an invalid Offer deletion result.");
+  }
+
+  return { id: readRequiredString(data.id, "deleted Offer id"), deleted: true };
+}
+
 export function createCatalogNetwork(
   accessToken: string,
   companyId: string,
@@ -467,6 +569,23 @@ export function createCatalogNetwork(
     `/companies/${encodeURIComponent(companyId)}/catalog/networks`,
     "POST",
     input,
+    parseNetwork,
+  );
+}
+
+export function cloneCatalogNetwork(
+  accessToken: string,
+  companyId: string,
+  input: CloneCatalogNetworkInput,
+): Promise<CatalogNetwork> {
+  const { sourceAccountId, ...body } = input;
+
+  return writeCatalogEntity(
+    accessToken,
+    companyId,
+    `/companies/${encodeURIComponent(companyId)}/catalog/networks/${encodeURIComponent(sourceAccountId)}/clone`,
+    "POST",
+    body,
     parseNetwork,
   );
 }
@@ -485,6 +604,23 @@ export function updateCatalogNetwork(
     body,
     parseNetwork,
   );
+}
+
+export async function deleteCatalogNetwork(
+  accessToken: string,
+  companyId: string,
+  input: DeleteCatalogNetworkInput,
+): Promise<DeleteCatalogNetworkResult> {
+  const payload = await authenticatedApiRequest(
+    accessToken,
+    `/companies/${encodeURIComponent(companyId)}/catalog/networks/${encodeURIComponent(input.accountId)}`,
+    {
+      companyId,
+      method: "DELETE",
+    },
+  );
+
+  return parseDeleteCatalogNetworkResult(readData(payload));
 }
 
 export function updateCatalogPublisher(
