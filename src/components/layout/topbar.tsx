@@ -1,29 +1,31 @@
-import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router';
+import { useEffect, useRef, useState } from "react";
+import { Link, useLocation } from "react-router";
 
-import { MaterialIcon } from '../icons/material-icon';
-import { useAuth } from '../../features/auth/use-auth';
-import { useCompany } from '../../features/companies/use-company';
-import { useApiHealth } from '../../features/system/use-api-health';
-import { useAccountProfile } from '../../features/final-operations/use-final-operations';
+import { MaterialIcon } from "../icons/material-icon";
+import { useAuth } from "../../features/auth/use-auth";
+import { useCompany } from "../../features/companies/use-company";
+import { useApiHealth } from "../../features/system/use-api-health";
+import { useAccountProfile } from "../../features/final-operations/use-final-operations";
 
 type TopbarProps = {
   onOpenNavigation: () => void;
 };
 
 function readMetadataString(value: unknown): string | null {
-  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
+  return typeof value === "string" && value.trim().length > 0
+    ? value.trim()
+    : null;
 }
 
 function formatRole(role: string | null): string {
   if (role === null) {
-    return 'Authenticated User';
+    return "Authenticated User";
   }
 
   return role
-    .split('_')
+    .split("_")
     .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
-    .join(' ');
+    .join(" ");
 }
 
 export function Topbar({ onOpenNavigation }: TopbarProps) {
@@ -31,10 +33,11 @@ export function Topbar({ onOpenNavigation }: TopbarProps) {
   const company = useCompany();
   const account = useAccountProfile();
   const health = useApiHealth();
+  const location = useLocation();
   const isLive = health.isSuccess;
   const platformAdmin =
-    auth.identity?.authorization.platformRole === 'platform_super_admin';
-  const [profileOpen, setProfileOpen] = useState(false);
+    auth.identity?.authorization.platformRole === "platform_super_admin";
+  const [profileOpenPath, setProfileOpenPath] = useState<string | null>(null);
   const [signingOut, setSigningOut] = useState(false);
   const [companyError, setCompanyError] = useState<string | null>(null);
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
@@ -45,7 +48,7 @@ export function Topbar({ onOpenNavigation }: TopbarProps) {
     readMetadataString(userMetadata.full_name) ??
     readMetadataString(userMetadata.name) ??
     auth.user?.email ??
-    'Publisher Tracker User';
+    "Publisher Tracker User";
   const avatarUrl =
     readMetadataString(userMetadata.avatar_url) ??
     readMetadataString(userMetadata.picture);
@@ -53,16 +56,17 @@ export function Topbar({ onOpenNavigation }: TopbarProps) {
     account.profile?.email ??
     auth.identity?.user.email ??
     auth.user?.email ??
-    'Email unavailable';
+    "Email unavailable";
   const role =
     auth.identity?.authorization.platformRole ??
     auth.identity?.authorization.companyMembership?.role ??
     null;
+  const profileOpen = profileOpenPath === location.pathname;
   const initials = displayName
     .split(/\s+/u)
     .slice(0, 2)
     .map((part) => part.charAt(0).toUpperCase())
-    .join('');
+    .join("");
 
   useEffect(() => {
     function handlePointerDown(event: PointerEvent) {
@@ -71,12 +75,23 @@ export function Topbar({ onOpenNavigation }: TopbarProps) {
         event.target instanceof Node &&
         !profileMenuRef.current.contains(event.target)
       ) {
-        setProfileOpen(false);
+        setProfileOpenPath(null);
       }
     }
 
-    window.addEventListener('pointerdown', handlePointerDown);
-    return () => window.removeEventListener('pointerdown', handlePointerDown);
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setProfileOpenPath(null);
+      }
+    }
+
+    window.addEventListener("pointerdown", handlePointerDown);
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("pointerdown", handlePointerDown);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
 
   async function handleSignOut() {
@@ -88,7 +103,7 @@ export function Topbar({ onOpenNavigation }: TopbarProps) {
       // The auth context clears the local session even when the remote sign-out request fails.
     } finally {
       setSigningOut(false);
-      setProfileOpen(false);
+      setProfileOpenPath(null);
     }
   }
 
@@ -99,7 +114,9 @@ export function Topbar({ onOpenNavigation }: TopbarProps) {
       await company.selectCompany(companyId);
     } catch (error: unknown) {
       setCompanyError(
-        error instanceof Error ? error.message : 'The company context could not be changed.',
+        error instanceof Error
+          ? error.message
+          : "The company context could not be changed.",
       );
     }
   }
@@ -127,19 +144,27 @@ export function Topbar({ onOpenNavigation }: TopbarProps) {
 
       <div className="app-topbar__actions">
         {company.companies.length > 0 ? (
-          <label className="company-context-selector" title={companyError ?? undefined}>
+          <label
+            className="company-context-selector"
+            title={companyError ?? undefined}
+          >
             <MaterialIcon name="domain" />
             <select
               aria-label="Active company"
               onChange={(event) => void handleCompanyChange(event.target.value)}
-              value={company.activeCompanyId ?? ''}
+              value={company.activeCompanyId ?? ""}
             >
               <option disabled value="">
                 Select company
               </option>
               {company.companies.map((item) => (
-                <option disabled={item.status !== 'active'} key={item.id} value={item.id}>
-                  {item.name}{item.status === 'active' ? '' : ` (${item.status})`}
+                <option
+                  disabled={item.status !== "active"}
+                  key={item.id}
+                  value={item.id}
+                >
+                  {item.name}
+                  {item.status === "active" ? "" : ` (${item.status})`}
                 </option>
               ))}
             </select>
@@ -152,9 +177,17 @@ export function Topbar({ onOpenNavigation }: TopbarProps) {
           </Link>
         ) : null}
 
-        <div className={`system-status ${isLive ? 'system-status--live' : 'system-status--offline'}`}>
+        <div
+          className={`system-status ${isLive ? "system-status--live" : "system-status--offline"}`}
+        >
           <span className="system-status__dot" />
-          <span>{health.isLoading ? 'Checking API' : isLive ? 'System Live' : 'API Offline'}</span>
+          <span>
+            {health.isLoading
+              ? "Checking API"
+              : isLive
+                ? "System Live"
+                : "API Offline"}
+          </span>
         </div>
 
         {!platformAdmin && (
@@ -174,18 +207,27 @@ export function Topbar({ onOpenNavigation }: TopbarProps) {
             aria-haspopup="menu"
             aria-label="Open profile menu"
             className="profile-button"
-            onClick={() => setProfileOpen((open) => !open)}
+            onClick={() =>
+              setProfileOpenPath((openPath) =>
+                openPath === location.pathname ? null : location.pathname,
+              )
+            }
             type="button"
           >
             {avatarUrl === null ? (
-              <span className="profile-button__initials">{initials || 'PT'}</span>
+              <span className="profile-button__initials">
+                {initials || "PT"}
+              </span>
             ) : (
               <img alt={displayName} src={avatarUrl} />
             )}
           </button>
 
           {profileOpen && (
-            <div className="profile-popover glass-panel specular-panel" role="menu">
+            <div
+              className="profile-popover glass-panel specular-panel"
+              role="menu"
+            >
               <div className="profile-popover__identity">
                 <strong>{displayName}</strong>
                 <span>{email}</span>
@@ -211,7 +253,7 @@ export function Topbar({ onOpenNavigation }: TopbarProps) {
 
               <Link
                 className="profile-popover__action"
-                onClick={() => setProfileOpen(false)}
+                onClick={() => setProfileOpenPath(null)}
                 role="menuitem"
                 to="/account"
               >
@@ -227,10 +269,10 @@ export function Topbar({ onOpenNavigation }: TopbarProps) {
                 type="button"
               >
                 <MaterialIcon
-                  {...(signingOut ? { className: 'spin' } : {})}
-                  name={signingOut ? 'progress_activity' : 'logout'}
+                  {...(signingOut ? { className: "spin" } : {})}
+                  name={signingOut ? "progress_activity" : "logout"}
                 />
-                <span>{signingOut ? 'Signing out…' : 'Sign out'}</span>
+                <span>{signingOut ? "Signing out…" : "Sign out"}</span>
               </button>
             </div>
           )}

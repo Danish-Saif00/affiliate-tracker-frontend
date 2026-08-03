@@ -129,10 +129,7 @@ export function useControlPlaneContext() {
     canManage,
     canManagePlatform: platformAdmin,
     canManageOffers: canManage,
-    canManageTracking:
-      canManage ||
-      (activeMembership &&
-        (companyRole === "manager" || companyRole === "publisher")),
+    canManageTracking: canManage,
     canViewFinancials:
       activeMembership &&
       (companyRole === "company_admin" ||
@@ -445,7 +442,7 @@ export function useTrackingLinks(
   const enabled =
     context.accessToken !== null &&
     context.companyId !== null &&
-    context.permissions.canRead;
+    context.permissions.canManageTracking;
   const query = useQuery({
     queryKey: [
       "company-scoped",

@@ -7,6 +7,21 @@ export type CatalogRedirectType = "301" | "302";
 export type CatalogReferrerMode = "preserve" | "strip";
 export type CatalogPayoutType = "fixed_member" | "per_offer";
 
+export type CatalogTrackingLinkStatus =
+  "draft" | "active" | "paused" | "archived";
+export type CatalogAssignmentTrackingLinkSource =
+  "manager_assignment" | "publisher_assignment";
+
+export type CatalogAssignmentTrackingLink = {
+  id: string;
+  ownerMembershipId: string;
+  ownerRole: "manager" | "publisher";
+  ownerPublicId: number;
+  source: CatalogAssignmentTrackingLinkSource;
+  status: CatalogTrackingLinkStatus;
+  url: string;
+};
+
 export type CatalogProvider = {
   id: string;
   code: string;
@@ -70,7 +85,8 @@ export type CatalogOffer = {
   description: string | null;
   promotionalTextTemplate: string;
   trackingLinkTemplate: string | null;
-  destinationUrl: string;
+  trackingLinks: readonly CatalogAssignmentTrackingLink[];
+  destinationUrl: string | null;
   status: CatalogOfferStatus;
   countries: readonly string[];
   devices: readonly CatalogDevice[];

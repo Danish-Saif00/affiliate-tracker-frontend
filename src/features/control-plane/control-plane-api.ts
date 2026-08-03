@@ -310,7 +310,9 @@ function parseTrackingLink(value: unknown): TrackingLink {
 
   const source = readRequiredString(value.source, "tracking link source");
 
-  if (!["manual", "publisher_assignment"].includes(source)) {
+  if (
+    !["manual", "manager_assignment", "publisher_assignment"].includes(source)
+  ) {
     throw new Error("The API returned an unsupported tracking-link source.");
   }
 

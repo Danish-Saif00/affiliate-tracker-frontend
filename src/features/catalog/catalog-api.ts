@@ -6,6 +6,7 @@ import {
   readRequiredString,
 } from "../../lib/api-client";
 import type {
+  CatalogAssignmentTrackingLink,
   CatalogDevice,
   CatalogDomain,
   CatalogManager,
@@ -227,6 +228,42 @@ function parseDeleteCatalogNetworkResult(
   };
 }
 
+function parseAssignmentTrackingLink(
+  value: unknown,
+): CatalogAssignmentTrackingLink {
+  if (!isRecord(value)) {
+    throw new Error("The API returned an invalid assignment tracking link.");
+  }
+
+  return {
+    id: readRequiredString(value["id"], "assignment tracking-link id"),
+    ownerMembershipId: readRequiredString(
+      value["ownerMembershipId"],
+      "assignment tracking-link owner membership id",
+    ),
+    ownerRole: readStatus(
+      value["ownerRole"],
+      "assignment tracking-link owner role",
+      ["manager", "publisher"],
+    ),
+    ownerPublicId: readRequiredNumber(
+      value["ownerPublicId"],
+      "assignment tracking-link owner public id",
+    ),
+    source: readStatus(value["source"], "assignment tracking-link source", [
+      "manager_assignment",
+      "publisher_assignment",
+    ]),
+    status: readStatus(value["status"], "assignment tracking-link status", [
+      "draft",
+      "active",
+      "paused",
+      "archived",
+    ]),
+    url: readRequiredString(value["url"], "assignment tracking-link URL"),
+  };
+}
+
 function parseOffer(value: unknown): CatalogOffer {
   if (!isRecord(value)) {
     throw new Error("The API returned an invalid offer.");
@@ -278,7 +315,11 @@ function parseOffer(value: unknown): CatalogOffer {
       value.trackingLinkTemplate,
       "offer tracking link template",
     ),
-    destinationUrl: readRequiredString(
+    trackingLinks: readArray(
+      value["trackingLinks"],
+      "offer assignment tracking links",
+    ).map(parseAssignmentTrackingLink),
+    destinationUrl: readNullableString(
       value.destinationUrl,
       "offer destination URL",
     ),

@@ -111,7 +111,8 @@ export type TrackingLinkWritableStatus = Exclude<
   TrackingLinkStatus,
   "archived"
 >;
-export type TrackingLinkSource = "manual" | "publisher_assignment";
+export type TrackingLinkSource =
+  "manual" | "manager_assignment" | "publisher_assignment";
 export type TrackingLinkOwnerRole = Extract<
   CompanyRole,
   "manager" | "publisher"

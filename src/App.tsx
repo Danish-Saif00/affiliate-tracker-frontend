@@ -78,11 +78,6 @@ const TrackingDomainsPage = lazy(async () => ({
   default: (await import("./pages/tracking-domains/tracking-domains-page"))
     .TrackingDomainsPage,
 }));
-const TrackingLinksPage = lazy(async () => ({
-  default: (
-    await import("./pages/tracking-links/role-aware-tracking-links-page")
-  ).TrackingLinksPage,
-}));
 const UserAgentsPage = lazy(async () => ({
   default: (await import("./pages/logs/role-aware-user-agents-page"))
     .UserAgentsPage,
@@ -260,11 +255,7 @@ export default function App() {
           />
           <Route
             path="tracking-links"
-            element={
-              <LazyRoute>
-                <TrackingLinksPage />
-              </LazyRoute>
-            }
+            element={<Navigate replace to="/offers/manage" />}
           />
           <Route
             path="payouts"

@@ -145,12 +145,6 @@ const companyAdminGroups: readonly NavigationGroup[] = [
         ],
       },
       {
-        label: "Tracking Links",
-        path: "/tracking-links",
-        icon: "link",
-        audience: "company-admin",
-      },
-      {
         label: "Managers",
         path: "/managers/manage",
         icon: "supervisor_account",
@@ -278,12 +272,6 @@ const managerGroups: readonly NavigationGroup[] = [
         audience: "manager",
       },
       {
-        label: "Tracking Links",
-        path: "/tracking-links",
-        icon: "link",
-        audience: "manager",
-      },
-      {
         label: "Reports",
         path: "/reports/offers",
         icon: "analytics",
@@ -364,12 +352,6 @@ const publisherGroups: readonly NavigationGroup[] = [
         label: "Assigned Offers",
         path: "/offers/manage",
         icon: "local_offer",
-        audience: "publisher",
-      },
-      {
-        label: "My Tracking Links",
-        path: "/tracking-links",
-        icon: "link",
         audience: "publisher",
       },
       {

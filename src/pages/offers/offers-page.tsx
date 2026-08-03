@@ -22,8 +22,6 @@ import {
   copyOfferShareValue,
   formatOfferCountries,
   formatOfferDevices,
-  renderOfferShareText,
-  type OfferShareMode,
 } from "../../features/offers/offer-share-content";
 import {
   CatalogPagination,
@@ -212,16 +210,6 @@ function formFromOffer(offer: CatalogOffer): OfferFormState {
   };
 }
 
-function trackingOrigin(hostname: string | undefined): string {
-  if (hostname === undefined || hostname.length === 0) {
-    return "https://example.com";
-  }
-
-  return hostname.startsWith("http://") || hostname.startsWith("https://")
-    ? hostname.replace(/\/$/u, "")
-    : `https://${hostname}`;
-}
-
 function OfferForm({
   form,
   mode,
@@ -254,12 +242,11 @@ function OfferForm({
   const selectedDomain = domains.find(
     (domain) => domain.id === form.trackingDomainId,
   );
-  const linkOrigin = trackingOrigin(selectedDomain?.hostname);
-  const exampleOfferId = publicOfferId ?? 890;
-  const exampleTrackingLink = `${linkOrigin}?pub_id=1234&offer_id=${exampleOfferId}`;
-  const trackingTemplate = `${linkOrigin}?pub_id=%PUB_ID%&offer_id=${
-    publicOfferId === null ? "%OFFER_ID%" : publicOfferId
-  }`;
+  const selectedManagerCount = form.managerMembershipIds.length;
+  const offerReference =
+    publicOfferId === null
+      ? "after the Offer is saved"
+      : `for Offer #${publicOfferId}`;
 
   return (
     <form className="catalog-form company-admin-offer-form" onSubmit={onSubmit}>
@@ -512,27 +499,30 @@ function OfferForm({
       <div className="catalog-form-section-heading">
         <MaterialIcon name="link" />
         <div>
-          <strong>Tracking Link</strong>
+          <strong>Automatic Tracking Links</strong>
           <small>
-            Tracking Links are generated from the selected Domain, Publisher
-            public ID, and Offer public ID.
+            The system creates one secure link per Manager assignment and later
+            creates one per Publisher assignment.
           </small>
         </div>
       </div>
 
-      <div className="offer-tracking-link-panel">
+      <div className="offer-tracking-link-panel offer-tracking-link-panel--automatic">
         <div>
-          <span>Required generated shape</span>
-          <code>{exampleTrackingLink}</code>
+          <span>Selected tracking domain</span>
+          <code>{selectedDomain?.hostname ?? "Select an active domain"}</code>
         </div>
         <div>
-          <span>Runtime template</span>
-          <code>{trackingTemplate}</code>
+          <span>Manager links</span>
+          <code>
+            {selectedManagerCount === 0
+              ? "Select at least one Manager"
+              : `${selectedManagerCount} unique link(s) will be generated ${offerReference}`}
+          </code>
         </div>
         <p>
-          Managers receive the link and text templates with %PUB_ID%. When a
-          Publisher is assigned, the system resolves the numeric Publisher ID
-          and automatically provisions the internal tracking record.
+          Managers and Publishers cannot create or edit links. They receive only
+          their own assignment-specific generated URL inside the Offer module.
         </p>
       </div>
 
@@ -770,6 +760,37 @@ function updateInputFromOffer(
   };
 }
 
+function resolveTrackingLinkOwnerLabel(
+  offer: CatalogOffer,
+  ownerMembershipId: string,
+  ownerRole: "manager" | "publisher",
+  managers: readonly {
+    membershipId: string;
+    displayName: string | null;
+    email: string | null;
+  }[],
+  publishers: readonly {
+    membershipId: string;
+    displayName: string | null;
+    email: string | null;
+  }[],
+): string {
+  const member =
+    ownerRole === "manager"
+      ? managers.find((item) => item.membershipId === ownerMembershipId)
+      : publishers.find((item) => item.membershipId === ownerMembershipId);
+
+  return (
+    member?.displayName ??
+    member?.email ??
+    `${ownerRole === "manager" ? "Manager" : "Publisher"} #${
+      offer.trackingLinks.find(
+        (link) => link.ownerMembershipId === ownerMembershipId,
+      )?.ownerPublicId ?? "—"
+    }`
+  );
+}
+
 export function OffersPage({ mode }: { mode: OffersPageMode }) {
   const catalog = useCatalogOperations();
   const [form, setForm] = useState<OfferFormState>(() => emptyForm());
@@ -787,9 +808,6 @@ export function OffersPage({ mode }: { mode: OffersPageMode }) {
   const [page, setPage] = useState(1);
   const [message, setMessage] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [shareModes, setShareModes] = useState<
-    Readonly<Record<string, OfferShareMode>>
-  >({});
   const snapshot = catalog.snapshot;
 
   const activeNetworks = useMemo(
@@ -1273,102 +1291,155 @@ export function OffersPage({ mode }: { mode: OffersPageMode }) {
               aria-label="Offer directory"
             >
               {pageRows.map((offer) => {
-                const shareMode = shareModes[offer.id] ?? "link";
-                const trackingLink =
-                  offer.trackingLinkTemplate ?? "Tracking Domain unavailable";
-                const promotionalText = renderOfferShareText(
-                  offer.promotionalTextTemplate,
-                  {
-                    "%OFFER_NAME%": offer.name,
-                    "%OFFER_ID%": String(offer.publicId),
-                    "%PUB_ID%": "%PUB_ID%",
-                    "%COUNTRIES%": formatOfferCountries(offer.countries),
-                    "%DEVICES%": formatOfferDevices(offer.devices),
-                    "%PAYOUT%":
-                      offer.defaultPayoutAmountMinor === null ||
-                      offer.payoutCurrency === null
-                        ? "Not configured"
-                        : `${offer.payoutCurrency} ${String(
-                            offer.defaultPayoutAmountMinor,
-                          )} minor units`,
-                    "%TRACKING_LINK%": trackingLink,
-                  },
-                );
-                const selectedShareValue =
-                  shareMode === "text" ? promotionalText : trackingLink;
+                const destinationUrl = offer.destinationUrl;
+                const primaryTrackingLink =
+                  offer.trackingLinks.find(
+                    (link) => link.status === "active",
+                  ) ?? offer.trackingLinks[0];
+
+                const copyValue = (value: string, successMessage: string) => {
+                  void copyOfferShareValue(value)
+                    .then(() => setMessage(successMessage))
+                    .catch((error: unknown) =>
+                      setActionError(
+                        error instanceof Error
+                          ? error.message
+                          : "The Offer link could not be copied.",
+                      ),
+                    );
+                };
 
                 return (
-                  <details className="offer-directory-card" key={offer.id}>
+                  <details
+                    className="offer-directory-card offer-directory-card--compact"
+                    key={offer.id}
+                  >
                     <summary>
-                      <div>
-                        <strong>
-                          #{offer.publicId} · {offer.name}
-                        </strong>
+                      <div className="offer-directory-card__identity">
+                        <strong>{offer.name}</strong>
                         <small>
-                          {offer.networkAccountName} ·{" "}
-                          {offer.managerMembershipIds.length} Manager
-                          assignment(s)
+                          Offer ID #{offer.publicId} · {offer.status}
                         </small>
                       </div>
-                      <div>
+                      <div
+                        className="offer-directory-card__quick-actions"
+                        onClick={(event) => event.preventDefault()}
+                        onPointerDown={(event) => event.stopPropagation()}
+                      >
+                        {catalog.permissions.canManageCatalog &&
+                          destinationUrl !== null && (
+                            <button
+                              aria-label={`Copy original network URL for ${offer.name}`}
+                              onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                copyValue(
+                                  destinationUrl,
+                                  "Original network URL copied.",
+                                );
+                              }}
+                              title="Copy original network URL"
+                              type="button"
+                            >
+                              <MaterialIcon name="link" />
+                            </button>
+                          )}
+                        {primaryTrackingLink !== undefined && (
+                          <button
+                            aria-label={`Copy generated tracking link for ${offer.name}`}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              copyValue(
+                                primaryTrackingLink.url,
+                                "Generated tracking link copied.",
+                              );
+                            }}
+                            title="Copy generated tracking link"
+                            type="button"
+                          >
+                            <MaterialIcon name="content_copy" />
+                          </button>
+                        )}
+                      </div>
+                      <div className="offer-directory-card__summary-status">
                         <ControlStatus status={offer.status} />
                         <MaterialIcon name="expand_more" />
                       </div>
                     </summary>
 
                     <div className="offer-directory-card__body">
-                      <div
-                        className="offer-share-control"
-                        onClick={(event) => event.stopPropagation()}
-                        onKeyDown={(event) => event.stopPropagation()}
-                        onPointerDown={(event) => event.stopPropagation()}
-                      >
-                        <label>
-                          <span>Copy content</span>
-                          <select
-                            onChange={(event) => {
-                              event.stopPropagation();
-                              const nextMode = event.currentTarget
-                                .value as OfferShareMode;
+                      <div className="offer-link-directory">
+                        {catalog.permissions.canManageCatalog &&
+                          destinationUrl !== null && (
+                            <div className="offer-link-directory__row">
+                              <div>
+                                <strong>Original network URL</strong>
+                                <small>Company Admin only</small>
+                              </div>
+                              <code>{destinationUrl}</code>
+                              <button
+                                aria-label={`Copy original URL for ${offer.name}`}
+                                onClick={() =>
+                                  copyValue(
+                                    destinationUrl,
+                                    "Original network URL copied.",
+                                  )
+                                }
+                                title="Copy original network URL"
+                                type="button"
+                              >
+                                <MaterialIcon name="content_copy" />
+                              </button>
+                            </div>
+                          )}
 
-                              setShareModes((current) => ({
-                                ...current,
-                                [offer.id]: nextMode,
-                              }));
-                            }}
-                            onClick={(event) => event.stopPropagation()}
-                            onKeyDown={(event) => event.stopPropagation()}
-                            onMouseDown={(event) => event.stopPropagation()}
-                            onPointerDown={(event) => event.stopPropagation()}
-                            value={shareMode}
-                          >
-                            <option value="link">Link</option>
-                            <option value="text">Text</option>
-                          </select>
-                        </label>
-                        <code>{selectedShareValue}</code>
-                        <button
-                          className="primary-gradient-button primary-gradient-button--compact"
-                          onClick={(event) => {
-                            event.preventDefault();
-                            event.stopPropagation();
-                            void copyOfferShareValue(selectedShareValue)
-                              .then(() =>
-                                setMessage("Selected Offer content copied."),
-                              )
-                              .catch((error: unknown) =>
-                                setActionError(
-                                  error instanceof Error
-                                    ? error.message
-                                    : "The Offer content could not be copied.",
-                                ),
-                              );
-                          }}
-                          type="button"
-                        >
-                          <MaterialIcon name="content_copy" />
-                          Copy
-                        </button>
+                        {offer.trackingLinks.length === 0 ? (
+                          <div className="offer-link-directory__empty">
+                            <MaterialIcon name="link_off" />
+                            <span>
+                              Generated links will appear after an eligible
+                              assignment and database migration are active.
+                            </span>
+                          </div>
+                        ) : (
+                          offer.trackingLinks.map((link) => (
+                            <div
+                              className="offer-link-directory__row"
+                              key={link.id}
+                            >
+                              <div>
+                                <strong>
+                                  {resolveTrackingLinkOwnerLabel(
+                                    offer,
+                                    link.ownerMembershipId,
+                                    link.ownerRole,
+                                    snapshot.managers,
+                                    snapshot.publishers,
+                                  )}
+                                </strong>
+                                <small>
+                                  {link.ownerRole} · {link.status}
+                                </small>
+                              </div>
+                              <code>{link.url}</code>
+                              <button
+                                aria-label={`Copy ${link.ownerRole} tracking link`}
+                                disabled={link.status === "archived"}
+                                onClick={() =>
+                                  copyValue(
+                                    link.url,
+                                    "Generated tracking link copied.",
+                                  )
+                                }
+                                title="Copy generated tracking link"
+                                type="button"
+                              >
+                                <MaterialIcon name="content_copy" />
+                              </button>
+                            </div>
+                          ))
+                        )}
                       </div>
 
                       <dl className="offer-directory-card__details">
