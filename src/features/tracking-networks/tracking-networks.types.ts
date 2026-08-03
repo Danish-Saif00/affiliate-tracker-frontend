@@ -1,6 +1,22 @@
 export type TrackingDomainStatus =
   "pending_verification" | "active" | "suspended" | "archived";
 
+export type TrackingDomainProvider = "manual" | "render";
+
+export type TrackingDomainProviderVerificationStatus =
+  "not_applicable" | "unregistered" | "unverified" | "verified";
+
+export type TrackingDomainProvisioningStatus =
+  | "manual"
+  | "ownership_pending"
+  | "ownership_verified"
+  | "provider_pending"
+  | "dns_pending"
+  | "tls_pending"
+  | "active"
+  | "failed"
+  | "disconnected";
+
 export type NetworkProviderStatus = "active" | "archived";
 
 export type ProviderPostbackConversionStatus = "pending" | "approved";
@@ -16,8 +32,24 @@ export type TrackingDomain = {
   hostname: string;
   status: TrackingDomainStatus;
   verificationToken: string;
+  ownershipRecordName: string;
+  ownershipRecordValue: string;
   verifiedAt: string | null;
   isPrimary: boolean;
+  provider: TrackingDomainProvider;
+  providerCustomDomainId: string | null;
+  providerVerificationStatus: TrackingDomainProviderVerificationStatus;
+  provisioningStatus: TrackingDomainProvisioningStatus;
+  dnsRecordType: "CNAME" | null;
+  dnsRecordName: string | null;
+  dnsTarget: string | null;
+  ownershipVerifiedAt: string | null;
+  dnsVerifiedAt: string | null;
+  tlsVerifiedAt: string | null;
+  lastCheckedAt: string | null;
+  lastErrorCode: string | null;
+  lastErrorMessage: string | null;
+  disconnectedAt: string | null;
   createdBy: string | null;
   updatedBy: string | null;
   createdAt: string;
@@ -82,6 +114,18 @@ export type UpdateTrackingDomainInput = {
 export type UpdatePlatformTrackingDomainStatusInput = {
   domainId: string;
   status: "active" | "suspended" | "archived";
+};
+
+export type AdoptPlatformTrackingDomainInput = {
+  domainId: string;
+};
+
+export type ReconcilePlatformTrackingDomainInput = {
+  domainId: string;
+};
+
+export type DisconnectPlatformTrackingDomainInput = {
+  domainId: string;
 };
 
 export type CreateNetworkProviderInput = {

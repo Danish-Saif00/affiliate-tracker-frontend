@@ -5,15 +5,21 @@ import {
   readRequiredString,
 } from "../../lib/api-client";
 import type {
+  AdoptPlatformTrackingDomainInput,
   CreateNetworkAccountInput,
   CreateNetworkProviderInput,
   CreateTrackingDomainInput,
+  DisconnectPlatformTrackingDomainInput,
   NetworkAccount,
   NetworkAccountStatus,
   NetworkProvider,
   NetworkProviderIntegration,
   NetworkProviderStatus,
+  ReconcilePlatformTrackingDomainInput,
   TrackingDomain,
+  TrackingDomainProvider,
+  TrackingDomainProviderVerificationStatus,
+  TrackingDomainProvisioningStatus,
   TrackingDomainStatus,
   UpdateNetworkAccountInput,
   UpdateNetworkProviderInput,
@@ -50,6 +56,82 @@ function readTrackingDomainStatus(value: unknown): TrackingDomainStatus {
   }
 
   return status as TrackingDomainStatus;
+}
+
+function readTrackingDomainProvider(value: unknown): TrackingDomainProvider {
+  const provider = readRequiredString(value, "tracking domain provider");
+
+  if (provider !== "manual" && provider !== "render") {
+    throw new Error(
+      "The API returned an unsupported tracking domain provider.",
+    );
+  }
+
+  return provider;
+}
+
+function readTrackingDomainProviderVerificationStatus(
+  value: unknown,
+): TrackingDomainProviderVerificationStatus {
+  const status = readRequiredString(
+    value,
+    "tracking domain provider verification status",
+  );
+
+  if (
+    !["not_applicable", "unregistered", "unverified", "verified"].includes(
+      status,
+    )
+  ) {
+    throw new Error(
+      "The API returned an unsupported tracking domain provider verification status.",
+    );
+  }
+
+  return status as TrackingDomainProviderVerificationStatus;
+}
+
+function readTrackingDomainProvisioningStatus(
+  value: unknown,
+): TrackingDomainProvisioningStatus {
+  const status = readRequiredString(
+    value,
+    "tracking domain provisioning status",
+  );
+
+  if (
+    ![
+      "manual",
+      "ownership_pending",
+      "ownership_verified",
+      "provider_pending",
+      "dns_pending",
+      "tls_pending",
+      "active",
+      "failed",
+      "disconnected",
+    ].includes(status)
+  ) {
+    throw new Error(
+      "The API returned an unsupported tracking domain provisioning status.",
+    );
+  }
+
+  return status as TrackingDomainProvisioningStatus;
+}
+
+function readNullableCname(value: unknown): "CNAME" | null {
+  if (value === null) {
+    return null;
+  }
+
+  if (value !== "CNAME") {
+    throw new Error(
+      "The API returned an unsupported tracking domain DNS record type.",
+    );
+  }
+
+  return value;
 }
 
 function readNetworkProviderStatus(value: unknown): NetworkProviderStatus {
@@ -89,11 +171,67 @@ function parseTrackingDomain(value: unknown): TrackingDomain {
       value.verificationToken,
       "tracking domain verification token",
     ),
+    ownershipRecordName: readRequiredString(
+      value.ownershipRecordName,
+      "tracking domain ownership record name",
+    ),
+    ownershipRecordValue: readRequiredString(
+      value.ownershipRecordValue,
+      "tracking domain ownership record value",
+    ),
     verifiedAt: readNullableString(
       value.verifiedAt,
       "tracking domain verification time",
     ),
     isPrimary: readBoolean(value.isPrimary, "tracking domain primary flag"),
+    provider: readTrackingDomainProvider(value.provider),
+    providerCustomDomainId: readNullableString(
+      value.providerCustomDomainId,
+      "tracking domain provider id",
+    ),
+    providerVerificationStatus: readTrackingDomainProviderVerificationStatus(
+      value.providerVerificationStatus,
+    ),
+    provisioningStatus: readTrackingDomainProvisioningStatus(
+      value.provisioningStatus,
+    ),
+    dnsRecordType: readNullableCname(value.dnsRecordType),
+    dnsRecordName: readNullableString(
+      value.dnsRecordName,
+      "tracking domain DNS record name",
+    ),
+    dnsTarget: readNullableString(
+      value.dnsTarget,
+      "tracking domain DNS target",
+    ),
+    ownershipVerifiedAt: readNullableString(
+      value.ownershipVerifiedAt,
+      "tracking domain ownership verification time",
+    ),
+    dnsVerifiedAt: readNullableString(
+      value.dnsVerifiedAt,
+      "tracking domain DNS verification time",
+    ),
+    tlsVerifiedAt: readNullableString(
+      value.tlsVerifiedAt,
+      "tracking domain TLS verification time",
+    ),
+    lastCheckedAt: readNullableString(
+      value.lastCheckedAt,
+      "tracking domain last check time",
+    ),
+    lastErrorCode: readNullableString(
+      value.lastErrorCode,
+      "tracking domain last error code",
+    ),
+    lastErrorMessage: readNullableString(
+      value.lastErrorMessage,
+      "tracking domain last error message",
+    ),
+    disconnectedAt: readNullableString(
+      value.disconnectedAt,
+      "tracking domain disconnect time",
+    ),
     createdBy: readNullableString(value.createdBy, "tracking domain creator"),
     updatedBy: readNullableString(value.updatedBy, "tracking domain updater"),
     createdAt: readRequiredString(
@@ -324,6 +462,57 @@ export async function updatePlatformTrackingDomainStatus(
       method: "PATCH",
       companyId,
       body: { status: input.status },
+    },
+  );
+
+  return parseTrackingDomain(readData(payload));
+}
+
+export async function adoptPlatformTrackingDomain(
+  accessToken: string,
+  companyId: string,
+  input: AdoptPlatformTrackingDomainInput,
+): Promise<TrackingDomain> {
+  const payload = await authenticatedApiRequest(
+    accessToken,
+    `/platform/tracking-domains/${encodeURIComponent(input.domainId)}/adopt`,
+    {
+      method: "POST",
+      companyId,
+    },
+  );
+
+  return parseTrackingDomain(readData(payload));
+}
+
+export async function reconcilePlatformTrackingDomain(
+  accessToken: string,
+  companyId: string,
+  input: ReconcilePlatformTrackingDomainInput,
+): Promise<TrackingDomain> {
+  const payload = await authenticatedApiRequest(
+    accessToken,
+    `/platform/tracking-domains/${encodeURIComponent(input.domainId)}/reconcile`,
+    {
+      method: "POST",
+      companyId,
+    },
+  );
+
+  return parseTrackingDomain(readData(payload));
+}
+
+export async function disconnectPlatformTrackingDomain(
+  accessToken: string,
+  companyId: string,
+  input: DisconnectPlatformTrackingDomainInput,
+): Promise<TrackingDomain> {
+  const payload = await authenticatedApiRequest(
+    accessToken,
+    `/platform/tracking-domains/${encodeURIComponent(input.domainId)}/disconnect`,
+    {
+      method: "POST",
+      companyId,
     },
   );
 

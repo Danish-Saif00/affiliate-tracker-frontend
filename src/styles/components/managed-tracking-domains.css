@@ -1,0 +1,209 @@
+.managed-domains-page .control-status {
+  white-space: nowrap;
+}
+
+.managed-domains-onboarding {
+  align-items: stretch;
+}
+
+.managed-domains-table td {
+  vertical-align: middle;
+}
+
+.managed-domain-readiness {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.managed-domain-readiness > span {
+  align-items: center;
+  border: 1px solid var(--outline-variant);
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 0.72rem;
+  font-weight: 700;
+  gap: 0.25rem;
+  padding: 0.28rem 0.48rem;
+  text-transform: uppercase;
+}
+
+.managed-domain-readiness .material-symbols-rounded {
+  font-size: 0.95rem;
+}
+
+.managed-domain-readiness .is-ready {
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  border-color: color-mix(in srgb, var(--success) 35%, var(--outline-variant));
+  color: var(--success);
+}
+
+.managed-domain-readiness .is-pending {
+  color: var(--on-surface-variant);
+}
+
+.managed-domain-details-row > td {
+  background: color-mix(
+    in srgb,
+    var(--surface-container-high) 82%,
+    transparent
+  );
+  padding: 0 !important;
+}
+
+.managed-domain-details {
+  display: grid;
+  gap: 1rem;
+  padding: 1.1rem;
+}
+
+.managed-domain-details__header {
+  align-items: flex-start;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.managed-domain-details__header p {
+  color: var(--on-surface-variant);
+  margin: 0.3rem 0 0;
+}
+
+.managed-domain-error {
+  align-items: flex-start;
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+  border: 1px solid
+    color-mix(in srgb, var(--danger) 30%, var(--outline-variant));
+  border-radius: 0.85rem;
+  color: var(--danger);
+  display: flex;
+  gap: 0.65rem;
+  padding: 0.8rem;
+}
+
+.managed-domain-error div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.managed-domain-error span {
+  color: var(--on-surface-variant);
+}
+
+.managed-domain-record-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.managed-domain-record-grid section {
+  border: 1px solid var(--outline-variant);
+  border-radius: 0.9rem;
+  display: grid;
+  gap: 0.65rem;
+  min-width: 0;
+  padding: 0.9rem;
+}
+
+.managed-domain-record-grid h4 {
+  margin: 0;
+}
+
+.managed-domain-record {
+  align-items: center;
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  border-radius: 0.7rem;
+  display: grid;
+  gap: 0.35rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 0.65rem;
+}
+
+.managed-domain-record > span {
+  color: var(--on-surface-variant);
+  font-size: 0.72rem;
+  grid-column: 1 / -1;
+  text-transform: uppercase;
+}
+
+.managed-domain-record code {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.managed-domain-record button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  display: inline-flex;
+  justify-content: center;
+  padding: 0.25rem;
+}
+
+.managed-domain-record button:hover {
+  color: var(--on-surface);
+}
+
+.managed-domain-muted {
+  color: var(--on-surface-variant);
+  margin: 0;
+}
+
+.managed-domain-metadata {
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+}
+
+.managed-domain-metadata > div {
+  border-left: 2px solid var(--outline-variant);
+  display: grid;
+  gap: 0.2rem;
+  padding-left: 0.7rem;
+}
+
+.managed-domain-metadata dt {
+  color: var(--on-surface-variant);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+}
+
+.managed-domain-metadata dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  text-transform: capitalize;
+}
+
+.managed-domain-detail-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.managed-domain-test-link {
+  align-items: center;
+  color: var(--on-surface-variant);
+  display: inline-flex;
+  gap: 0.35rem;
+  text-decoration: none;
+}
+
+.managed-domain-test-link:hover {
+  color: var(--on-surface);
+}
+
+@media (max-width: 900px) {
+  .managed-domain-record-grid,
+  .managed-domain-metadata {
+    grid-template-columns: 1fr;
+  }
+
+  .managed-domain-details__header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

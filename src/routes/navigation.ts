@@ -47,7 +47,7 @@ const platformGroups: readonly NavigationGroup[] = [
         audience: "platform-admin",
       },
       {
-        label: "Domain Approvals",
+        label: "Managed Domains",
         path: "/domain-approvals",
         icon: "domain_verification",
         audience: "platform-admin",

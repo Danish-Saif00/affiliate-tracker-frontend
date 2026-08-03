@@ -5,23 +5,29 @@ import { queryClient } from "../../app/query-client";
 import { useAuth } from "../auth/use-auth";
 import { useCompany } from "../companies/use-company";
 import {
+  adoptPlatformTrackingDomain,
   createNetworkAccount,
   createCompanyNetworkProvider,
   createTrackingDomain,
+  disconnectPlatformTrackingDomain,
   fetchNetworkAccounts,
   fetchNetworkProviders,
   fetchTrackingDomains,
+  reconcilePlatformTrackingDomain,
   updateCompanyNetworkProvider,
   updateNetworkAccount,
   updatePlatformTrackingDomainStatus,
   updateTrackingDomain,
 } from "./tracking-networks-api";
 import type {
+  AdoptPlatformTrackingDomainInput,
   CreateNetworkAccountInput,
   CreateNetworkProviderInput,
   CreateTrackingDomainInput,
+  DisconnectPlatformTrackingDomainInput,
   NetworkAccount,
   NetworkProvider,
+  ReconcilePlatformTrackingDomainInput,
   TrackingDomain,
   TrackingModuleLoadStatus,
   UpdateNetworkAccountInput,
@@ -198,11 +204,83 @@ export function useTrackingDomains() {
     onSettled: invalidate,
   });
 
+  const adoptMutation = useMutation<
+    TrackingDomain,
+    Error,
+    AdoptPlatformTrackingDomainInput
+  >({
+    mutationFn: async (input) => {
+      if (
+        session === null ||
+        companyId === null ||
+        !permissions.platformAdmin
+      ) {
+        throw new Error("Platform Super Admin access is required.");
+      }
+
+      return adoptPlatformTrackingDomain(
+        session.access_token,
+        companyId,
+        input,
+      );
+    },
+    onSettled: invalidate,
+  });
+
+  const reconcileMutation = useMutation<
+    TrackingDomain,
+    Error,
+    ReconcilePlatformTrackingDomainInput
+  >({
+    mutationFn: async (input) => {
+      if (
+        session === null ||
+        companyId === null ||
+        !permissions.platformAdmin
+      ) {
+        throw new Error("Platform Super Admin access is required.");
+      }
+
+      return reconcilePlatformTrackingDomain(
+        session.access_token,
+        companyId,
+        input,
+      );
+    },
+    onSettled: invalidate,
+  });
+
+  const disconnectMutation = useMutation<
+    TrackingDomain,
+    Error,
+    DisconnectPlatformTrackingDomainInput
+  >({
+    mutationFn: async (input) => {
+      if (
+        session === null ||
+        companyId === null ||
+        !permissions.platformAdmin
+      ) {
+        throw new Error("Platform Super Admin access is required.");
+      }
+
+      return disconnectPlatformTrackingDomain(
+        session.access_token,
+        companyId,
+        input,
+      );
+    },
+    onSettled: invalidate,
+  });
+
   const firstError =
     domainsQuery.error ??
     createMutation.error ??
     updateMutation.error ??
-    platformStatusMutation.error;
+    platformStatusMutation.error ??
+    adoptMutation.error ??
+    reconcileMutation.error ??
+    disconnectMutation.error;
 
   return {
     companyId,
@@ -220,11 +298,17 @@ export function useTrackingDomains() {
     isMutating:
       createMutation.isPending ||
       updateMutation.isPending ||
-      platformStatusMutation.isPending,
+      platformStatusMutation.isPending ||
+      adoptMutation.isPending ||
+      reconcileMutation.isPending ||
+      disconnectMutation.isPending,
     permissions,
     createDomain: createMutation.mutateAsync,
     updateDomain: updateMutation.mutateAsync,
     updatePlatformStatus: platformStatusMutation.mutateAsync,
+    adoptDomain: adoptMutation.mutateAsync,
+    reconcileDomain: reconcileMutation.mutateAsync,
+    disconnectDomain: disconnectMutation.mutateAsync,
     refresh: async (): Promise<void> => {
       await refetch();
     },
