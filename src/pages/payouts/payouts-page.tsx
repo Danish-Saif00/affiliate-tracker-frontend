@@ -180,17 +180,12 @@ export function PayoutsPage() {
           as="section"
           className={`control-main-card control-directory-surface ${payouts.permissions.canManageOffers ? '' : 'control-main-card--full'}`}
         >
-          <ControlCardHeading
-            action={
-              <RefreshButton
-                disabled={payouts.isMutating}
-                onClick={() => void payouts.refresh()}
-              />
-            }
-            description={`${payouts.profiles.length} accessible payout profiles.`}
-            eyebrow="Resolved Terms"
-            title={payouts.permissions.companyRole === 'publisher' ? 'My payout profile' : 'Company payout profiles'}
-          />
+          <div className="control-directory-actions">
+            <RefreshButton
+              disabled={payouts.isMutating}
+              onClick={() => void payouts.refresh()}
+            />
+          </div>
           <div className="control-record-list">
             {payouts.profiles.length === 0 ? (
               <ControlEmpty

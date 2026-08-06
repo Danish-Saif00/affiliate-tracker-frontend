@@ -207,17 +207,12 @@ export function ManagersPage({ mode }: { mode: ManagersPageMode }) {
             as="section"
             className="control-card manager-directory-card control-directory-surface"
           >
-            <ControlCardHeading
-              action={
-                <RefreshButton
-                  disabled={tenant.isMutating}
-                  onClick={() => void tenant.refresh()}
-                />
-              }
-              eyebrow="Manager Directory"
-              title="Company Managers"
-              description="Company Admins can reset credentials and activate, suspend, or revoke Manager memberships."
-            />
+            <div className="control-directory-actions">
+              <RefreshButton
+                disabled={tenant.isMutating}
+                onClick={() => void tenant.refresh()}
+              />
+            </div>
 
             <div className="manager-filter-row">
               <label>

@@ -759,17 +759,12 @@ export function NetworkAccountsPage({
 
       {mode === "manage" && (
         <GlassPanel as="section" className="control-card catalog-table-panel control-directory-surface">
-          <ControlCardHeading
-            action={
-              <RefreshButton
-                disabled={catalog.isRefreshing}
-                onClick={() => void catalog.refresh()}
-              />
-            }
-            description="Search and control all Networks and their attached Postback configuration."
-            eyebrow="Network Directory"
-            title="Manage Networks"
-          />
+          <div className="control-directory-actions">
+            <RefreshButton
+              disabled={catalog.isRefreshing}
+              onClick={() => void catalog.refresh()}
+            />
+          </div>
           <CatalogToolbar
             onSearch={(value) => {
               setSearch(value);

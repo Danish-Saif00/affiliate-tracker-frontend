@@ -1163,17 +1163,12 @@ export function OffersPage({ mode }: { mode: OffersPageMode }) {
 
       {mode === "manage" && (
         <GlassPanel as="section" className="control-card catalog-table-panel control-directory-surface">
-          <ControlCardHeading
-            action={
-              <RefreshButton
-                disabled={catalog.isRefreshing}
-                onClick={() => void catalog.refresh()}
-              />
-            }
-            description="Search, filter, and manage live Offer records."
-            eyebrow="Offer Directory"
-            title="Manage Offers"
-          />
+          <div className="control-directory-actions">
+            <RefreshButton
+              disabled={catalog.isRefreshing}
+              onClick={() => void catalog.refresh()}
+            />
+          </div>
           <CatalogToolbar
             onSearch={(value) => {
               setSearch(value);

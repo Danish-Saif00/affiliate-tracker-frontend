@@ -197,17 +197,12 @@ export function AccountPage() {
             as="section"
             className="control-main-card control-directory-surface"
           >
-            <ControlCardHeading
-              action={
-                <RefreshButton
-                  disabled={account.isUpdating}
-                  onClick={() => void account.refresh()}
-                />
-              }
-              description="Update your name and IANA timezone. Empty names fall back to your login email."
-              eyebrow="Profile"
-              title="Personal details"
-            />
+            <div className="control-directory-actions">
+              <RefreshButton
+                disabled={account.isUpdating}
+                onClick={() => void account.refresh()}
+              />
+            </div>
             <ProfileForm
               disabled={account.isUpdating}
               key={profile.updatedAt}

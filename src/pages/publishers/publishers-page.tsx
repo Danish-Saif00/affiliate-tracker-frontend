@@ -573,19 +573,14 @@ export function PublishersPage() {
       )}
 
       <GlassPanel as="section" className="control-card catalog-table-panel control-directory-surface">
-        <ControlCardHeading
-          action={
-            <RefreshButton
-              disabled={catalog.isRefreshing || tenant.isMutating}
-              onClick={() =>
-                void Promise.all([catalog.refresh(), tenant.refresh()])
-              }
-            />
-          }
-          description="Manage settings, Offer coverage, suspension, revocation, and safe restoration."
-          eyebrow="Publisher Directory"
-          title="Managed Publishers"
-        />
+        <div className="control-directory-actions">
+          <RefreshButton
+            disabled={catalog.isRefreshing || tenant.isMutating}
+            onClick={() =>
+              void Promise.all([catalog.refresh(), tenant.refresh()])
+            }
+          />
+        </div>
 
         <CatalogToolbar
           onSearch={(value) => {

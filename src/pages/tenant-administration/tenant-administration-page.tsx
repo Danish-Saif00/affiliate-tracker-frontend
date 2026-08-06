@@ -279,17 +279,26 @@ export function TenantAdministrationPage() {
           platformAdmin ? "" : " control-directory-surface"
         }`}
       >
-        <ControlCardHeading
-          action={
+        {platformAdmin ? (
+          <ControlCardHeading
+            action={
+              <RefreshButton
+                disabled={tenant.isMutating}
+                onClick={() => void tenant.refresh()}
+              />
+            }
+            eyebrow="Directory"
+            title={target.pluralLabel}
+            description="Passwords are never displayed. Parent administrators can only reset credentials for the role directly beneath them."
+          />
+        ) : (
+          <div className="control-directory-actions">
             <RefreshButton
               disabled={tenant.isMutating}
               onClick={() => void tenant.refresh()}
             />
-          }
-          eyebrow="Directory"
-          title={target.pluralLabel}
-          description="Passwords are never displayed. Parent administrators can only reset credentials for the role directly beneath them."
-        />
+          </div>
+        )}
 
         <div className="tenant-filter-grid">
           <label>

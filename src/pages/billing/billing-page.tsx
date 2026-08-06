@@ -419,17 +419,12 @@ export function BillingPage() {
           as="section"
           className="control-main-card control-main-card--full control-directory-surface"
         >
-          <ControlCardHeading
-            action={
-              <RefreshButton
-                disabled={invoices.isRefreshing}
-                onClick={() => void invoices.refresh()}
-              />
-            }
-            description={`${invoices.invoices.length} invoice(s) are available for the selected company.`}
-            eyebrow="Invoice History"
-            title="Invoices"
-          />
+          <div className="control-directory-actions">
+            <RefreshButton
+              disabled={invoices.isRefreshing}
+              onClick={() => void invoices.refresh()}
+            />
+          </div>
 
           {invoices.status === 'loading' || invoices.status === 'idle' ? (
             <div className="final-inline-loading">

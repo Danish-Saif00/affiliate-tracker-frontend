@@ -18,7 +18,6 @@ import {
 } from '../control-plane/control-plane-formatters';
 import {
   ControlAccessDenied,
-  ControlCardHeading,
   ControlEmpty,
   ControlFeedback,
   ControlLoading,
@@ -155,17 +154,12 @@ export function UserAgentsPage() {
         as="section"
         className="control-main-card control-main-card--full control-directory-surface"
       >
-        <ControlCardHeading
-          action={
-            <RefreshButton
-              disabled={logs.isRefreshing}
-              onClick={() => void logs.refresh()}
-            />
-          }
-          description={`${logs.userAgents.length} aggregated user-agent signature(s) match the filters.`}
-          eyebrow="User-Agent Directory"
-          title="Captured client signatures"
-        />
+        <div className="control-directory-actions">
+          <RefreshButton
+            disabled={logs.isRefreshing}
+            onClick={() => void logs.refresh()}
+          />
+        </div>
 
         <div className="final-filter-grid final-filter-grid--logs">
           <label className="final-search-field">

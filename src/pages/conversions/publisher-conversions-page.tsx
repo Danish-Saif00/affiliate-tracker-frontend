@@ -17,7 +17,6 @@ import {
 } from "../control-plane/control-plane-formatters";
 import {
   ControlAccessDenied,
-  ControlCardHeading,
   ControlEmpty,
   ControlFeedback,
   ControlLoading,
@@ -113,19 +112,14 @@ export function PublisherConversionsPage() {
         as="section"
         className="control-main-card control-main-card--full control-directory-surface"
       >
-        <ControlCardHeading
-          action={
-            <RefreshButton
-              disabled={logs.isRefreshing}
-              onClick={() =>
-                void Promise.all([logs.refresh(), offers.refresh()])
-              }
-            />
-          }
-          description={`${logs.conversions.length} conversion(s) match the current filters.`}
-          eyebrow="Publisher Conversion Directory"
-          title="Attributed conversions"
-        />
+        <div className="control-directory-actions">
+          <RefreshButton
+            disabled={logs.isRefreshing}
+            onClick={() =>
+              void Promise.all([logs.refresh(), offers.refresh()])
+            }
+          />
+        </div>
 
         <div className="final-filter-grid final-filter-grid--logs">
           <label className="final-search-field">

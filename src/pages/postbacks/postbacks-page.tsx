@@ -40,9 +40,7 @@ export function PostbacksPage() {
     networkAccountId.length === 0 ? null : networkAccountId,
     status === "all" ? undefined : status,
   );
-  const selectedAccount =
-    accounts.accounts.find((account) => account.id === networkAccountId) ??
-    null;
+
 
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -285,21 +283,12 @@ export function PostbacksPage() {
           as="section"
           className="control-main-card control-directory-surface"
         >
-          <ControlCardHeading
-            action={
-              <RefreshButton
-                disabled={endpoints.isMutating || networkAccountId.length === 0}
-                onClick={() => void endpoints.refresh()}
-              />
-            }
-            description={
-              selectedAccount === null
-                ? "Select a network account."
-                : `${endpoints.endpoints.length} endpoints for ${selectedAccount.name}.`
-            }
-            eyebrow="Endpoint Registry"
-            title="Configured endpoints"
-          />
+          <div className="control-directory-actions">
+            <RefreshButton
+              disabled={endpoints.isMutating || networkAccountId.length === 0}
+              onClick={() => void endpoints.refresh()}
+            />
+          </div>
 
           <div className="control-filter-bar">
             <div className="control-filter-spacer" />

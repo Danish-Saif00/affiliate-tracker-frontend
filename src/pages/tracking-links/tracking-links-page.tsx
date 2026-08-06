@@ -621,17 +621,12 @@ export function TrackingLinksPage() {
           as="section"
           className={`control-main-card control-directory-surface ${links.permissions.canManageTracking ? "" : "control-main-card--full"}`}
         >
-          <ControlCardHeading
-            action={
-              <RefreshButton
-                disabled={links.isMutating}
-                onClick={() => void links.refresh()}
-              />
-            }
-            description={`${filteredLinks.length} matching tracking links.`}
-            eyebrow="Link Directory"
-            title="Generated links"
-          />
+          <div className="control-directory-actions">
+            <RefreshButton
+              disabled={links.isMutating}
+              onClick={() => void links.refresh()}
+            />
+          </div>
           <div className="control-filter-bar">
             <label>
               <MaterialIcon name="search" />

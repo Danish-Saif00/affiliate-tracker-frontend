@@ -531,19 +531,14 @@ export function PublisherTrackingLinksPage() {
             links.permissions.canManageTracking ? "" : "control-main-card--full"
           }`}
         >
-          <ControlCardHeading
-            action={
-              <RefreshButton
-                disabled={links.isMutating}
-                onClick={() =>
-                  void Promise.all([links.refresh(), publisherOffers.refresh()])
-                }
-              />
-            }
-            description={`${filteredLinks.length} matching Publisher link(s).`}
-            eyebrow="My Link Directory"
-            title="Generated links"
-          />
+          <div className="control-directory-actions">
+            <RefreshButton
+              disabled={links.isMutating}
+              onClick={() =>
+                void Promise.all([links.refresh(), publisherOffers.refresh()])
+              }
+            />
+          </div>
           <div className="control-filter-bar">
             <label>
               <MaterialIcon name="search" />

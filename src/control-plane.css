@@ -898,38 +898,44 @@ button.control-record__summary {
     grid-column: auto;
   }
 }
-/* Publisher Tracker directory and guidance card cleanup batch. */
+/* Publisher Tracker directory and guidance card cleanup. */
+.glass-panel.control-directory-surface,
+.specular-panel.control-directory-surface,
 .control-directory-surface {
   overflow: visible !important;
   padding: 0 !important;
   border: 0 !important;
   border-radius: 0 !important;
+  outline: 0 !important;
   background: transparent !important;
+  background-image: none !important;
   box-shadow: none !important;
+  filter: none !important;
   backdrop-filter: none !important;
 }
 
+.glass-panel.control-directory-surface::before,
+.glass-panel.control-directory-surface::after,
+.specular-panel.control-directory-surface::before,
+.specular-panel.control-directory-surface::after,
 .control-directory-surface::before,
 .control-directory-surface::after {
   display: none !important;
+  content: none !important;
 }
 
-.control-directory-surface > .control-card-heading,
-.control-directory-surface > .tracking-section-heading {
-  min-height: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  justify-content: flex-end !important;
+.control-directory-actions {
+  display: flex;
+  min-height: 0;
+  align-items: center;
+  justify-content: flex-end;
+  margin: 0 0 0.75rem;
+  padding: 0;
 }
 
-.control-directory-surface > .control-card-heading > div,
-.control-directory-surface > .tracking-section-heading > div {
-  display: none !important;
-}
-
-.control-directory-surface > .control-card-heading > .control-icon-button,
-.control-directory-surface > .tracking-section-heading > .icon-button {
-  margin: 0 0 0.75rem auto !important;
+.control-directory-actions > .control-icon-button,
+.control-directory-actions > .icon-button {
+  margin-left: auto;
 }
 
 .account-grid--single,

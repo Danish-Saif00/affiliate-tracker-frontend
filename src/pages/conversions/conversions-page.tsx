@@ -271,17 +271,12 @@ export function ConversionsPage() {
         as="section"
         className="control-main-card control-main-card--full control-directory-surface"
       >
-        <ControlCardHeading
-          action={
-            <RefreshButton
-              disabled={logs.isRefreshing}
-              onClick={() => void logs.refresh()}
-            />
-          }
-          description={`${logs.conversions.length} conversion(s) match the current filters.`}
-          eyebrow="Conversion Directory"
-          title="Attributed conversion records"
-        />
+        <div className="control-directory-actions">
+          <RefreshButton
+            disabled={logs.isRefreshing}
+            onClick={() => void logs.refresh()}
+          />
+        </div>
 
         <div className="final-filter-grid final-filter-grid--logs">
           <label className="final-search-field">

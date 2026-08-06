@@ -721,12 +721,7 @@ export function NetworkProvidersPage() {
               : "tracking-list-card tracking-list-card--full control-directory-surface"
           }
         >
-          <div className="tracking-section-heading tracking-section-heading--toolbar">
-            <div>
-              <span className="eyebrow-chip">Company Directory</span>
-              <h2>Available providers</h2>
-              <p>{filteredProviders.length} matching providers.</p>
-            </div>
+          <div className="control-directory-actions">
             <button
               aria-label="Refresh network providers"
               className="icon-button"

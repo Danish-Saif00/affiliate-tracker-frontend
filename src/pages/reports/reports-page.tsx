@@ -18,7 +18,6 @@ import {
 } from '../control-plane/control-plane-formatters';
 import {
   ControlAccessDenied,
-  ControlCardHeading,
   ControlEmpty,
   ControlFeedback,
   ControlLoading,
@@ -207,17 +206,12 @@ export function ReportsPage({
         as="section"
         className="control-main-card control-main-card--full control-directory-surface"
       >
-        <ControlCardHeading
-          action={
-            <RefreshButton
-              disabled={report.isRefreshing}
-              onClick={() => void report.refresh()}
-            />
-          }
-          description={`${report.rows.length} ${configuration.singular} performance row(s) match the current filters.`}
-          eyebrow="Reporting Filters"
-          title="Performance directory"
-        />
+        <div className="control-directory-actions">
+          <RefreshButton
+            disabled={report.isRefreshing}
+            onClick={() => void report.refresh()}
+          />
+        </div>
 
         <div className="final-filter-grid">
           <label className="final-search-field">

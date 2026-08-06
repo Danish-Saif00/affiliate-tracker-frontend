@@ -12,7 +12,6 @@ import {
 } from "../control-plane/control-plane-formatters";
 import {
   ControlAccessDenied,
-  ControlCardHeading,
   ControlEmpty,
   ControlFeedback,
   ControlLoading,
@@ -92,17 +91,12 @@ export function PublisherSessionsPage() {
         as="section"
         className="control-main-card control-main-card--full control-directory-surface"
       >
-        <ControlCardHeading
-          action={
-            <RefreshButton
-              disabled={logs.isRefreshing}
-              onClick={() => void logs.refresh()}
-            />
-          }
-          description={`${logs.sessions.length} session(s) match the current filters.`}
-          eyebrow="Publisher Session Directory"
-          title="Visitor sessions"
-        />
+        <div className="control-directory-actions">
+          <RefreshButton
+            disabled={logs.isRefreshing}
+            onClick={() => void logs.refresh()}
+          />
+        </div>
 
         <div className="final-filter-grid final-filter-grid--logs">
           <label className="final-search-field">

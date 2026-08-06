@@ -486,25 +486,34 @@ export function TrackingDomainsPage({
             approvalMode ? "" : " control-directory-surface"
           }`}
         >
-          <ControlCardHeading
-            action={
+          {approvalMode ? (
+            <ControlCardHeading
+              action={
+                <RefreshButton
+                  disabled={domains.isMutating}
+                  onClick={() => void refreshRelatedData()}
+                />
+              }
+              eyebrow={
+                approvalMode ? "Provisioning Directory" : "Domain Directory"
+              }
+              title={
+                approvalMode ? "Manage client tracking domains" : "Manage domains"
+              }
+              description={
+                approvalMode
+                  ? "Expand a domain for exact TXT/CNAME records, current provider state, last error, and lifecycle actions."
+                  : "Only active verified domains can become primary or be selected by Offer configuration."
+              }
+            />
+          ) : (
+            <div className="control-directory-actions">
               <RefreshButton
                 disabled={domains.isMutating}
                 onClick={() => void refreshRelatedData()}
               />
-            }
-            eyebrow={
-              approvalMode ? "Provisioning Directory" : "Domain Directory"
-            }
-            title={
-              approvalMode ? "Manage client tracking domains" : "Manage domains"
-            }
-            description={
-              approvalMode
-                ? "Expand a domain for exact TXT/CNAME records, current provider state, last error, and lifecycle actions."
-                : "Only active verified domains can become primary or be selected by Offer configuration."
-            }
-          />
+            </div>
+          )}
 
           {!domainLoadFailed && (
             <CatalogToolbar

@@ -261,14 +261,9 @@ export function FraudReviewPage() {
           as="section"
           className={`control-main-card control-directory-surface ${fraud.permissions.canManage ? '' : 'control-main-card--full'}`}
         >
-          <ControlCardHeading
-            action={
-              <RefreshButton disabled={fraud.isMutating} onClick={() => void fraud.refresh()} />
-            }
-            description={`${fraud.rules.length} duplicate-protection rules.`}
-            eyebrow="Policy Registry"
-            title="Duplicate rules"
-          />
+          <div className="control-directory-actions">
+            <RefreshButton disabled={fraud.isMutating} onClick={() => void fraud.refresh()} />
+          </div>
           {fraud.rules.length === 0 ? (
             <ControlEmpty
               icon="policy"
@@ -322,11 +317,7 @@ export function FraudReviewPage() {
           as="section"
           className="control-main-card control-main-card--full control-directory-surface"
         >
-          <ControlCardHeading
-            description={`${fraud.clicks.length} traffic records match the current risk filters.`}
-            eyebrow="Investigation Queue"
-            title="Traffic and flagged clicks"
-          />
+
           <div className="control-filter-bar control-filter-bar--four">
             <select
               onChange={(event) => {

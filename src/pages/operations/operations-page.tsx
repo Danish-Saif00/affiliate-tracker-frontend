@@ -5,7 +5,6 @@ import { useOperations } from '../../features/control-plane/use-control-plane';
 import { formatDateTime, formatLabel, shortId } from '../control-plane/control-plane-formatters';
 import {
   ControlAccessDenied,
-  ControlCardHeading,
   ControlEmpty,
   ControlFeedback,
   ControlLoading,
@@ -56,12 +55,9 @@ export function OperationsPage() {
         as="section"
         className="control-main-card control-main-card--full control-directory-surface"
       >
-        <ControlCardHeading
-          action={<RefreshButton disabled={false} onClick={() => void operations.refresh()} />}
-          description="Latest company-scoped events, newest first."
-          eyebrow="Audit Stream"
-          title="Operational events"
-        />
+        <div className="control-directory-actions">
+          <RefreshButton disabled={false} onClick={() => void operations.refresh()} />
+        </div>
         <div className="control-filter-bar control-filter-bar--three">
           <input onChange={(event) => setEventName(event.target.value)} placeholder="Filter event name" value={eventName} />
           <input onChange={(event) => setEntityType(event.target.value)} placeholder="Filter entity type" value={entityType} />
