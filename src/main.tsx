@@ -6,8 +6,11 @@ import { BrowserRouter } from "react-router";
 import { queryClient } from "./app/query-client";
 import { AuthProvider } from "./features/auth/auth-provider";
 import { CompanyProvider } from "./features/companies/company-provider";
+import { applyTheme, readStoredTheme } from "./features/theme/theme-storage";
 import App from "./App";
 import "./styles/app.css";
+
+applyTheme(readStoredTheme());
 
 const rootElement = document.getElementById("root");
 

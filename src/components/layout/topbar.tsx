@@ -8,7 +8,11 @@ import { useApiHealth } from "../../features/system/use-api-health";
 import { useAccountProfile } from "../../features/final-operations/use-final-operations";
 
 type TopbarProps = {
+  filterAvailable: boolean;
+  onOpenFilters: () => void;
   onOpenNavigation: () => void;
+  onToggleTheme: () => void;
+  theme: "light" | "dark";
 };
 
 function readMetadataString(value: unknown): string | null {
@@ -28,7 +32,47 @@ function formatRole(role: string | null): string {
     .join(" ");
 }
 
-export function Topbar({ onOpenNavigation }: TopbarProps) {
+function ThemeToggleIcon({ theme }: { theme: "light" | "dark" }) {
+  return theme === "light" ? (
+    <svg
+      aria-hidden="true"
+      className="theme-toggle-icon"
+      fill="none"
+      viewBox="0 0 24 24"
+    >
+      <path
+        d="M20.2 15.1A8.4 8.4 0 0 1 8.9 3.8 8.5 8.5 0 1 0 20.2 15.1Z"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+      />
+    </svg>
+  ) : (
+    <svg
+      aria-hidden="true"
+      className="theme-toggle-icon"
+      fill="none"
+      viewBox="0 0 24 24"
+    >
+      <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.8" />
+      <path
+        d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth="1.8"
+      />
+    </svg>
+  );
+}
+
+export function Topbar({
+  filterAvailable,
+  onOpenFilters,
+  onOpenNavigation,
+  onToggleTheme,
+  theme,
+}: TopbarProps) {
   const auth = useAuth();
   const company = useCompany();
   const account = useAccountProfile();
@@ -143,6 +187,28 @@ export function Topbar({ onOpenNavigation }: TopbarProps) {
       )}
 
       <div className="app-topbar__actions">
+        {filterAvailable && (
+          <button
+            aria-label="Open page filters"
+            className="icon-button app-topbar__filter"
+            onClick={onOpenFilters}
+            title="Search & filters"
+            type="button"
+          >
+            <MaterialIcon name="filter_alt" />
+          </button>
+        )}
+
+        <button
+          aria-label={`Switch to ${theme === "light" ? "dark" : "light"} theme`}
+          className="icon-button theme-toggle-button"
+          onClick={onToggleTheme}
+          title={`Switch to ${theme === "light" ? "dark" : "light"} theme`}
+          type="button"
+        >
+          <ThemeToggleIcon theme={theme} />
+        </button>
+
         {company.companies.length > 0 ? (
           <label
             className="company-context-selector"
@@ -272,7 +338,7 @@ export function Topbar({ onOpenNavigation }: TopbarProps) {
                   {...(signingOut ? { className: "spin" } : {})}
                   name={signingOut ? "progress_activity" : "logout"}
                 />
-                <span>{signingOut ? "Signing out…" : "Sign out"}</span>
+                <span>{signingOut ? "Signing outâ€¦" : "Sign out"}</span>
               </button>
             </div>
           )}
