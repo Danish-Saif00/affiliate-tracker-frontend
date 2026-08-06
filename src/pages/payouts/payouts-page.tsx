@@ -178,7 +178,7 @@ export function PayoutsPage() {
 
         <GlassPanel
           as="section"
-          className={`control-main-card ${payouts.permissions.canManageOffers ? '' : 'control-main-card--full'}`}
+          className={`control-main-card control-directory-surface ${payouts.permissions.canManageOffers ? '' : 'control-main-card--full'}`}
         >
           <ControlCardHeading
             action={

@@ -259,7 +259,7 @@ export function FraudReviewPage() {
 
         <GlassPanel
           as="section"
-          className={`control-main-card ${fraud.permissions.canManage ? '' : 'control-main-card--full'}`}
+          className={`control-main-card control-directory-surface ${fraud.permissions.canManage ? '' : 'control-main-card--full'}`}
         >
           <ControlCardHeading
             action={
@@ -318,7 +318,10 @@ export function FraudReviewPage() {
           )}
         </GlassPanel>
 
-        <GlassPanel as="section" className="control-main-card control-main-card--full">
+        <GlassPanel
+          as="section"
+          className="control-main-card control-main-card--full control-directory-surface"
+        >
           <ControlCardHeading
             description={`${fraud.clicks.length} traffic records match the current risk filters.`}
             eyebrow="Investigation Queue"

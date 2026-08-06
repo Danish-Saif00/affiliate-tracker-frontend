@@ -63,6 +63,11 @@ function ProfileForm({ profile, disabled, onSubmit }: ProfileFormProps) {
       onSubmit={(event) => void handleSubmit(event)}
     >
       <label>
+        <span>Login email</span>
+        <input disabled value={profile.email} />
+      </label>
+
+      <label>
         <span>Name</span>
         <input
           autoComplete="name"
@@ -187,8 +192,11 @@ export function AccountPage() {
           />
         </GlassPanel>
       ) : (
-        <div className="account-grid">
-          <GlassPanel as="section" className="control-main-card">
+        <div className="account-grid account-grid--single">
+          <GlassPanel
+            as="section"
+            className="control-main-card control-directory-surface"
+          >
             <ControlCardHeading
               action={
                 <RefreshButton
@@ -208,26 +216,7 @@ export function AccountPage() {
             />
           </GlassPanel>
 
-          <GlassPanel as="section" className="control-main-card">
-            <ControlCardHeading
-              description="For managed accounts, email and password changes are performed by the parent administrator in the user-management area."
-              eyebrow="Credential policy"
-              title="Administrator-managed access"
-            />
-            <div className="catalog-security-note">
-              <MaterialIcon name="admin_panel_settings" />
-              <span>
-                Your current password is never visible. Contact your parent
-                administrator when a password reset is required.
-              </span>
-            </div>
-            <div className="control-form account-form">
-              <label>
-                <span>Login email</span>
-                <input disabled value={profile.email} />
-              </label>
-            </div>
-          </GlassPanel>
+
         </div>
       )}
     </div>

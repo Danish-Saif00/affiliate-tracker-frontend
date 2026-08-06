@@ -898,3 +898,41 @@ button.control-record__summary {
     grid-column: auto;
   }
 }
+/* Publisher Tracker directory and guidance card cleanup batch. */
+.control-directory-surface {
+  overflow: visible !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+.control-directory-surface::before,
+.control-directory-surface::after {
+  display: none !important;
+}
+
+.control-directory-surface > .control-card-heading,
+.control-directory-surface > .tracking-section-heading {
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  justify-content: flex-end !important;
+}
+
+.control-directory-surface > .control-card-heading > div,
+.control-directory-surface > .tracking-section-heading > div {
+  display: none !important;
+}
+
+.control-directory-surface > .control-card-heading > .control-icon-button,
+.control-directory-surface > .tracking-section-heading > .icon-button {
+  margin: 0 0 0.75rem auto !important;
+}
+
+.account-grid--single,
+.catalog-two-column--single {
+  grid-template-columns: minmax(0, 1fr) !important;
+}

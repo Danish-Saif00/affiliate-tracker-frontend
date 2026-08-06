@@ -1162,7 +1162,7 @@ export function OffersPage({ mode }: { mode: OffersPageMode }) {
       )}
 
       {mode === "manage" && (
-        <GlassPanel as="section" className="control-card catalog-table-panel">
+        <GlassPanel as="section" className="control-card catalog-table-panel control-directory-surface">
           <ControlCardHeading
             action={
               <RefreshButton

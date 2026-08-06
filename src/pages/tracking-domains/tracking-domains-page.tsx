@@ -401,7 +401,13 @@ export function TrackingDomainsPage({
       />
 
       {showCreatePanel && (
-        <div className="catalog-two-column managed-domains-onboarding">
+        <div
+          className={
+            approvalMode
+              ? "catalog-two-column managed-domains-onboarding"
+              : "managed-domains-onboarding"
+          }
+        >
           <GlassPanel as="section" className="control-card">
             <ControlCardHeading
               eyebrow="Add Managed Domain"
@@ -435,44 +441,51 @@ export function TrackingDomainsPage({
             </form>
           </GlassPanel>
 
-          <GlassPanel
-            as="section"
-            className="control-card dns-instructions-card"
-          >
-            <ControlCardHeading
-              eyebrow="One Dashboard Workflow"
-              title="Ownership to active tracking"
-            />
-            <ol>
-              <li>Add the client tracking hostname in Publisher Tracker.</li>
-              <li>
-                Publish the unique TXT ownership record shown for that domain.
-              </li>
-              <li>
-                Run Verify &amp; Continue to register the hostname with the
-                provider.
-              </li>
-              <li>
-                Publish the exact CNAME target shown in the domain details.
-              </li>
-              <li>
-                Run verification again until DNS, TLS, and domain status are
-                Active.
-              </li>
-            </ol>
-            <div className="catalog-security-note">
-              <MaterialIcon name="security" />
-              <span>
-                Provider credentials remain server-side. The client only
-                receives DNS records that belong in their own DNS provider.
-              </span>
-            </div>
-          </GlassPanel>
+          {approvalMode && (
+            <GlassPanel
+              as="section"
+              className="control-card dns-instructions-card"
+            >
+              <ControlCardHeading
+                eyebrow="One Dashboard Workflow"
+                title="Ownership to active tracking"
+              />
+              <ol>
+                <li>Add the client tracking hostname in Publisher Tracker.</li>
+                <li>
+                  Publish the unique TXT ownership record shown for that domain.
+                </li>
+                <li>
+                  Run Verify &amp; Continue to register the hostname with the
+                  provider.
+                </li>
+                <li>
+                  Publish the exact CNAME target shown in the domain details.
+                </li>
+                <li>
+                  Run verification again until DNS, TLS, and domain status are
+                  Active.
+                </li>
+              </ol>
+              <div className="catalog-security-note">
+                <MaterialIcon name="security" />
+                <span>
+                  Provider credentials remain server-side. The client only
+                  receives DNS records that belong in their own DNS provider.
+                </span>
+              </div>
+            </GlassPanel>
+          )}
         </div>
       )}
 
       {(mode === "manage" || approvalMode) && (
-        <GlassPanel as="section" className="control-card catalog-table-panel">
+        <GlassPanel
+          as="section"
+          className={`control-card catalog-table-panel${
+            approvalMode ? "" : " control-directory-surface"
+          }`}
+        >
           <ControlCardHeading
             action={
               <RefreshButton

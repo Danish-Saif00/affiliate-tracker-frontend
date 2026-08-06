@@ -205,7 +205,7 @@ export function ReportsPage({
 
       <GlassPanel
         as="section"
-        className="control-main-card control-main-card--full"
+        className="control-main-card control-main-card--full control-directory-surface"
       >
         <ControlCardHeading
           action={

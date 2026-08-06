@@ -619,7 +619,7 @@ export function TrackingLinksPage() {
 
         <GlassPanel
           as="section"
-          className={`control-main-card ${links.permissions.canManageTracking ? "" : "control-main-card--full"}`}
+          className={`control-main-card control-directory-surface ${links.permissions.canManageTracking ? "" : "control-main-card--full"}`}
         >
           <ControlCardHeading
             action={

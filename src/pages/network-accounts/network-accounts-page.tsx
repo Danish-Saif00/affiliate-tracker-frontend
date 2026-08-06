@@ -758,7 +758,7 @@ export function NetworkAccountsPage({
       )}
 
       {mode === "manage" && (
-        <GlassPanel as="section" className="control-card catalog-table-panel">
+        <GlassPanel as="section" className="control-card catalog-table-panel control-directory-surface">
           <ControlCardHeading
             action={
               <RefreshButton

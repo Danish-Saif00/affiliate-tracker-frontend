@@ -527,7 +527,7 @@ export function PublisherTrackingLinksPage() {
 
         <GlassPanel
           as="section"
-          className={`control-main-card ${
+          className={`control-main-card control-directory-surface ${
             links.permissions.canManageTracking ? "" : "control-main-card--full"
           }`}
         >

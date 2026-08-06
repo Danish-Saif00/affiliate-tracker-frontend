@@ -717,8 +717,8 @@ export function NetworkProvidersPage() {
           as="section"
           className={
             providers.permissions.canManage
-              ? "tracking-list-card"
-              : "tracking-list-card tracking-list-card--full"
+              ? "tracking-list-card control-directory-surface"
+              : "tracking-list-card tracking-list-card--full control-directory-surface"
           }
         >
           <div className="tracking-section-heading tracking-section-heading--toolbar">

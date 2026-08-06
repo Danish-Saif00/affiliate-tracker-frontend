@@ -365,7 +365,11 @@ export function PublishersPage() {
       />
 
       {catalog.permissions.canManagePublishers && (
-        <div className="catalog-two-column">
+        <div
+          className={`catalog-two-column${
+            passwordTarget === null ? " catalog-two-column--single" : ""
+          }`}
+        >
           <GlassPanel
             as="section"
             className="control-card publisher-editor-panel"
@@ -382,22 +386,7 @@ export function PublishersPage() {
             />
           </GlassPanel>
 
-          {passwordTarget === null ? (
-            <GlassPanel as="section" className="control-card">
-              <ControlCardHeading
-                description="Select the password action beside a Publisher to overwrite their password securely."
-                eyebrow="Credential Control"
-                title="Administrator-managed passwords"
-              />
-              <div className="catalog-security-note">
-                <MaterialIcon name="verified_user" />
-                <span>
-                  Passwords are never displayed, returned by the API, or stored
-                  in application tables and audit metadata.
-                </span>
-              </div>
-            </GlassPanel>
-          ) : (
+          {passwordTarget !== null && (
             <GlassPanel as="section" className="control-card">
               <ControlCardHeading
                 description="Only the new password is accepted. The current password remains unreadable."
@@ -583,7 +572,7 @@ export function PublishersPage() {
         </GlassPanel>
       )}
 
-      <GlassPanel as="section" className="control-card catalog-table-panel">
+      <GlassPanel as="section" className="control-card catalog-table-panel control-directory-surface">
         <ControlCardHeading
           action={
             <RefreshButton

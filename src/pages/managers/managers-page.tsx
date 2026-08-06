@@ -205,7 +205,7 @@ export function ManagersPage({ mode }: { mode: ManagersPageMode }) {
 
           <GlassPanel
             as="section"
-            className="control-card manager-directory-card"
+            className="control-card manager-directory-card control-directory-surface"
           >
             <ControlCardHeading
               action={

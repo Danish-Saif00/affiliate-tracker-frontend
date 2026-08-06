@@ -281,7 +281,10 @@ export function PostbacksPage() {
           </div>
         </GlassPanel>
 
-        <GlassPanel as="section" className="control-main-card">
+        <GlassPanel
+          as="section"
+          className="control-main-card control-directory-surface"
+        >
           <ControlCardHeading
             action={
               <RefreshButton

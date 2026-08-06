@@ -52,7 +52,10 @@ export function OperationsPage() {
       />
       <ControlFeedback error={operations.error} message={null} />
 
-      <GlassPanel as="section" className="control-main-card control-main-card--full">
+      <GlassPanel
+        as="section"
+        className="control-main-card control-main-card--full control-directory-surface"
+      >
         <ControlCardHeading
           action={<RefreshButton disabled={false} onClick={() => void operations.refresh()} />}
           description="Latest company-scoped events, newest first."

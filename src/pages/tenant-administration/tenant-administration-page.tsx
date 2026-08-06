@@ -273,7 +273,12 @@ export function TenantAdministrationPage() {
         )}
       </div>
 
-      <GlassPanel as="section" className="control-card tenant-directory-card">
+      <GlassPanel
+        as="section"
+        className={`control-card tenant-directory-card${
+          platformAdmin ? "" : " control-directory-surface"
+        }`}
+      >
         <ControlCardHeading
           action={
             <RefreshButton
