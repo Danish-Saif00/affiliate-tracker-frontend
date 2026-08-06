@@ -82,8 +82,7 @@ export function AppShell() {
     !platformAdmin && company.accessRestriction !== null;
   const showRestriction =
     companyAccessRestricted && location.pathname !== "/account";
-  const filterOpen =
-    filterAvailable && filterOpenPath === location.pathname;
+  const filterOpen = filterOpenPath === location.pathname;
 
   useEffect(() => {
     const content = document.querySelector(".app-content");
