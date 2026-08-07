@@ -2803,6 +2803,7 @@
   }
 }
 
+@media (max-width: 900px) {
 /* publisher_tracker_full_height_filter_sidebar_v2 */
 /*
  * Unified filter presentation:
@@ -3264,7 +3265,7 @@ html[data-theme="dark"][data-filter-route="true"]
     transition: none !important;
   }
 }
-
+}
 /* publisher_tracker_filter_panel_clip_fix_v1 */
 /*
  * GlassPanel renders both .glass-panel and .specular-panel.
@@ -3695,5 +3696,316 @@ html[data-filter-route="true"][data-filter-drawer-open="true"]
   .company-admin-network-page
     .catalog-form-grid--three {
     grid-template-columns: 1fr !important;
+  }
+}
+/* publisher_tracker_desktop_controls_and_dark_action_polish_v1 */
+
+/*
+ * Desktop restores native page-owned filter/search controls.
+ * Mobile/tablet keeps the existing bottom-right Filter FAB + right drawer.
+ * No React state, API, tracking, postback, or data flow is changed here.
+ */
+@media (min-width: 901px) {
+  html[data-filter-route="true"]
+    .responsive-filter-fab,
+  html[data-filter-route="true"]
+    .responsive-filter-drawer-header,
+  html[data-filter-route="true"]
+    .responsive-filter-backdrop {
+    display: none !important;
+  }
+
+  html[data-filter-route="true"]
+    .app-content
+    [data-responsive-filter-host="true"] {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    transform: none !important;
+  }
+}
+
+/*
+ * Native select arrows were too low-contrast in dark mode.
+ * Restore the browser's native menulist affordance across app-content.
+ */
+:root[data-theme="dark"]
+  .app-content
+  select {
+  -webkit-appearance: menulist !important;
+  appearance: auto !important;
+  min-height: 44px;
+  padding-right: 34px !important;
+  border-color: rgba(148, 171, 203, 0.38) !important;
+  background-color: #172536 !important;
+  color: #eef4fc !important;
+  color-scheme: dark !important;
+  cursor: pointer;
+}
+
+:root[data-theme="dark"]
+  .app-content
+  select:hover:not(:disabled) {
+  border-color: rgba(165, 190, 225, 0.58) !important;
+  background-color: #1b2c40 !important;
+}
+
+:root[data-theme="dark"]
+  .app-content
+  select:focus {
+  border-color: rgba(139, 174, 226, 0.72) !important;
+  background-color: #1b2b3d !important;
+  box-shadow:
+    0 0 0 3px rgba(112, 151, 211, 0.15) !important;
+}
+
+:root[data-theme="dark"]
+  .app-content
+  select
+  option {
+  background: #101a27 !important;
+  color: #edf4fc !important;
+}
+
+/* Keep native date affordance visible beside filter dropdowns. */
+:root[data-theme="dark"]
+  .app-content
+  input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0.9 !important;
+  filter: invert(0.88) !important;
+  cursor: pointer;
+}
+
+/*
+ * Shared Catalog switch used by Networks and other Catalog forms.
+ * Functional checkbox remains unchanged; only the visual switch is reinforced.
+ */
+:root[data-theme="dark"]
+  .app-content
+  .catalog-toggle-field {
+  display: flex !important;
+  min-height: 68px !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 14px !important;
+  border-color: rgba(148, 171, 203, 0.34) !important;
+  background:
+    linear-gradient(
+      145deg,
+      #1a293a,
+      #131f2d
+    ) !important;
+}
+
+:root[data-theme="dark"]
+  .app-content
+  .catalog-toggle-field
+  > span {
+  display: flex !important;
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+  flex-direction: column !important;
+}
+
+:root[data-theme="dark"]
+  .app-content
+  .catalog-toggle-field
+  i {
+  position: relative !important;
+  display: block !important;
+  width: 48px !important;
+  min-width: 48px !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  flex: 0 0 48px !important;
+  overflow: visible !important;
+  border: 1px solid rgba(159, 181, 211, 0.55) !important;
+  border-radius: 999px !important;
+  background: #26384d !important;
+  box-shadow:
+    inset 0 2px 5px rgba(0, 0, 0, 0.32),
+    0 0 0 1px rgba(255, 255, 255, 0.025) !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+:root[data-theme="dark"]
+  .app-content
+  .catalog-toggle-field
+  i::after {
+  position: absolute !important;
+  top: 3px !important;
+  left: 3px !important;
+  display: block !important;
+  width: 20px !important;
+  height: 20px !important;
+  border-radius: 50% !important;
+  background: #d7e2f0 !important;
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.42) !important;
+  content: "" !important;
+  opacity: 1 !important;
+}
+
+:root[data-theme="dark"]
+  .app-content
+  .catalog-toggle-field
+  input:checked
+  + i {
+  border-color: rgba(102, 210, 171, 0.72) !important;
+  background:
+    linear-gradient(
+      135deg,
+      #2d7664,
+      #21594e
+    ) !important;
+  box-shadow:
+    inset 0 2px 5px rgba(0, 0, 0, 0.2),
+    0 0 0 2px rgba(79, 208, 160, 0.08) !important;
+}
+
+:root[data-theme="dark"]
+  .app-content
+  .catalog-toggle-field
+  input:checked
+  + i::after {
+  transform: translateX(20px) !important;
+  background: #effff9 !important;
+}
+
+/*
+ * Shared custom multi-select control: visible trigger, chevron, menu and choices.
+ */
+:root[data-theme="dark"]
+  .app-content
+  .catalog-multi-select__trigger {
+  min-height: 44px !important;
+  border: 1px solid rgba(148, 171, 203, 0.38) !important;
+  border-radius: 12px !important;
+  background:
+    linear-gradient(
+      145deg,
+      #1b2a3b,
+      #142130
+    ) !important;
+  color: #eaf2fc !important;
+  box-shadow:
+    0 5px 12px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.025) !important;
+}
+
+:root[data-theme="dark"]
+  .app-content
+  .catalog-multi-select__trigger
+  :is(.app-icon, .material-symbols-outlined) {
+  color: #b9cdf0 !important;
+  opacity: 1 !important;
+}
+
+:root[data-theme="dark"]
+  .app-content
+  .catalog-multi-select__menu {
+  border-color: rgba(148, 171, 203, 0.36) !important;
+  background: #172434 !important;
+  color: #eaf2fc !important;
+}
+
+:root[data-theme="dark"]
+  .app-content
+  .catalog-multi-select__option {
+  color: #cbd8e9 !important;
+}
+
+:root[data-theme="dark"]
+  .app-content
+  .catalog-multi-select__option:hover,
+:root[data-theme="dark"]
+  .app-content
+  .catalog-multi-select__option--selected {
+  background: #22354b !important;
+  color: #ffffff !important;
+}
+
+/*
+ * Dark action buttons/icons: stronger separation from table/card backgrounds.
+ * This covers Domains, Networks, Catalog row actions and shared icon controls.
+ */
+:root[data-theme="dark"]
+  .app-content
+  :is(
+    .catalog-row-actions button,
+    .catalog-pagination button,
+    .control-icon-button,
+    .icon-button
+  ) {
+  min-width: 38px;
+  min-height: 38px;
+  border: 1px solid rgba(153, 178, 211, 0.42) !important;
+  background:
+    linear-gradient(
+      145deg,
+      #22344a,
+      #172536
+    ) !important;
+  color: #dce8f7 !important;
+  box-shadow:
+    0 5px 13px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.045) !important;
+  opacity: 1 !important;
+}
+
+:root[data-theme="dark"]
+  .app-content
+  :is(
+    .catalog-row-actions button,
+    .catalog-pagination button,
+    .control-icon-button,
+    .icon-button
+  )
+  :is(
+    svg,
+    .app-icon,
+    .material-symbols-outlined
+  ) {
+  color: currentColor !important;
+  opacity: 1 !important;
+}
+
+:root[data-theme="dark"]
+  .app-content
+  :is(
+    .catalog-row-actions button,
+    .catalog-pagination button,
+    .control-icon-button,
+    .icon-button
+  ):hover:not(:disabled) {
+  border-color: rgba(174, 202, 239, 0.68) !important;
+  background:
+    linear-gradient(
+      145deg,
+      #2b425d,
+      #1c2e43
+    ) !important;
+  color: #ffffff !important;
+  box-shadow:
+    0 7px 16px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Mobile Filter FAB stays clear and prominent. */
+@media (max-width: 900px) {
+  :root[data-theme="dark"][data-filter-route="true"]
+    .responsive-filter-fab {
+    border-color: rgba(161, 188, 225, 0.52) !important;
+    background:
+      linear-gradient(
+        145deg,
+        #2a405a,
+        #1b2d42
+      ) !important;
+    color: #eef5ff !important;
+    box-shadow:
+      0 15px 34px rgba(0, 0, 0, 0.42),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
   }
 }
