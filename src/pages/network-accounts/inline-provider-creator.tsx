@@ -1,6 +1,3 @@
-// src/pages/network-accounts/inline-provider-creator.tsx
-// Creates a missing company-scoped provider from the Company Admin Add Network flow.
-
 import { useState } from "react";
 
 import { MaterialIcon } from "../../components/icons/material-icon";
@@ -18,36 +15,23 @@ function createProviderCode(name: string): string {
     .slice(0, 80);
 }
 
-function normalizeOptionalUrl(value: string): string | null {
+function normalizeOptional(value: string): string | null {
   const normalized = value.trim();
   return normalized.length === 0 ? null : normalized;
 }
 
-function isOptionalHttpUrl(value: string): boolean {
-  const normalized = value.trim();
-
-  if (normalized.length === 0) {
-    return true;
-  }
-
-  try {
-    const url = new URL(normalized);
-    return url.protocol === "http:" || url.protocol === "https:";
-  } catch {
-    return false;
-  }
-}
-
-export function InlineProviderCreator() {
+export function InlineProviderCreator({
+  onCreated,
+}: {
+  onCreated?: (providerId: string) => void;
+}) {
   const providerOperations = useNetworkProviders();
   const catalog = useCatalogOperations();
+
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
-  const [code, setCode] = useState("");
-  const [codeEdited, setCodeEdited] = useState(false);
-  const [websiteUrl, setWebsiteUrl] = useState("");
-  const [documentationUrl, setDocumentationUrl] = useState("");
-  const [defaultTrackingParameter, setDefaultTrackingParameter] = useState("");
+  const [defaultTrackingParameter, setDefaultTrackingParameter] =
+    useState("click_id");
   const [postbackClickIdToken, setPostbackClickIdToken] = useState("");
   const [postbackConversionIdToken, setPostbackConversionIdToken] =
     useState("");
@@ -56,68 +40,56 @@ export function InlineProviderCreator() {
 
   const disabled = providerOperations.isMutating;
 
-  function resetFields() {
+  function resetFields(): void {
     setName("");
-    setCode("");
-    setCodeEdited(false);
-    setWebsiteUrl("");
-    setDocumentationUrl("");
-    setDefaultTrackingParameter("");
+    setDefaultTrackingParameter("click_id");
     setPostbackClickIdToken("");
     setPostbackConversionIdToken("");
   }
 
-  function handleNameChange(value: string) {
-    setName(value);
-
-    if (!codeEdited) {
-      setCode(createProviderCode(value));
-    }
-  }
-
-  async function handleCreate() {
+  async function handleCreate(): Promise<void> {
     const normalizedName = name.trim();
-    const normalizedCode = code.trim().toLowerCase();
+    const generatedCode = createProviderCode(normalizedName);
+    const clickParameter = defaultTrackingParameter.trim();
+    const clickToken = postbackClickIdToken.trim();
 
     setError(null);
     setMessage(null);
 
     if (normalizedName.length < 2 || normalizedName.length > 160) {
-      setError("Provider name must contain between 2 and 160 characters.");
+      setError("Software name must contain between 2 and 160 characters.");
       return;
     }
 
     if (
-      normalizedCode.length < 2 ||
-      normalizedCode.length > 80 ||
-      !PROVIDER_CODE_PATTERN.test(normalizedCode)
+      generatedCode.length < 2 ||
+      generatedCode.length > 80 ||
+      !PROVIDER_CODE_PATTERN.test(generatedCode)
     ) {
-      setError(
-        "Provider code must use lowercase letters, numbers, and single underscores.",
-      );
+      setError("The software name could not produce a valid internal code.");
       return;
     }
 
-    if (
-      !isOptionalHttpUrl(websiteUrl) ||
-      !isOptionalHttpUrl(documentationUrl)
-    ) {
-      setError("Provider links must be valid HTTP or HTTPS URLs.");
+    if (clickParameter.length === 0) {
+      setError("Click ID parameter is required.");
+      return;
+    }
+
+    if (clickToken.length === 0) {
+      setError("Click ID token is required.");
       return;
     }
 
     try {
       const provider = await providerOperations.createProvider({
-        code: normalizedCode,
+        code: generatedCode,
         name: normalizedName,
-        websiteUrl: normalizeOptionalUrl(websiteUrl),
-        documentationUrl: normalizeOptionalUrl(documentationUrl),
+        websiteUrl: null,
+        documentationUrl: null,
         integration: {
-          defaultTrackingParameter: normalizeOptionalUrl(
-            defaultTrackingParameter,
-          ),
-          postbackClickIdToken: normalizeOptionalUrl(postbackClickIdToken),
-          postbackConversionIdToken: normalizeOptionalUrl(
+          defaultTrackingParameter: clickParameter,
+          postbackClickIdToken: clickToken,
+          postbackConversionIdToken: normalizeOptional(
             postbackConversionIdToken,
           ),
           postbackRevenueAmountToken: null,
@@ -127,16 +99,16 @@ export function InlineProviderCreator() {
       });
 
       await catalog.refresh();
+      onCreated?.(provider.id);
+
       resetFields();
       setOpen(false);
-      setMessage(
-        `${provider.name} was added. Select it from the provider dropdown above.`,
-      );
+      setMessage(provider.name + " was added and selected.");
     } catch (creationError: unknown) {
       setError(
         creationError instanceof Error
           ? creationError.message
-          : "The network provider could not be created.",
+          : "The software profile could not be created.",
       );
     }
   }
@@ -145,9 +117,9 @@ export function InlineProviderCreator() {
     <div className="inline-provider-creator">
       <div className="inline-provider-creator__bar">
         <div>
-          <strong>Provider not listed?</strong>
+          <strong>Software not listed?</strong>
           <span>
-            Add the missing software provider without leaving this network form.
+            Add only the click/conversion mapping required by this tracker.
           </span>
         </div>
 
@@ -163,7 +135,7 @@ export function InlineProviderCreator() {
           type="button"
         >
           <MaterialIcon name={open ? "close" : "add_circle"} />
-          {open ? "Cancel" : "Add provider"}
+          {open ? "Cancel" : "Add custom software"}
         </button>
       </div>
 
@@ -178,88 +150,56 @@ export function InlineProviderCreator() {
         <div className="inline-provider-creator__panel">
           <div className="inline-provider-creator__grid">
             <label>
-              <span>Provider name</span>
+              <span>Software name</span>
               <input
                 disabled={disabled}
                 maxLength={160}
-                onChange={(event) => handleNameChange(event.target.value)}
-                placeholder="Example Provider"
+                onChange={(event) => setName(event.currentTarget.value)}
+                placeholder="Affise, Cake, Custom..."
+                required
                 type="text"
                 value={name}
               />
             </label>
 
             <label>
-              <span>Provider code</span>
+              <span>Click ID parameter</span>
               <input
                 autoCapitalize="none"
                 disabled={disabled}
-                maxLength={80}
-                onChange={(event) => {
-                  setCodeEdited(true);
-                  setCode(event.target.value.toLowerCase());
-                }}
-                placeholder="example_provider"
-                spellCheck={false}
-                type="text"
-                value={code}
-              />
-            </label>
-
-            <label>
-              <span>Website URL</span>
-              <input
-                disabled={disabled}
-                onChange={(event) => setWebsiteUrl(event.target.value)}
-                placeholder="https://provider.example"
-                type="url"
-                value={websiteUrl}
-              />
-            </label>
-
-            <label>
-              <span>Documentation URL</span>
-              <input
-                disabled={disabled}
-                onChange={(event) => setDocumentationUrl(event.target.value)}
-                placeholder="Optional provider documentation"
-                type="url"
-                value={documentationUrl}
-              />
-            </label>
-
-            <label>
-              <span>Default click-ID parameter</span>
-              <input
-                disabled={disabled}
                 onChange={(event) =>
-                  setDefaultTrackingParameter(event.target.value)
+                  setDefaultTrackingParameter(event.currentTarget.value)
                 }
                 placeholder="click_id"
+                spellCheck={false}
                 value={defaultTrackingParameter}
               />
             </label>
 
             <label>
-              <span>Provider click-ID token</span>
+              <span>Click ID token</span>
               <input
+                autoCapitalize="none"
                 disabled={disabled}
                 onChange={(event) =>
-                  setPostbackClickIdToken(event.target.value)
+                  setPostbackClickIdToken(event.currentTarget.value)
                 }
-                placeholder="{SUB1}"
+                placeholder="{click_id}"
+                spellCheck={false}
                 value={postbackClickIdToken}
               />
             </label>
 
             <label>
-              <span>Provider conversion-ID token</span>
+              <span>Conversion ID token (optional)</span>
               <input
+                autoCapitalize="none"
                 disabled={disabled}
                 onChange={(event) =>
-                  setPostbackConversionIdToken(event.target.value)
+                  setPostbackConversionIdToken(event.currentTarget.value)
                 }
-                placeholder="{CONVERSION_ID}"
+                placeholder="{conversion_id}"
+                spellCheck={false}
                 value={postbackConversionIdToken}
               />
             </label>
@@ -274,9 +214,10 @@ export function InlineProviderCreator() {
 
           <div className="inline-provider-creator__actions">
             <span>
-              The provider code is unique inside this company and cannot be
-              changed after creation.
+              Internal provider code is generated automatically. Website,
+              documentation, revenue and currency fields are not needed here.
             </span>
+
             <button
               className="inline-provider-creator__submit"
               disabled={disabled}
@@ -284,7 +225,7 @@ export function InlineProviderCreator() {
               type="button"
             >
               <MaterialIcon name="add_business" />
-              {disabled ? "Adding provider..." : "Create provider"}
+              {disabled ? "Adding software..." : "Add software"}
             </button>
           </div>
         </div>

@@ -116,12 +116,6 @@ const companyAdminGroups: readonly NavigationGroup[] = [
             icon: "account_tree",
             audience: "company-admin",
           },
-          {
-            label: "Manage Providers",
-            path: "/network-providers",
-            icon: "hub",
-            audience: "company-admin",
-          },
         ],
       },
       {

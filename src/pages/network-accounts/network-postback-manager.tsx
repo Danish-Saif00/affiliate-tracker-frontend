@@ -35,15 +35,16 @@ export function NetworkPostbackManager({
   networkName: string;
 }) {
   const endpoints = usePostbackEndpoints(networkAccountId);
-  const [endpointName, setEndpointName] = useState(
-    `${networkName.trim() || "Network"} Conversions`,
-  );
+  const endpointName = `${networkName.trim() || "Network"} Conversions`;
   const [generated, setGenerated] = useState<ProviderPostbackSetup | null>(
     null,
   );
   const [message, setMessage] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const localOrigin = isLoopbackOrigin(environment.apiOrigin);
+  const hasCurrentEndpoint = endpoints.endpoints.some(
+    (endpoint) => endpoint.status !== "archived",
+  );
 
   function resetFeedback(): void {
     setMessage(null);
@@ -61,6 +62,11 @@ export function NetworkPostbackManager({
   }
 
   async function createEndpoint(): Promise<void> {
+    if (hasCurrentEndpoint) {
+      setActionError("This Network already has a current Postback endpoint.");
+      return;
+    }
+
     resetFeedback();
 
     try {
@@ -71,7 +77,7 @@ export function NetworkPostbackManager({
 
       setGenerated(buildProviderPostbackSetup(result));
       setMessage(
-        `${result.endpoint.name} was created. Copy the new endpoint key now.`,
+        `${result.endpoint.name} was created. Copy the Postback URL now.`,
       );
     } catch (error: unknown) {
       setActionError(
@@ -167,13 +173,13 @@ export function NetworkPostbackManager({
       {generated !== null && (
         <div className="network-postback-manager__secret">
           <div className="network-postback-manager__secret-heading">
-            <MaterialIcon name="key" />
+            <MaterialIcon name="webhook" />
             <div>
-              <span>One-time endpoint key</span>
+              <span>Postback URL ready</span>
               <strong>{generated.endpointName}</strong>
               <small>
-                Copy this now. The full key is not returned again unless you
-                rotate it.
+                Use the complete provider-ready URL. The endpoint credential is
+                not displayed as a separate field.
               </small>
             </div>
             <button
@@ -186,57 +192,35 @@ export function NetworkPostbackManager({
             </button>
           </div>
 
-          <code>{generated.endpointKey}</code>
-
           <div className="network-postback-manager__template">
-            <span>{generated.providerName} global postback template</span>
-            {generated.templateUrl === null ? (
+            <span>Postback URL</span>
+            <code>{generated.templateUrl ?? generated.baseUrl}</code>
+
+            {generated.templateUrl === null && (
               <small>
-                Configure the Provider integration profile before generating a
-                provider-ready template.
+                The software mapping does not currently provide a complete
+                macro template. Verify its click token before production use.
               </small>
-            ) : (
-              <>
-                <code>{generated.templateUrl}</code>
-                <small>
-                  Effective click parameter:{" "}
-                  {generated.effectiveTrackingParameter}. Provider macros are
-                  already mapped to the normalized callback fields.
-                </small>
-              </>
             )}
           </div>
 
           <div className="network-postback-manager__actions">
             <button
-              className="control-secondary-button"
+              className="primary-gradient-button primary-gradient-button--compact"
               onClick={() =>
-                void copyValue(generated.baseUrl, "Base postback URL")
+                void copyValue(
+                  generated.templateUrl ?? generated.baseUrl,
+                  "Postback URL",
+                )
               }
               type="button"
             >
-              <MaterialIcon name="link" />
-              Copy base URL
+              <MaterialIcon name="content_copy" />
+              Copy Postback URL
             </button>
-            {generated.templateUrl !== null && (
-              <button
-                className="primary-gradient-button primary-gradient-button--compact"
-                onClick={() =>
-                  void copyValue(
-                    generated.templateUrl ?? "",
-                    "Provider postback template",
-                  )
-                }
-                type="button"
-              >
-                <MaterialIcon name="content_copy" />
-                Copy provider template
-              </button>
-            )}
           </div>
         </div>
       )}
-
       {endpoints.status === "loading" ? (
         <ControlLoading label="Secure postback endpoints" />
       ) : endpoints.endpoints.length === 0 ? (
@@ -247,16 +231,6 @@ export function NetworkPostbackManager({
             title="No endpoint configured"
           />
           <div className="network-postback-manager__create">
-            <label>
-              <span>Endpoint name</span>
-              <input
-                disabled={endpoints.isMutating}
-                maxLength={160}
-                onChange={(event) => setEndpointName(event.currentTarget.value)}
-                placeholder={`${networkName} Conversions`}
-                value={endpointName}
-              />
-            </label>
             <button
               className="primary-gradient-button primary-gradient-button--compact"
               disabled={endpoints.isMutating}
@@ -264,7 +238,7 @@ export function NetworkPostbackManager({
               type="button"
             >
               <MaterialIcon name="add_link" />
-              Create Endpoint
+              Create Postback URL
             </button>
           </div>
         </div>
@@ -278,9 +252,7 @@ export function NetworkPostbackManager({
               <div className="network-postback-manager__endpoint-main">
                 <div>
                   <strong>{endpoint.name}</strong>
-                  <span>
-                    Key ending: <code>{endpoint.endpointKeyLast4}</code>
-                  </span>
+                  <span>Secure conversion callback</span>
                 </div>
                 <ControlStatus status={endpoint.status} />
               </div>
@@ -299,8 +271,8 @@ export function NetworkPostbackManager({
                       onClick={() => void rotateKey(endpoint.id)}
                       type="button"
                     >
-                      <MaterialIcon name="key" />
-                      Rotate Key
+                      <MaterialIcon name="refresh" />
+                      Regenerate URL
                     </button>
                     <button
                       className="control-secondary-button"
@@ -337,27 +309,19 @@ export function NetworkPostbackManager({
             </article>
           ))}
 
-          <div className="network-postback-manager__create network-postback-manager__create--secondary">
-            <label>
-              <span>Additional endpoint name</span>
-              <input
+          {!hasCurrentEndpoint && (
+            <div className="network-postback-manager__create network-postback-manager__create--secondary">
+              <button
+                className="control-secondary-button"
                 disabled={endpoints.isMutating}
-                maxLength={160}
-                onChange={(event) => setEndpointName(event.currentTarget.value)}
-                placeholder={`${networkName} Conversions`}
-                value={endpointName}
-              />
-            </label>
-            <button
-              className="control-secondary-button"
-              disabled={endpoints.isMutating}
-              onClick={() => void createEndpoint()}
-              type="button"
-            >
-              <MaterialIcon name="add_link" />
-              Add Endpoint
-            </button>
-          </div>
+                onClick={() => void createEndpoint()}
+                type="button"
+              >
+                <MaterialIcon name="add_link" />
+                Create Postback URL
+              </button>
+            </div>
+          )}
         </div>
       )}
     </section>

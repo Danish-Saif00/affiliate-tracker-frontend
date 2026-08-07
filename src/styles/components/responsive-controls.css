@@ -3555,3 +3555,145 @@ html[data-filter-route="true"][data-filter-drawer-open="true"]
       max(16px, env(safe-area-inset-left)) !important;
   }
 }
+
+
+/* publisher_tracker_safe_network_domain_final_v2 */
+
+/* Catalog tables must keep TD semantics; legacy first-cell flex caused grey bars. */
+.catalog-page
+  .catalog-table-wrap.responsive-table
+  tbody
+  td:first-child {
+  display: table-cell !important;
+  align-items: initial !important;
+  gap: initial !important;
+}
+
+/* Keep Domain/Network native controls aligned with dark theme. */
+:root[data-theme="dark"]
+  .catalog-page
+  :is(select, input[type="date"]) {
+  color-scheme: dark !important;
+  border-color: rgba(132, 154, 184, 0.3) !important;
+  background-color: #131d29 !important;
+  color: #edf3fb !important;
+}
+
+:root[data-theme="dark"]
+  .catalog-page
+  select
+  option {
+  background: #101a27 !important;
+  color: #e7eef8 !important;
+}
+
+/* Stabilize shared Catalog toggle appearance without changing its input behavior. */
+:root[data-theme="dark"]
+  .catalog-page
+  .catalog-toggle-field {
+  border-color: rgba(132, 154, 184, 0.28) !important;
+  background:
+    linear-gradient(
+      145deg,
+      #172332,
+      #111a26
+    ) !important;
+  color: #dce6f3 !important;
+  box-shadow:
+    7px 8px 18px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.025) !important;
+}
+
+:root[data-theme="dark"]
+  .catalog-page
+  .catalog-toggle-field
+  i {
+  border-color: rgba(145, 165, 194, 0.32) !important;
+  background: #0c1520 !important;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.28) !important;
+}
+
+:root[data-theme="dark"]
+  .catalog-page
+  .catalog-toggle-field
+  i::after {
+  background: #9fb0c7 !important;
+}
+
+:root[data-theme="dark"]
+  .catalog-page
+  .catalog-toggle-field
+  input:checked
+  + i {
+  border-color: rgba(92, 198, 167, 0.5) !important;
+  background:
+    linear-gradient(
+      135deg,
+      #245b50,
+      #183e39
+    ) !important;
+}
+
+:root[data-theme="dark"]
+  .catalog-page
+  .catalog-toggle-field
+  input:checked
+  + i::after {
+  background: #d9f8ef !important;
+}
+
+.company-admin-network-page
+  .network-combined-form
+  .inline-provider-creator {
+  grid-column: 1 / -1 !important;
+}
+
+:root[data-theme="dark"]
+  .company-admin-network-page
+  :is(
+    .inline-provider-creator__bar,
+    .inline-provider-creator__panel,
+    .network-postback-inline,
+    .network-postback-manager__secret,
+    .network-postback-manager__endpoint
+  ) {
+  border-color: rgba(132, 154, 184, 0.26) !important;
+  background:
+    linear-gradient(
+      145deg,
+      #182535,
+      #131d29
+    ) !important;
+  color: #e6edf7 !important;
+}
+
+:root[data-theme="dark"]
+  .company-admin-network-page
+  :is(
+    .network-postback-result__url code,
+    .network-postback-manager__template code
+  ) {
+  display: block !important;
+  overflow-x: auto !important;
+  border: 1px solid rgba(132, 154, 184, 0.24) !important;
+  background: #0c1520 !important;
+  color: #d7e5f6 !important;
+}
+
+:root[data-theme="dark"]
+  .managed-domains-page
+  .managed-domains-table
+  tbody
+  td:first-child
+  small {
+  width: auto !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+@media (max-width: 760px) {
+  .company-admin-network-page
+    .catalog-form-grid--three {
+    grid-template-columns: 1fr !important;
+  }
+}

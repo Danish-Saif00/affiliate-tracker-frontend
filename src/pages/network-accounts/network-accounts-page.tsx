@@ -106,27 +106,29 @@ function NetworkForm({
   onCancel?: () => void;
   networkAccountId: string | null;
 }) {
-  const selectedProvider = providers.find(
+  const selectedSoftware = providers.find(
     (provider) => provider.id === form.providerId,
   );
+
   const inheritedTrackingParameter =
-    selectedProvider?.integration.defaultTrackingParameter ?? "click_id";
+    selectedSoftware?.integration.defaultTrackingParameter ?? "click_id";
 
   return (
     <form className="catalog-form network-combined-form" onSubmit={onSubmit}>
       <div className="catalog-form-section-heading">
         <MaterialIcon name="account_tree" />
         <div>
-          <strong>Network configuration</strong>
+          <strong>Network integration</strong>
           <small>
-            Provider account identity and tracking identifier settings.
+            Keep the visible setup simple while preserving the existing
+            tracking and conversion contracts.
           </small>
         </div>
       </div>
 
       <div className="catalog-form-grid catalog-form-grid--three">
         <label>
-          <span>Name</span>
+          <span>Network name</span>
           <input
             disabled={disabled}
             maxLength={160}
@@ -138,44 +140,42 @@ function NetworkForm({
             value={form.name}
           />
         </label>
+
         <label>
-          <span>Software / provider</span>
+          <span>Software</span>
           <select
             disabled={disabled}
             onChange={(event) =>
-              onChange({ ...form, providerId: event.currentTarget.value })
+              onChange({
+                ...form,
+                providerId: event.currentTarget.value,
+                trackingParameter: "",
+              })
             }
             required
             value={form.providerId}
           >
-            <option value="">Select provider</option>
+            <option value="">Select software</option>
             {providers.map((provider) => (
               <option key={provider.id} value={provider.id}>
                 {provider.name}
               </option>
             ))}
           </select>
+
+          {selectedSoftware !== undefined && (
+            <small>
+              {selectedSoftware.integration.configured
+                ? "Software click/conversion mapping is configured."
+                : "Verify this software's click token before production use."}
+            </small>
+          )}
         </label>
 
-        {mode !== "edit" && <InlineProviderCreator />}
         <label>
-          <span>External account ID</span>
+          <span>Click ID parameter</span>
           <input
-            autoComplete="off"
-            disabled={disabled}
-            onChange={(event) =>
-              onChange({
-                ...form,
-                externalAccountId: event.currentTarget.value,
-              })
-            }
-            placeholder="Optional provider account ID"
-            value={form.externalAccountId}
-          />
-        </label>
-        <label>
-          <span>Tracking parameter</span>
-          <input
+            autoCapitalize="none"
             disabled={disabled}
             onChange={(event) =>
               onChange({
@@ -183,98 +183,70 @@ function NetworkForm({
                 trackingParameter: event.currentTarget.value,
               })
             }
-            placeholder={`Inherited from Provider: ${inheritedTrackingParameter}`}
+            placeholder={inheritedTrackingParameter}
+            spellCheck={false}
             value={form.trackingParameter}
           />
           <small>
             {form.trackingParameter.trim().length === 0
-              ? `Inherited from Provider: ${inheritedTrackingParameter}`
-              : `Network override: ${form.trackingParameter.trim()}`}
+              ? "Using software default: " + inheritedTrackingParameter
+              : "Network override: " + form.trackingParameter.trim()}
           </small>
         </label>
-        {mode === "edit" && (
-          <label>
-            <span>Status</span>
-            <select
-              disabled={disabled}
-              onChange={(event) =>
-                onChange({
-                  ...form,
-                  status: event.currentTarget.value as CatalogNetworkStatus,
-                })
-              }
-              value={form.status}
-            >
-              <option value="active">Active</option>
-              <option value="suspended">Paused</option>
-              <option value="archived">Archived</option>
-            </select>
-          </label>
+
+        {mode !== "edit" && (
+          <InlineProviderCreator
+            onCreated={(providerId) =>
+              onChange({
+                ...form,
+                providerId,
+                trackingParameter: "",
+              })
+            }
+          />
         )}
       </div>
 
-      <div className="catalog-form-section-heading catalog-form-section-heading--postback">
-        <MaterialIcon name="webhook" />
-        <div>
-          <strong>Postback configuration</strong>
-          <small>
-            Postback belongs to this Network and is not managed as a separate
-            module.
-          </small>
-        </div>
-      </div>
-
-      {mode !== "edit" ? (
-        <div className="network-postback-inline">
-          <ToggleField
-            checked={form.createPostbackEndpoint}
-            disabled={disabled}
-            hint="Generate a secure conversion URL immediately after this Network is created."
-            label="Create secure postback endpoint"
-            onChange={(createPostbackEndpoint) =>
-              onChange({ ...form, createPostbackEndpoint })
-            }
-          />
-
-          {form.createPostbackEndpoint && (
-            <div className="catalog-form-grid">
-              <label className="catalog-field--wide">
-                <span>Endpoint name</span>
-                <input
-                  disabled={disabled}
-                  maxLength={160}
-                  onChange={(event) =>
-                    onChange({
-                      ...form,
-                      postbackEndpointName: event.currentTarget.value,
-                    })
-                  }
-                  placeholder={`${form.name.trim() || "Network"} Conversions`}
-                  value={form.postbackEndpointName}
-                />
-                <small>
-                  The secure URL and one-time key will appear after Add Network
-                  succeeds. You will paste that generated URL into the provider
-                  dashboard.
-                </small>
-              </label>
+      {mode === "edit" && networkAccountId !== null ? (
+        <>
+          <div className="catalog-form-section-heading catalog-form-section-heading--postback">
+            <MaterialIcon name="webhook" />
+            <div>
+              <strong>Network Postback</strong>
+              <small>
+                Keep the working secure endpoint lifecycle attached to this
+                Network.
+              </small>
             </div>
-          )}
+          </div>
+
+          <NetworkPostbackManager
+            key={networkAccountId}
+            networkAccountId={networkAccountId}
+            networkName={form.name}
+          />
+        </>
+      ) : (
+        <div className="network-postback-inline network-postback-inline--automatic">
+          <MaterialIcon name="webhook" />
+          <div>
+            <strong>One secure Postback URL</strong>
+            <span>
+              The existing backend flow will automatically create one secure
+              provider-ready endpoint after this Network is saved.
+            </span>
+          </div>
         </div>
-      ) : networkAccountId !== null ? (
-        <NetworkPostbackManager
-          key={networkAccountId}
-          networkAccountId={networkAccountId}
-          networkName={form.name}
-        />
-      ) : null}
+      )}
 
       <ToggleField
         checked={form.duplicateAllowed}
         disabled={disabled}
         hint="Allow repeated provider-side conversion identifiers for this Network."
         label="Allow duplicate conversions"
-        onChange={(duplicateAllowed) => onChange({ ...form, duplicateAllowed })}
+        onChange={(duplicateAllowed) =>
+          onChange({ ...form, duplicateAllowed })
+        }
       />
 
       <div className="catalog-form-actions">
@@ -288,6 +260,7 @@ function NetworkForm({
             Cancel
           </button>
         )}
+
         <button
           className="primary-gradient-button primary-gradient-button--compact"
           disabled={disabled}
@@ -618,8 +591,8 @@ export function NetworkAccountsPage({
       <ControlModuleHeader
         description={
           mode === "add"
-            ? "Add a Network and its Postback configuration in one operational form."
-            : "Edit, clone, activate, pause, archive, or safely delete company Networks."
+            ? "Add a Network with its software and click-ID mapping. One secure Postback URL is generated automatically."
+            : "Edit Network integration and manage the existing Postback while preserving lifecycle controls."
         }
         eyebrow="Network Operations"
         icon="account_tree"
@@ -648,18 +621,20 @@ export function NetworkAccountsPage({
         >
           <div className="network-postback-result__heading">
             <span className="network-postback-result__icon">
-              <MaterialIcon name="key" />
+              <MaterialIcon name="webhook" />
             </span>
+
             <div>
-              <span>One-time secure endpoint</span>
-              <strong>{createdPostback.networkName} is ready</strong>
+              <span>Network Postback</span>
+              <strong>{createdPostback.networkName} is connected</strong>
               <small>
-                Copy this URL now. The endpoint key is only returned when the
-                endpoint is created or rotated.
+                Copy this single working provider-ready URL into the Network
+                software. The endpoint credential is not shown separately.
               </small>
             </div>
+
             <button
-              aria-label="Dismiss generated postback details"
+              aria-label="Dismiss generated Postback URL"
               className="control-secondary-button"
               onClick={() => setCreatedPostback(null)}
               type="button"
@@ -669,72 +644,46 @@ export function NetworkAccountsPage({
             </button>
           </div>
 
-          <div className="network-postback-result__grid">
-            <div>
-              <span>Endpoint name</span>
-              <strong>{createdPostback.endpointName}</strong>
-            </div>
-            <div>
-              <span>Endpoint key</span>
-              <code>{createdPostback.endpointKey}</code>
-            </div>
-          </div>
-
           <div className="network-postback-result__url">
-            <span>{createdPostback.providerName} global postback template</span>
-            {createdPostback.templateUrl === null ? (
+            <span>Postback URL</span>
+            <code>
+              {createdPostback.templateUrl ?? createdPostback.baseUrl}
+            </code>
+
+            {createdPostback.templateUrl === null && (
               <small>
-                Configure the Provider integration profile before generating a
-                provider-ready template. The secure base URL remains available.
+                The software mapping does not currently provide a complete
+                macro template. Verify its click token before using the base
+                callback in production.
               </small>
-            ) : (
-              <>
-                <code>{createdPostback.templateUrl}</code>
-                <small>
-                  The template uses the exact Provider macro tokens configured
-                  for {createdPostback.providerName}.
-                </small>
-              </>
             )}
           </div>
 
           <div className="network-postback-result__actions">
             <button
-              className="control-secondary-button"
+              className="primary-gradient-button primary-gradient-button--compact"
               onClick={() =>
                 void copyPostbackValue(
-                  createdPostback.baseUrl,
-                  "Base postback URL",
+                  createdPostback.templateUrl ?? createdPostback.baseUrl,
+                  "Postback URL",
                 )
               }
               type="button"
             >
-              <MaterialIcon name="link" />
-              Copy base URL
+              <MaterialIcon name="content_copy" />
+              Copy Postback URL
             </button>
-            {createdPostback.templateUrl !== null && (
-              <button
-                className="primary-gradient-button primary-gradient-button--compact"
-                onClick={() =>
-                  void copyPostbackValue(
-                    createdPostback.templateUrl ?? "",
-                    "Provider postback template",
-                  )
-                }
-                type="button"
-              >
-                <MaterialIcon name="content_copy" />
-                Copy provider template
-              </button>
-            )}
           </div>
         </GlassPanel>
       )}
-
       {catalog.permissions.canManageCatalog && editorVisible && (
         <GlassPanel as="section" className="control-card catalog-editor-panel">
           <ControlCardHeading
-            description="Network and Postback settings remain attached to one record."
+            description={
+              editorMode === "edit"
+                ? "Update the same Network integration and manage its secure Postback."
+                : "Choose software and click-ID mapping. One secure Postback URL is generated automatically."
+            }
             eyebrow={
               editorMode === "edit"
                 ? "Edit Network"
@@ -750,24 +699,16 @@ export function NetworkAccountsPage({
                   : "Connect a Network"
             }
           />
-          {providers.length === 0 ? (
-            <ControlEmpty
-              icon="hub"
-              message="Create or activate a company-owned Network Provider first."
-              title="No active providers"
-            />
-          ) : (
-            <NetworkForm
-              disabled={catalog.isMutating || postbackCreator.isMutating}
-              form={form}
-              mode={editorMode}
-              onCancel={mode === "manage" ? closeEditor : undefined}
-              onChange={setForm}
-              networkAccountId={editingId}
-              onSubmit={(event) => void handleSubmit(event)}
-              providers={providers}
-            />
-          )}
+          <NetworkForm
+            disabled={catalog.isMutating || postbackCreator.isMutating}
+            form={form}
+            mode={editorMode}
+            onCancel={mode === "manage" ? closeEditor : undefined}
+            onChange={setForm}
+            networkAccountId={editingId}
+            onSubmit={(event) => void handleSubmit(event)}
+            providers={providers}
+          />
         </GlassPanel>
       )}
 
@@ -793,7 +734,7 @@ export function NetworkAccountsPage({
               }}
               value={providerId}
             >
-              <option value="">All providers</option>
+              <option value="">All software</option>
               {snapshot.providers.map((provider) => (
                 <option key={provider.id} value={provider.id}>
                   {provider.name}
@@ -847,7 +788,7 @@ export function NetworkAccountsPage({
                 <thead>
                   <tr>
                     <th>Network</th>
-                    <th>Provider</th>
+                    <th>Software</th>
                     <th>Offers</th>
                     <th>Tracking</th>
                     <th>Postback</th>
@@ -861,22 +802,16 @@ export function NetworkAccountsPage({
                     <tr key={network.id}>
                       <td>
                         <strong>{network.name}</strong>
-                        <small>
-                          {network.externalAccountId ?? "No external ID"}
-                        </small>
                       </td>
-                      <td>
-                        {network.providerName}
-                        <small>{network.providerCode}</small>
-                      </td>
+                      <td>{network.providerName}</td>
                       <td>{network.offerCount}</td>
                       <td>
                         <code>{network.effectiveTrackingParameter}</code>
                       </td>
                       <td>
                         {network.providerIntegrationConfigured
-                          ? "Provider template ready"
-                          : "Provider setup required"}
+                          ? "Postback ready"
+                          : "Software mapping required"}
                       </td>
                       <td>
                         <ControlStatus status={network.status} />
