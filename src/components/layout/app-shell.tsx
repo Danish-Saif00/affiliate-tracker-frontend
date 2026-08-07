@@ -222,7 +222,31 @@ export function AppShell() {
         </>
       )}
 
-      <main className="app-content">
+            {filterAvailable && (
+        <button
+          aria-label="Open filters"
+          className="responsive-filter-fab"
+          onClick={() => setFilterOpenPath(location.pathname)}
+          title="Filters"
+          type="button"
+        >
+          <svg
+            aria-hidden="true"
+            fill="none"
+            height="22"
+            viewBox="0 0 24 24"
+            width="22"
+          >
+            <path
+              d="M4 5h16l-6.2 7.1v5.2l-3.6 1.7v-6.9L4 5Z"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1.7"
+            />
+          </svg>
+        </button>
+      )}      <main className="app-content">
         {showRestriction ? <SubscriptionAccessPage /> : <Outlet />}
       </main>
     </div>
