@@ -8,7 +8,7 @@ import {
 } from 'react';
 
 import { queryClient } from '../../app/query-client';
-import { ApiRequestError } from '../../lib/api-client';
+import { ApiRequestError, fetchCurrentIdentity } from '../../lib/api-client';
 import { useAuth } from '../auth/use-auth';
 import {
   CompanyContext,
@@ -164,7 +164,8 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     if (
       activeCompanyId === null ||
       authStatus !== 'authenticated' ||
-      platformAdmin
+      platformAdmin ||
+      session === null
     ) {
       return;
     }
@@ -172,7 +173,10 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     let active = true;
 
     const verifyCompanyAccess = () => {
-      void refreshIdentity(activeCompanyId)
+      void fetchCurrentIdentity(
+        session.access_token,
+        activeCompanyId,
+      )
         .then(() => {
           if (!active) {
             return;
@@ -214,7 +218,7 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     activeCompanyId,
     authStatus,
     identity,
-    refreshIdentity,
+    session,
   ]);
 
   const createMutation = useMutation<CompanyRecord, Error, CreateCompanyInput>({

@@ -10,6 +10,7 @@ type ApplyFiltersHandler = () => void;
 
 export type FilterApplyCoordinator = {
   registerApplyHandler: (handler: ApplyFiltersHandler) => () => void;
+  closeFilters: () => void;
 };
 
 export const FilterApplyCoordinatorContext =
@@ -26,7 +27,8 @@ export function useAppliedFilters<T>(
   const applyFilters = useCallback(() => {
     setAppliedFilters(draftFilters);
     onApply?.();
-  }, [draftFilters, onApply]);
+    coordinator?.closeFilters();
+  }, [coordinator, draftFilters, onApply]);
 
   useEffect(() => {
     if (coordinator === null) {

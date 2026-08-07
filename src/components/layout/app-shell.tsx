@@ -93,11 +93,15 @@ export function AppShell() {
       }
     };
   }, []);
+  const closeFilters = useCallback(() => {
+    setFilterOpenPath(null);
+  }, []);
   const filterCoordinator = useMemo(
     () => ({
       registerApplyHandler,
+      closeFilters,
     }),
-    [registerApplyHandler],
+    [closeFilters, registerApplyHandler],
   );
   const applyAndCloseFilters = useCallback(() => {
     filterApplyHandlerRef.current?.();
