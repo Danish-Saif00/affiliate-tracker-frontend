@@ -4,12 +4,16 @@ const THEME_STORAGE_KEY = "publisher-tracker-theme";
 
 export function readStoredTheme(): ThemeMode {
   if (typeof window === "undefined") {
-    return "light";
+    return "dark";
   }
 
-  return window.localStorage.getItem(THEME_STORAGE_KEY) === "dark"
-    ? "dark"
-    : "light";
+  const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
+
+  if (storedTheme === "light" || storedTheme === "dark") {
+    return storedTheme;
+  }
+
+  return "dark";
 }
 
 export function applyTheme(theme: ThemeMode): void {

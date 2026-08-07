@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, Outlet, useLocation } from "react-router";
 
 import { useAuth } from "../../features/auth/use-auth";
 import { useCompany } from "../../features/companies/use-company";
+import { FilterApplyCoordinatorContext } from "../../features/filters/use-applied-filters";
 import {
   persistTheme,
   readStoredTheme,
@@ -83,6 +84,25 @@ export function AppShell() {
   const showRestriction =
     companyAccessRestricted && location.pathname !== "/account";
   const filterOpen = filterOpenPath === location.pathname;
+  const filterApplyHandlerRef = useRef<(() => void) | null>(null);
+  const registerApplyHandler = useCallback((handler: () => void) => {
+    filterApplyHandlerRef.current = handler;
+    return () => {
+      if (filterApplyHandlerRef.current === handler) {
+        filterApplyHandlerRef.current = null;
+      }
+    };
+  }, []);
+  const filterCoordinator = useMemo(
+    () => ({
+      registerApplyHandler,
+    }),
+    [registerApplyHandler],
+  );
+  const applyAndCloseFilters = useCallback(() => {
+    filterApplyHandlerRef.current?.();
+    setFilterOpenPath(null);
+  }, []);
 
   useEffect(() => {
     const content = document.querySelector(".app-content");
@@ -129,40 +149,26 @@ export function AppShell() {
 
   useEffect(() => {
     const root = document.documentElement;
-    const mobileQuery = window.matchMedia("(max-width: 900px)");
-
     root.dataset.filterRoute = filterAvailable ? "true" : "false";
     root.dataset.filterDrawerOpen = filterOpen ? "true" : "false";
-
-    if (filterOpen && mobileQuery.matches) {
+    if (filterOpen) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.removeProperty("overflow");
     }
-
     function handleKeyDown(event: KeyboardEvent): void {
-      if (event.key === "Escape") {
-        setFilterOpenPath(null);
+      if (event.key === "Escape" && filterOpen) {
+        applyAndCloseFilters();
       }
     }
-
-    function handleViewportChange(event: MediaQueryListEvent): void {
-      if (!event.matches) {
-        setFilterOpenPath(null);
-      }
-    }
-
     window.addEventListener("keydown", handleKeyDown);
-    mobileQuery.addEventListener("change", handleViewportChange);
-
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
-      mobileQuery.removeEventListener("change", handleViewportChange);
       document.body.style.removeProperty("overflow");
       delete root.dataset.filterRoute;
       delete root.dataset.filterDrawerOpen;
     };
-  }, [filterAvailable, filterOpen]);
+  }, [applyAndCloseFilters, filterAvailable, filterOpen]);
 
   function toggleTheme(): void {
     const nextTheme: ThemeMode = theme === "light" ? "dark" : "light";
@@ -200,7 +206,7 @@ export function AppShell() {
           <button
             aria-label="Close filters"
             className="responsive-filter-backdrop"
-            onClick={() => setFilterOpenPath(null)}
+            onClick={applyAndCloseFilters}
             type="button"
           />
           <div className="responsive-filter-drawer-header" role="presentation">
@@ -211,7 +217,7 @@ export function AppShell() {
             <button
               aria-label="Close filters"
               className="icon-button responsive-filter-close"
-              onClick={() => setFilterOpenPath(null)}
+              onClick={applyAndCloseFilters}
               type="button"
             >
               ×
@@ -246,7 +252,13 @@ export function AppShell() {
         </button>
       )}
       <main className="app-content">
-        {showRestriction ? <SubscriptionAccessPage /> : <Outlet />}
+        {showRestriction ? (
+          <SubscriptionAccessPage />
+        ) : (
+          <FilterApplyCoordinatorContext.Provider value={filterCoordinator}>
+            <Outlet />
+          </FilterApplyCoordinatorContext.Provider>
+        )}
       </main>
     </div>
   );

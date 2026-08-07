@@ -63,7 +63,7 @@ export function PublisherUserAgentsPage() {
     [countryCode, device, offerId, rangeDays, search, status],
   );
     const { appliedFilters, applyFilters } =
-    useAppliedFilters(draftFilters);
+    useAppliedFilters(draftFilters, () => setPage(1));
   const logs = useUserAgentLogs(appliedFilters);
 
   if (
@@ -224,10 +224,7 @@ export function PublisherUserAgentsPage() {
                   <div className="filter-apply-actions">
             <button
               className="primary-gradient-button primary-gradient-button--compact filter-apply-button"
-              onClick={() => {
-                applyFilters();
-                setPage(1);
-              }}
+              onClick={applyFilters}
               type="button"
             >
               <MaterialIcon name="filter_alt" />

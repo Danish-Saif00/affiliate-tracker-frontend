@@ -114,7 +114,7 @@ export function ReportsPage({
     ],
   );
     const { appliedFilters, applyFilters } =
-    useAppliedFilters(draftFilters);
+    useAppliedFilters(draftFilters, () => setPage(1));
   const report = usePerformanceReport(dimension, appliedFilters);
 
   if (report.status === 'loading' || report.status === 'idle') {
@@ -297,10 +297,7 @@ export function ReportsPage({
                   <div className="filter-apply-actions">
             <button
               className="primary-gradient-button primary-gradient-button--compact filter-apply-button"
-              onClick={() => {
-                applyFilters();
-                setPage(1);
-              }}
+              onClick={applyFilters}
               type="button"
             >
               <MaterialIcon name="filter_alt" />

@@ -79,7 +79,7 @@ export function PublisherConversionsPage() {
     ],
   );
     const { appliedFilters, applyFilters } =
-    useAppliedFilters(draftFilters);
+    useAppliedFilters(draftFilters, () => setPage(1));
   const logs = useConversionLogs(appliedFilters);
 
   if (
@@ -235,10 +235,7 @@ export function PublisherConversionsPage() {
                   <div className="filter-apply-actions">
             <button
               className="primary-gradient-button primary-gradient-button--compact filter-apply-button"
-              onClick={() => {
-                applyFilters();
-                setPage(1);
-              }}
+              onClick={applyFilters}
               type="button"
             >
               <MaterialIcon name="filter_alt" />

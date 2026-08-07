@@ -74,7 +74,7 @@ export function SessionsPage() {
     ],
   );
     const { appliedFilters, applyFilters } =
-    useAppliedFilters(draftFilters);
+    useAppliedFilters(draftFilters, () => setPage(1));
   const logs = useSessionLogs(appliedFilters);
 
   if (logs.status === 'loading' || logs.status === 'idle') {
@@ -223,10 +223,7 @@ export function SessionsPage() {
                   <div className="filter-apply-actions">
             <button
               className="primary-gradient-button primary-gradient-button--compact filter-apply-button"
-              onClick={() => {
-                applyFilters();
-                setPage(1);
-              }}
+              onClick={applyFilters}
               type="button"
             >
               <MaterialIcon name="filter_alt" />

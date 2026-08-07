@@ -548,7 +548,7 @@ export function NetworkProvidersPage() {
   }
 
   return (
-    <div className="tracking-module-page page-stack">
+    <div className="tracking-module-page page-stack company-admin-provider-page">
       <GlassPanel
         as="section"
         className="page-heading-panel tracking-heading-panel"

@@ -128,7 +128,7 @@ export function PublishersPage() {
     [createdAfter, membershipStatus, search],
   );
   const { appliedFilters, applyFilters } =
-    useAppliedFilters(draftFilters);
+    useAppliedFilters(draftFilters, () => setPage(1));
   const filteredPublishers = useMemo(() => {
     const items = snapshot?.publishers ?? [];
     const needle = appliedFilters.search.trim().toLowerCase();
@@ -626,10 +626,7 @@ export function PublishersPage() {
             <div className="filter-apply-actions">
               <button
                 className="primary-gradient-button primary-gradient-button--compact filter-apply-button"
-                onClick={() => {
-                  applyFilters();
-                  setPage(1);
-                }}
+                onClick={applyFilters}
                 type="button"
               >
                 Apply Filters

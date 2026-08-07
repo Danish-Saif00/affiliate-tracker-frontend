@@ -148,7 +148,7 @@ export function TrackingDomainsPage({
     [createdAfter, search, status],
   );
   const { appliedFilters, applyFilters } =
-    useAppliedFilters(draftFilters);
+    useAppliedFilters(draftFilters, () => setPage(1));
   const filtered = useMemo(() => {
     const needle = appliedFilters.search.trim().toLowerCase();
     const threshold =
@@ -567,10 +567,7 @@ export function TrackingDomainsPage({
             <div className="filter-apply-actions">
               <button
                 className="primary-gradient-button primary-gradient-button--compact filter-apply-button"
-                onClick={() => {
-                  applyFilters();
-                  setPage(1);
-                }}
+                onClick={applyFilters}
                 type="button"
               >
                 Apply Filters
