@@ -190,8 +190,6 @@ export function AppShell() {
 
       <Sidebar open={navigationOpen} onClose={() => setNavigationOpen(false)} />
       <Topbar
-        filterAvailable={filterAvailable}
-        onOpenFilters={() => setFilterOpenPath(location.pathname)}
         onOpenNavigation={() => setNavigationOpen(true)}
         onToggleTheme={toggleTheme}
         theme={theme}
@@ -246,7 +244,8 @@ export function AppShell() {
             />
           </svg>
         </button>
-      )}      <main className="app-content">
+      )}
+      <main className="app-content">
         {showRestriction ? <SubscriptionAccessPage /> : <Outlet />}
       </main>
     </div>

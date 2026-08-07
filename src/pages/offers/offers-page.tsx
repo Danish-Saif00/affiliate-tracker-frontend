@@ -1,4 +1,5 @@
 import { type FormEvent, useMemo, useState } from "react";
+import { useAppliedFilters } from "../../features/filters/use-applied-filters";
 
 import { MaterialIcon } from "../../components/icons/material-icon";
 import { GlassPanel } from "../../components/ui/glass-panel";
@@ -834,12 +835,36 @@ export function OffersPage({ mode }: { mode: OffersPageMode }) {
     [snapshot],
   );
 
+  const draftFilters = useMemo(
+    () => ({
+      search,
+      status,
+      networkId,
+      domainId,
+      managerId,
+      country,
+      device,
+      createdAfter,
+    }),
+    [
+      country,
+      createdAfter,
+      device,
+      domainId,
+      managerId,
+      networkId,
+      search,
+      status,
+    ],
+  );
+  const { appliedFilters, applyFilters } =
+    useAppliedFilters(draftFilters);
   const filtered = useMemo(() => {
     if (snapshot === null) {
       return [];
     }
 
-    const needle = search.trim().toLowerCase();
+    const needle = appliedFilters.search.trim().toLowerCase();
     return snapshot.offers.filter((offer) => {
       const matchesSearch =
         needle.length === 0 ||
@@ -849,33 +874,28 @@ export function OffersPage({ mode }: { mode: OffersPageMode }) {
         offer.providerName.toLowerCase().includes(needle) ||
         offer.trackingDomainHostname?.toLowerCase().includes(needle) === true;
       const matchesCreatedAfter =
-        createdAfter.length === 0 ||
+        appliedFilters.createdAfter.length === 0 ||
         new Date(offer.createdAt).getTime() >=
-          new Date(`${createdAfter}T00:00:00`).getTime();
+          new Date(`${appliedFilters.createdAfter}T00:00:00`).getTime();
 
       return (
         matchesSearch &&
-        (status === "all" || offer.status === status) &&
-        (networkId.length === 0 || offer.networkAccountId === networkId) &&
-        (domainId.length === 0 || offer.trackingDomainId === domainId) &&
-        (managerId.length === 0 ||
-          offer.managerMembershipIds.includes(managerId)) &&
-        (country.length === 0 || offer.countries.includes(country)) &&
-        (device === "" || offer.devices.includes(device)) &&
+        (appliedFilters.status === "all" ||
+          offer.status === appliedFilters.status) &&
+        (appliedFilters.networkId.length === 0 ||
+          offer.networkAccountId === appliedFilters.networkId) &&
+        (appliedFilters.domainId.length === 0 ||
+          offer.trackingDomainId === appliedFilters.domainId) &&
+        (appliedFilters.managerId.length === 0 ||
+          offer.managerMembershipIds.includes(appliedFilters.managerId)) &&
+        (appliedFilters.country.length === 0 ||
+          offer.countries.includes(appliedFilters.country)) &&
+        (appliedFilters.device === "" ||
+          offer.devices.includes(appliedFilters.device)) &&
         matchesCreatedAfter
       );
     });
-  }, [
-    country,
-    createdAfter,
-    device,
-    domainId,
-    managerId,
-    networkId,
-    search,
-    snapshot,
-    status,
-  ]);
+  }, [appliedFilters, snapshot]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, pageCount);
@@ -1172,7 +1192,7 @@ export function OffersPage({ mode }: { mode: OffersPageMode }) {
           <CatalogToolbar
             onSearch={(value) => {
               setSearch(value);
-              setPage(1);
+
             }}
             search={search}
           >
@@ -1181,7 +1201,7 @@ export function OffersPage({ mode }: { mode: OffersPageMode }) {
                 setStatus(
                   event.currentTarget.value as CatalogOfferStatus | "all",
                 );
-                setPage(1);
+
               }}
               value={status}
             >
@@ -1194,7 +1214,7 @@ export function OffersPage({ mode }: { mode: OffersPageMode }) {
             <select
               onChange={(event) => {
                 setNetworkId(event.currentTarget.value);
-                setPage(1);
+
               }}
               value={networkId}
             >
@@ -1208,7 +1228,7 @@ export function OffersPage({ mode }: { mode: OffersPageMode }) {
             <select
               onChange={(event) => {
                 setDomainId(event.currentTarget.value);
-                setPage(1);
+
               }}
               value={domainId}
             >
@@ -1222,7 +1242,7 @@ export function OffersPage({ mode }: { mode: OffersPageMode }) {
             <select
               onChange={(event) => {
                 setManagerId(event.currentTarget.value);
-                setPage(1);
+
               }}
               value={managerId}
             >
@@ -1238,7 +1258,7 @@ export function OffersPage({ mode }: { mode: OffersPageMode }) {
             <select
               onChange={(event) => {
                 setCountry(event.currentTarget.value);
-                setPage(1);
+
               }}
               value={country}
             >
@@ -1252,7 +1272,7 @@ export function OffersPage({ mode }: { mode: OffersPageMode }) {
             <select
               onChange={(event) => {
                 setDevice(event.currentTarget.value as CatalogDevice | "");
-                setPage(1);
+
               }}
               value={device}
             >
@@ -1267,12 +1287,25 @@ export function OffersPage({ mode }: { mode: OffersPageMode }) {
               aria-label="Offers added after"
               onChange={(event) => {
                 setCreatedAfter(event.currentTarget.value);
-                setPage(1);
+
               }}
               type="date"
               value={createdAfter}
             />
-          </CatalogToolbar>
+
+            <div className="filter-apply-actions">
+              <button
+                className="primary-gradient-button primary-gradient-button--compact filter-apply-button"
+                onClick={() => {
+                  applyFilters();
+                  setPage(1);
+                }}
+                type="button"
+              >
+                Apply Filters
+              </button>
+            </div>
+</CatalogToolbar>
 
           {pageRows.length === 0 ? (
             <ControlEmpty

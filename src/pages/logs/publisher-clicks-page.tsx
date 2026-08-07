@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 
+import { useAppliedFilters } from "../../features/filters/use-applied-filters";
 import { MaterialIcon } from "../../components/icons/material-icon";
 import { GlassPanel } from "../../components/ui/glass-panel";
 import type {
@@ -47,7 +48,7 @@ export function PublisherClicksPage() {
   const [countryCode, setCountryCode] = useState("");
   const [device, setDevice] = useState<OperationalDevice | "">("");
   const [page, setPage] = useState(1);
-  const filters = useMemo(
+  const draftFilters = useMemo(
     () => ({
       from: startOfRange(rangeDays),
       to: endOfToday(),
@@ -62,7 +63,9 @@ export function PublisherClicksPage() {
     }),
     [countryCode, device, offerId, rangeDays, search, status],
   );
-  const logs = useClickLogs(filters);
+    const { appliedFilters, applyFilters } =
+    useAppliedFilters(draftFilters);
+  const logs = useClickLogs(appliedFilters);
 
   if (
     logs.status === "loading" ||
@@ -112,7 +115,7 @@ export function PublisherClicksPage() {
             <input
               onChange={(event) => {
                 setSearch(event.currentTarget.value);
-                setPage(1);
+
               }}
               placeholder="Search click or Offer"
               value={search}
@@ -123,7 +126,7 @@ export function PublisherClicksPage() {
             <select
               onChange={(event) => {
                 setRangeDays(Number(event.currentTarget.value));
-                setPage(1);
+
               }}
               value={rangeDays}
             >
@@ -138,7 +141,7 @@ export function PublisherClicksPage() {
             <select
               onChange={(event) => {
                 setOfferId(event.currentTarget.value);
-                setPage(1);
+
               }}
               value={offerId}
             >
@@ -156,7 +159,7 @@ export function PublisherClicksPage() {
               maxLength={2}
               onChange={(event) => {
                 setCountryCode(event.currentTarget.value.toUpperCase());
-                setPage(1);
+
               }}
               placeholder="US"
               value={countryCode}
@@ -169,7 +172,7 @@ export function PublisherClicksPage() {
                 setDevice(
                   event.currentTarget.value as OperationalDevice | "",
                 );
-                setPage(1);
+
               }}
               value={device}
             >
@@ -189,7 +192,7 @@ export function PublisherClicksPage() {
                     | OperationalReviewStatus
                     | "",
                 );
-                setPage(1);
+
               }}
               value={status}
             >
@@ -199,7 +202,19 @@ export function PublisherClicksPage() {
               <option value="unchecked">Unchecked</option>
             </select>
           </label>
-        </div>
+                  <div className="filter-apply-actions">
+            <button
+              className="primary-gradient-button primary-gradient-button--compact filter-apply-button"
+              onClick={() => {
+                applyFilters();
+                setPage(1);
+              }}
+              type="button"
+            >
+              <MaterialIcon name="filter_alt" />
+              Apply Filters
+            </button>
+          </div></div>
 
         {logs.clicks.length === 0 ? (
           <ControlEmpty

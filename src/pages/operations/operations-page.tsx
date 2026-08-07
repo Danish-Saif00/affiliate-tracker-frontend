@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useAppliedFilters } from '../../features/filters/use-applied-filters';
 
 import { GlassPanel } from '../../components/ui/glass-panel';
 import { useOperations } from '../../features/control-plane/use-control-plane';
@@ -15,7 +16,7 @@ import {
 export function OperationsPage() {
   const [eventName, setEventName] = useState('');
   const [entityType, setEntityType] = useState('');
-  const filters = useMemo(
+  const draftFilters = useMemo(
     () => ({
       ...(eventName.trim().length > 0 ? { eventName: eventName.trim() } : {}),
       ...(entityType.trim().length > 0 ? { entityType: entityType.trim() } : {}),
@@ -23,7 +24,9 @@ export function OperationsPage() {
     }),
     [entityType, eventName],
   );
-  const operations = useOperations(filters);
+  const { appliedFilters, applyFilters } =
+    useAppliedFilters(draftFilters);
+  const operations = useOperations(appliedFilters);
 
   if (operations.status === 'loading' || operations.status === 'idle') {
     return <ControlLoading label="operations" />;
@@ -62,7 +65,15 @@ export function OperationsPage() {
           <input onChange={(event) => setEventName(event.target.value)} placeholder="Filter event name" value={eventName} />
           <input onChange={(event) => setEntityType(event.target.value)} placeholder="Filter entity type" value={entityType} />
           <button className="secondary-button" onClick={() => { setEventName(''); setEntityType(''); }} type="button">Clear filters</button>
-        </div>
+                  <div className="filter-apply-actions">
+            <button
+              className="primary-gradient-button primary-gradient-button--compact filter-apply-button"
+              onClick={applyFilters}
+              type="button"
+            >
+              Apply Filters
+            </button>
+          </div></div>
 
         {operations.events.length === 0 ? (
           <ControlEmpty icon="history" message="No operational events match the current filters." title="No events" />

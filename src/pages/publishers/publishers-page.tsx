@@ -1,4 +1,5 @@
 import { type FormEvent, useMemo, useState } from "react";
+import { useAppliedFilters } from "../../features/filters/use-applied-filters";
 
 import {
   ManagedUserCreateForm,
@@ -118,26 +119,37 @@ export function PublishersPage() {
     [snapshot],
   );
 
+  const draftFilters = useMemo(
+    () => ({
+      search,
+      membershipStatus,
+      createdAfter,
+    }),
+    [createdAfter, membershipStatus, search],
+  );
+  const { appliedFilters, applyFilters } =
+    useAppliedFilters(draftFilters);
   const filteredPublishers = useMemo(() => {
     const items = snapshot?.publishers ?? [];
-    const needle = search.trim().toLowerCase();
+    const needle = appliedFilters.search.trim().toLowerCase();
 
     return items.filter((publisher) => {
       const label =
         `${publisher.displayName ?? ""} ${publisher.email ?? ""}`.toLowerCase();
       const matchesCreatedAfter =
-        createdAfter.length === 0 ||
+        appliedFilters.createdAfter.length === 0 ||
         new Date(publisher.createdAt).getTime() >=
-          new Date(`${createdAfter}T00:00:00`).getTime();
+          new Date(`${appliedFilters.createdAfter}T00:00:00`).getTime();
 
       return (
         (needle.length === 0 || label.includes(needle)) &&
-        (membershipStatus === "all" ||
-          publisher.membershipStatus === membershipStatus) &&
+        (appliedFilters.membershipStatus === "all" ||
+          publisher.membershipStatus ===
+            appliedFilters.membershipStatus) &&
         matchesCreatedAfter
       );
     });
-  }, [createdAfter, membershipStatus, search, snapshot]);
+  }, [appliedFilters, snapshot]);
 
   const pageCount = Math.max(
     1,
@@ -585,14 +597,14 @@ export function PublishersPage() {
         <CatalogToolbar
           onSearch={(value) => {
             setSearch(value);
-            setPage(1);
+
           }}
           search={search}
         >
           <select
             onChange={(event) => {
               setMembershipStatus(event.currentTarget.value);
-              setPage(1);
+
             }}
             value={membershipStatus}
           >
@@ -605,12 +617,25 @@ export function PublishersPage() {
             aria-label="Publishers added after"
             onChange={(event) => {
               setCreatedAfter(event.currentTarget.value);
-              setPage(1);
+
             }}
             type="date"
             value={createdAfter}
           />
-        </CatalogToolbar>
+
+            <div className="filter-apply-actions">
+              <button
+                className="primary-gradient-button primary-gradient-button--compact filter-apply-button"
+                onClick={() => {
+                  applyFilters();
+                  setPage(1);
+                }}
+                type="button"
+              >
+                Apply Filters
+              </button>
+            </div>
+</CatalogToolbar>
 
         {pageRows.length === 0 ? (
           <ControlEmpty

@@ -1,4 +1,5 @@
 import { type FormEvent, useMemo, useState } from "react";
+import { useAppliedFilters } from "../../features/filters/use-applied-filters";
 
 import { MaterialIcon } from "../../components/icons/material-icon";
 import { GlassPanel } from "../../components/ui/glass-panel";
@@ -36,9 +37,17 @@ export function PostbacksPage() {
   );
   const [feedback, setFeedback] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const draftFilters = useMemo(
+    () => ({ status }),
+    [status],
+  );
+  const { appliedFilters, applyFilters } =
+    useAppliedFilters(draftFilters);
   const endpoints = usePostbackEndpoints(
     networkAccountId.length === 0 ? null : networkAccountId,
-    status === "all" ? undefined : status,
+    appliedFilters.status === "all"
+      ? undefined
+      : appliedFilters.status,
   );
 
 
@@ -372,7 +381,15 @@ export function PostbacksPage() {
             </div>
           )}
         </GlassPanel>
-      </div>
+                <div className="filter-apply-actions">
+            <button
+              className="primary-gradient-button primary-gradient-button--compact filter-apply-button"
+              onClick={applyFilters}
+              type="button"
+            >
+              Apply Filters
+            </button>
+          </div></div>
     </div>
   );
 }

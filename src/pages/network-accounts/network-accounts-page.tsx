@@ -1,4 +1,5 @@
 import { type FormEvent, useMemo, useState } from "react";
+import { useAppliedFilters } from "../../features/filters/use-applied-filters";
 
 import { MaterialIcon } from "../../components/icons/material-icon";
 import { GlassPanel } from "../../components/ui/glass-panel";
@@ -341,12 +342,23 @@ export function NetworkAccountsPage({
     [snapshot],
   );
 
+  const draftFilters = useMemo(
+    () => ({
+      search,
+      status,
+      providerId,
+      createdAfter,
+    }),
+    [createdAfter, providerId, search, status],
+  );
+  const { appliedFilters, applyFilters } =
+    useAppliedFilters(draftFilters);
   const filtered = useMemo(() => {
     if (snapshot === null) {
       return [];
     }
 
-    const needle = search.trim().toLowerCase();
+    const needle = appliedFilters.search.trim().toLowerCase();
     return snapshot.networks.filter((network) => {
       const matchesSearch =
         needle.length === 0 ||
@@ -355,18 +367,20 @@ export function NetworkAccountsPage({
         network.providerCode.toLowerCase().includes(needle) ||
         network.externalAccountId?.toLowerCase().includes(needle) === true;
       const matchesCreatedAfter =
-        createdAfter.length === 0 ||
+        appliedFilters.createdAfter.length === 0 ||
         new Date(network.createdAt).getTime() >=
-          new Date(`${createdAfter}T00:00:00`).getTime();
+          new Date(`${appliedFilters.createdAfter}T00:00:00`).getTime();
 
       return (
         matchesSearch &&
-        (status === "all" || network.status === status) &&
-        (providerId.length === 0 || network.providerId === providerId) &&
+        (appliedFilters.status === "all" ||
+          network.status === appliedFilters.status) &&
+        (appliedFilters.providerId.length === 0 ||
+          network.providerId === appliedFilters.providerId) &&
         matchesCreatedAfter
       );
     });
-  }, [createdAfter, providerId, search, snapshot, status]);
+  }, [appliedFilters, snapshot]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, pageCount);
@@ -768,14 +782,14 @@ export function NetworkAccountsPage({
           <CatalogToolbar
             onSearch={(value) => {
               setSearch(value);
-              setPage(1);
+
             }}
             search={search}
           >
             <select
               onChange={(event) => {
                 setProviderId(event.currentTarget.value);
-                setPage(1);
+
               }}
               value={providerId}
             >
@@ -791,7 +805,7 @@ export function NetworkAccountsPage({
                 setStatus(
                   event.currentTarget.value as CatalogNetworkStatus | "all",
                 );
-                setPage(1);
+
               }}
               value={status}
             >
@@ -804,12 +818,25 @@ export function NetworkAccountsPage({
               aria-label="Networks added after"
               onChange={(event) => {
                 setCreatedAfter(event.currentTarget.value);
-                setPage(1);
+
               }}
               type="date"
               value={createdAfter}
             />
-          </CatalogToolbar>
+
+            <div className="filter-apply-actions">
+              <button
+                className="primary-gradient-button primary-gradient-button--compact filter-apply-button"
+                onClick={() => {
+                  applyFilters();
+                  setPage(1);
+                }}
+                type="button"
+              >
+                Apply Filters
+              </button>
+            </div>
+</CatalogToolbar>
 
           {pageRows.length === 0 ? (
             <ControlEmpty

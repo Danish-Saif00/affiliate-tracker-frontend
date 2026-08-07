@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useAppliedFilters } from "../../features/filters/use-applied-filters";
 
 import {
   ManagedUserCreateForm,
@@ -89,7 +90,7 @@ export function TenantAdministrationPage() {
   const [passwordTarget, setPasswordTarget] =
     useState<CompanyDirectoryUser | null>(null);
 
-  const filters = useMemo<DirectoryFilters>(
+  const draftFilters = useMemo<DirectoryFilters>(
     () => ({
       search,
       role: target?.role ?? "",
@@ -99,7 +100,9 @@ export function TenantAdministrationPage() {
     [membershipStatus, search, target?.role, userStatus],
   );
 
-  const tenant = useTenantAdministration(filters);
+  const { appliedFilters, applyFilters } =
+    useAppliedFilters(draftFilters);
+  const tenant = useTenantAdministration(appliedFilters);
 
   function resetFeedback(): void {
     setFeedback(null);
@@ -344,7 +347,15 @@ export function TenantAdministrationPage() {
               </select>
             </label>
           )}
-        </div>
+                  <div className="filter-apply-actions">
+            <button
+              className="primary-gradient-button primary-gradient-button--compact filter-apply-button"
+              onClick={applyFilters}
+              type="button"
+            >
+              Apply Filters
+            </button>
+          </div></div>
 
         {tenant.directory.items.length === 0 ? (
           <ControlEmpty

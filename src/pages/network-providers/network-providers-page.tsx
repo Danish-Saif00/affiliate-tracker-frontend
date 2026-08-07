@@ -1,4 +1,5 @@
 import { type FormEvent, useMemo, useState } from "react";
+import { useAppliedFilters } from "../../features/filters/use-applied-filters";
 
 import { MaterialIcon } from "../../components/icons/material-icon";
 import { GlassPanel } from "../../components/ui/glass-panel";
@@ -348,19 +349,28 @@ export function NetworkProvidersPage() {
   const [feedback, setFeedback] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
+  const draftFilters = useMemo(
+    () => ({ search, status }),
+    [search, status],
+  );
+  const { appliedFilters, applyFilters } =
+    useAppliedFilters(draftFilters);
   const filteredProviders = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
+    const normalizedSearch =
+      appliedFilters.search.trim().toLowerCase();
 
     return providers.providers.filter((provider) => {
       const matchesSearch =
         normalizedSearch.length === 0 ||
         provider.name.toLowerCase().includes(normalizedSearch) ||
         provider.code.includes(normalizedSearch);
-      const matchesStatus = status === "all" || provider.status === status;
+      const matchesStatus =
+        appliedFilters.status === "all" ||
+        provider.status === appliedFilters.status;
 
       return matchesSearch && matchesStatus;
     });
-  }, [providers.providers, search, status]);
+  }, [appliedFilters, providers.providers]);
 
   const activeCount = useMemo(
     () =>
@@ -753,7 +763,17 @@ export function NetworkProvidersPage() {
               <option value="active">Active</option>
               <option value="archived">Archived</option>
             </select>
-          </div>
+
+            <div className="filter-apply-actions">
+              <button
+                className="primary-gradient-button primary-gradient-button--compact filter-apply-button"
+                onClick={applyFilters}
+                type="button"
+              >
+                Apply Filters
+              </button>
+            </div>
+</div>
 
           {providers.status === "error" && filteredProviders.length === 0 ? (
             <div className="tracking-empty-state tracking-empty-state--error">

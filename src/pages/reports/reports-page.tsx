@@ -3,6 +3,7 @@ import {
   useState,
 } from 'react';
 
+import { useAppliedFilters } from '../../features/filters/use-applied-filters';
 import { MaterialIcon } from '../../components/icons/material-icon';
 import { GlassPanel } from '../../components/ui/glass-panel';
 import { CatalogPagination } from '../control-plane/catalog-page-ui';
@@ -92,7 +93,7 @@ export function ReportsPage({
   const [countryCode, setCountryCode] = useState('');
   const [device, setDevice] = useState<OperationalDevice | ''>('');
   const [page, setPage] = useState(1);
-  const filters = useMemo(
+  const draftFilters = useMemo(
     () => ({
       from: startOfRange(rangeDays),
       to: endOfToday(),
@@ -112,7 +113,9 @@ export function ReportsPage({
       search,
     ],
   );
-  const report = usePerformanceReport(dimension, filters);
+    const { appliedFilters, applyFilters } =
+    useAppliedFilters(draftFilters);
+  const report = usePerformanceReport(dimension, appliedFilters);
 
   if (report.status === 'loading' || report.status === 'idle') {
     return <ControlLoading label={configuration.title.toLowerCase()} />;
@@ -219,7 +222,7 @@ export function ReportsPage({
             <input
               onChange={(event) => {
                 setSearch(event.currentTarget.value);
-                setPage(1);
+
               }}
               placeholder={`Search ${configuration.singular}`}
               value={search}
@@ -231,7 +234,7 @@ export function ReportsPage({
             <select
               onChange={(event) => {
                 setRangeDays(Number(event.currentTarget.value));
-                setPage(1);
+
               }}
               value={rangeDays}
             >
@@ -247,7 +250,7 @@ export function ReportsPage({
             <select
               onChange={(event) => {
                 setDimensionStatus(event.currentTarget.value);
-                setPage(1);
+
               }}
               value={dimensionStatus}
             >
@@ -266,7 +269,7 @@ export function ReportsPage({
               maxLength={2}
               onChange={(event) => {
                 setCountryCode(event.currentTarget.value.toUpperCase());
-                setPage(1);
+
               }}
               placeholder="US"
               value={countryCode}
@@ -280,7 +283,7 @@ export function ReportsPage({
                 setDevice(
                   event.currentTarget.value as OperationalDevice | '',
                 );
-                setPage(1);
+
               }}
               value={device}
             >
@@ -291,7 +294,19 @@ export function ReportsPage({
               <option value="other">Other</option>
             </select>
           </label>
-        </div>
+                  <div className="filter-apply-actions">
+            <button
+              className="primary-gradient-button primary-gradient-button--compact filter-apply-button"
+              onClick={() => {
+                applyFilters();
+                setPage(1);
+              }}
+              type="button"
+            >
+              <MaterialIcon name="filter_alt" />
+              Apply Filters
+            </button>
+          </div></div>
 
         {report.rows.length === 0 ? (
           <ControlEmpty

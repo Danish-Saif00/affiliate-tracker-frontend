@@ -3,6 +3,7 @@ import {
   useMemo,
   useState,
 } from 'react';
+import { useAppliedFilters } from '../../features/filters/use-applied-filters';
 import { MaterialIcon } from '../../components/icons/material-icon';
 import { useCompany } from '../../features/companies/use-company';
 import type {
@@ -309,9 +310,18 @@ export function TrackingDomainsPanel({
     useState<string | null>(null);
   const [actionError, setActionError] =
     useState<string | null>(null);
+  const draftFilters = useMemo(
+    () => ({
+      search,
+      status,
+    }),
+    [search, status],
+  );
+  const { appliedFilters, applyFilters } =
+    useAppliedFilters(draftFilters);
   const filteredDomains = useMemo(() => {
     const normalizedSearch =
-      search.trim().toLowerCase();
+      appliedFilters.search.trim().toLowerCase();
     return tracking.domains.filter(
       (domain) => {
         const matchesSearch =
@@ -320,16 +330,12 @@ export function TrackingDomainsPanel({
             .toLowerCase()
             .includes(normalizedSearch);
         const matchesStatus =
-          status === 'all' ||
-          domain.status === status;
+          appliedFilters.status === 'all' ||
+          domain.status === appliedFilters.status;
         return matchesSearch && matchesStatus;
       },
     );
-  }, [
-    search,
-    status,
-    tracking.domains,
-  ]);
+  }, [appliedFilters, tracking.domains]);
   const activeCount =
     tracking.domains.filter(
       (domain) =>
@@ -1222,7 +1228,17 @@ export function TrackingDomainsPanel({
             >
               <MaterialIcon name="refresh" />
             </button>
-          </div>
+
+            <div className="filter-apply-actions">
+              <button
+                className="primary-gradient-button primary-gradient-button--compact filter-apply-button"
+                onClick={applyFilters}
+                type="button"
+              >
+                Apply Filters
+              </button>
+            </div>
+</div>
           {filteredDomains.length === 0 ? (
             <div className="custom-domain-empty">
               <MaterialIcon name="dns" />

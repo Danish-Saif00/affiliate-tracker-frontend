@@ -4,6 +4,7 @@ import {
   useState,
 } from 'react';
 
+import { useAppliedFilters } from '../../features/filters/use-applied-filters';
 import { MaterialIcon } from '../../components/icons/material-icon';
 import { GlassPanel } from '../../components/ui/glass-panel';
 import { useCatalogOperations } from '../../features/catalog/use-catalog';
@@ -61,7 +62,7 @@ export function ClicksPage() {
   const [device, setDevice] = useState<OperationalDevice | ''>('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
-  const filters = useMemo(
+  const draftFilters = useMemo(
     () => ({
       from: startOfRange(rangeDays),
       to: endOfToday(),
@@ -87,7 +88,9 @@ export function ClicksPage() {
       status,
     ],
   );
-  const logs = useClickLogs(filters);
+    const { appliedFilters, applyFilters } =
+    useAppliedFilters(draftFilters);
+  const logs = useClickLogs(appliedFilters);
 
   if (logs.status === 'loading' || logs.status === 'idle') {
     return <ControlLoading label="click logs" />;
@@ -153,7 +156,7 @@ export function ClicksPage() {
             <input
               onChange={(event) => {
                 setSearch(event.currentTarget.value);
-                setPage(1);
+
               }}
               placeholder="Search click, offer, network or publisher"
               value={search}
@@ -165,7 +168,7 @@ export function ClicksPage() {
             <select
               onChange={(event) => {
                 setRangeDays(Number(event.currentTarget.value));
-                setPage(1);
+
               }}
               value={rangeDays}
             >
@@ -183,7 +186,7 @@ export function ClicksPage() {
                 setStatus(
                   event.currentTarget.value as OperationalReviewStatus | '',
                 );
-                setPage(1);
+
               }}
               value={status}
             >
@@ -199,7 +202,7 @@ export function ClicksPage() {
             <select
               onChange={(event) => {
                 setOfferId(event.currentTarget.value);
-                setPage(1);
+
               }}
               value={offerId}
             >
@@ -217,7 +220,7 @@ export function ClicksPage() {
             <select
               onChange={(event) => {
                 setNetworkAccountId(event.currentTarget.value);
-                setPage(1);
+
               }}
               value={networkAccountId}
             >
@@ -235,7 +238,7 @@ export function ClicksPage() {
             <select
               onChange={(event) => {
                 setOwnerMembershipId(event.currentTarget.value);
-                setPage(1);
+
               }}
               value={ownerMembershipId}
             >
@@ -257,7 +260,7 @@ export function ClicksPage() {
               maxLength={2}
               onChange={(event) => {
                 setCountryCode(event.currentTarget.value.toUpperCase());
-                setPage(1);
+
               }}
               placeholder="US"
               value={countryCode}
@@ -271,7 +274,7 @@ export function ClicksPage() {
                 setDevice(
                   event.currentTarget.value as OperationalDevice | '',
                 );
-                setPage(1);
+
               }}
               value={device}
             >
@@ -282,7 +285,19 @@ export function ClicksPage() {
               <option value="other">Other</option>
             </select>
           </label>
-        </div>
+                  <div className="filter-apply-actions">
+            <button
+              className="primary-gradient-button primary-gradient-button--compact filter-apply-button"
+              onClick={() => {
+                applyFilters();
+                setPage(1);
+              }}
+              type="button"
+            >
+              <MaterialIcon name="filter_alt" />
+              Apply Filters
+            </button>
+          </div></div>
 
         {logs.clicks.length === 0 ? (
           <ControlEmpty

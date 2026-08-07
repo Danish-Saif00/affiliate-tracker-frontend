@@ -987,3 +987,177 @@
     height: 54px;
   }
 }
+
+/* publisher_tracker_filter_ui_polish_v3 */
+/*
+ * Dark theme refinement:
+ * retain contrast without pushing every content surface toward pure black.
+ */
+:root[data-theme="dark"] {
+  --pt-canvas: #101722;
+  --pt-canvas-soft: #141e2a;
+  --pt-surface: #182331;
+  --pt-surface-raised: #1d2a3a;
+  --pt-surface-strong: #233247;
+  --pt-surface-inset: #131d29;
+  --pt-surface-muted: #202e40;
+  --pt-border: rgba(150, 170, 198, 0.22);
+  --pt-border-strong: rgba(137, 166, 208, 0.38);
+}
+/* One mobile filter trigger only: the AppShell FAB. */
+.app-topbar__filter {
+  display: none !important;
+}
+/* Global search icon/text alignment. */
+.global-search,
+.catalog-search,
+.tenant-search-field,
+.control-search,
+.control-search-field,
+.control-filter-bar > label {
+  column-gap: 12px !important;
+}
+.global-search > :is(.app-icon, .material-symbols-outlined),
+.catalog-search > :is(.app-icon, .material-symbols-outlined),
+.tenant-search-field > :is(.app-icon, .material-symbols-outlined),
+.control-search > :is(.app-icon, .material-symbols-outlined),
+.control-search-field > :is(.app-icon, .material-symbols-outlined),
+.control-filter-bar > label > :is(.app-icon, .material-symbols-outlined) {
+  position: relative;
+  z-index: 2;
+  flex: 0 0 auto;
+  margin: 0 2px 0 0;
+  pointer-events: none;
+}
+.final-search-field .app-icon,
+.final-search-field .material-symbols-outlined {
+  left: 1rem !important;
+  pointer-events: none;
+}
+.final-search-field input {
+  padding-left: 3rem !important;
+}
+.catalog-search input,
+.global-search input,
+.tenant-search-field input,
+.control-search input,
+.control-search-field input,
+.control-filter-bar > label input {
+  min-width: 0 !important;
+}
+/* Cleaner visible dark borders instead of white/highlight borders. */
+:root[data-theme="dark"] .app-content :is(
+  input,
+  select,
+  textarea,
+  table,
+  .catalog-table-wrap,
+  .control-table-wrap,
+  .tracking-table-wrap,
+  .responsive-table-wrap,
+  [class*="table-wrap"],
+  [class*="table-shell"],
+  [class*="-card"],
+  [class*="-panel"],
+  [class*="-toolbar"]
+) {
+  border-color: rgba(132, 154, 184, 0.25) !important;
+}
+:root[data-theme="dark"] .app-content :is(
+  th,
+  td
+) {
+  border-color: rgba(118, 140, 170, 0.2) !important;
+}
+:root[data-theme="dark"] :is(
+  input,
+  select,
+  textarea
+) {
+  border-color: rgba(132, 154, 184, 0.28) !important;
+}
+/* Make the drawer dark, but not near-black. */
+@media (max-width: 900px) {
+  html[data-theme="dark"][data-filter-drawer-open="true"]
+    .app-content
+    [data-responsive-filter-host="true"] {
+    border-color: rgba(132, 154, 184, 0.24) !important;
+    background:
+      linear-gradient(
+        180deg,
+        #172332,
+        #141f2c
+      ) !important;
+    color: var(--pt-text) !important;
+  }
+  html[data-theme="dark"][data-filter-drawer-open="true"]
+    .responsive-filter-drawer-header {
+    border-color: rgba(132, 154, 184, 0.25) !important;
+    background:
+      linear-gradient(
+        145deg,
+        #213147,
+        #192638
+      ) !important;
+  }
+  html[data-theme="dark"][data-filter-drawer-open="true"]
+    .app-content
+    [data-responsive-filter-host="true"]
+    :is(
+      input,
+      select,
+      textarea
+    ) {
+    border-color: rgba(132, 154, 184, 0.28) !important;
+    background: #182536 !important;
+    color: #edf3fb !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.025),
+      0 0 0 1px rgba(4, 9, 15, 0.12) !important;
+  }
+}
+/* Slightly softer standalone filter FAB. */
+@media (max-width: 900px) {
+  html[data-filter-route="true"] .responsive-filter-fab {
+    border-color: rgba(138, 162, 196, 0.34) !important;
+    background:
+      linear-gradient(
+        145deg,
+        #24364d,
+        #19283a
+      ) !important;
+    color: #d7e3f4 !important;
+  }
+}
+
+/* publisher_tracker_apply_filters_batch_a */
+.filter-apply-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding-top: 6px;
+}
+.filter-apply-button {
+  min-width: 154px;
+}
+@media (max-width: 900px) {
+  html[data-filter-drawer-open="true"]
+    .filter-apply-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 3;
+    margin: 10px -2px -2px;
+    padding: 18px 0 2px;
+    background:
+      linear-gradient(
+        to bottom,
+        transparent,
+        var(--pt-surface) 32%
+      );
+  }
+  html[data-filter-drawer-open="true"]
+    .filter-apply-button {
+    width: 100%;
+  }
+}

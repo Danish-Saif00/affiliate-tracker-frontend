@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 
+import { useAppliedFilters } from "../../features/filters/use-applied-filters";
 import { MaterialIcon } from "../../components/icons/material-icon";
 import { GlassPanel } from "../../components/ui/glass-panel";
 import type {
@@ -46,7 +47,7 @@ export function PublisherUserAgentsPage() {
   const [status, setStatus] = useState<OperationalReviewStatus | "">("");
   const [copyMessage, setCopyMessage] = useState<string | null>(null);
   const [page, setPage] = useState(1);
-  const filters = useMemo(
+  const draftFilters = useMemo(
     () => ({
       from: startOfRange(rangeDays),
       to: endOfToday(),
@@ -61,7 +62,9 @@ export function PublisherUserAgentsPage() {
     }),
     [countryCode, device, offerId, rangeDays, search, status],
   );
-  const logs = useUserAgentLogs(filters);
+    const { appliedFilters, applyFilters } =
+    useAppliedFilters(draftFilters);
+  const logs = useUserAgentLogs(appliedFilters);
 
   if (
     logs.status === "loading" ||
@@ -131,7 +134,7 @@ export function PublisherUserAgentsPage() {
             <input
               onChange={(event) => {
                 setSearch(event.currentTarget.value);
-                setPage(1);
+
               }}
               placeholder="Search user agent"
               value={search}
@@ -142,7 +145,7 @@ export function PublisherUserAgentsPage() {
             <select
               onChange={(event) => {
                 setRangeDays(Number(event.currentTarget.value));
-                setPage(1);
+
               }}
               value={rangeDays}
             >
@@ -157,7 +160,7 @@ export function PublisherUserAgentsPage() {
             <select
               onChange={(event) => {
                 setOfferId(event.currentTarget.value);
-                setPage(1);
+
               }}
               value={offerId}
             >
@@ -175,7 +178,7 @@ export function PublisherUserAgentsPage() {
               maxLength={2}
               onChange={(event) => {
                 setCountryCode(event.currentTarget.value.toUpperCase());
-                setPage(1);
+
               }}
               placeholder="US"
               value={countryCode}
@@ -188,7 +191,7 @@ export function PublisherUserAgentsPage() {
                 setDevice(
                   event.currentTarget.value as OperationalDevice | "",
                 );
-                setPage(1);
+
               }}
               value={device}
             >
@@ -208,7 +211,7 @@ export function PublisherUserAgentsPage() {
                     | OperationalReviewStatus
                     | "",
                 );
-                setPage(1);
+
               }}
               value={status}
             >
@@ -218,7 +221,19 @@ export function PublisherUserAgentsPage() {
               <option value="unchecked">Unchecked</option>
             </select>
           </label>
-        </div>
+                  <div className="filter-apply-actions">
+            <button
+              className="primary-gradient-button primary-gradient-button--compact filter-apply-button"
+              onClick={() => {
+                applyFilters();
+                setPage(1);
+              }}
+              type="button"
+            >
+              <MaterialIcon name="filter_alt" />
+              Apply Filters
+            </button>
+          </div></div>
 
         {logs.userAgents.length === 0 ? (
           <ControlEmpty

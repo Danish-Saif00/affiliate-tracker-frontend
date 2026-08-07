@@ -1,4 +1,5 @@
 import { Fragment, type FormEvent, useMemo, useState } from "react";
+import { useAppliedFilters } from "../../features/filters/use-applied-filters";
 
 import { MaterialIcon } from "../../components/icons/material-icon";
 import { GlassPanel } from "../../components/ui/glass-panel";
@@ -138,10 +139,22 @@ export function TrackingDomainsPage({
   ).length;
   const domainLoadFailed = domains.status === "error";
 
+  const draftFilters = useMemo(
+    () => ({
+      search,
+      status,
+      createdAfter,
+    }),
+    [createdAfter, search, status],
+  );
+  const { appliedFilters, applyFilters } =
+    useAppliedFilters(draftFilters);
   const filtered = useMemo(() => {
-    const needle = search.trim().toLowerCase();
+    const needle = appliedFilters.search.trim().toLowerCase();
     const threshold =
-      createdAfter.length === 0 ? null : new Date(`${createdAfter}T00:00:00`);
+      appliedFilters.createdAfter.length === 0
+        ? null
+        : new Date(`${appliedFilters.createdAfter}T00:00:00`);
 
     return domains.domains.filter((domain) => {
       const matchesDate =
@@ -150,11 +163,12 @@ export function TrackingDomainsPage({
       return (
         (needle.length === 0 ||
           domain.hostname.toLowerCase().includes(needle)) &&
-        (status === "all" || domain.status === status) &&
+        (appliedFilters.status === "all" ||
+          domain.status === appliedFilters.status) &&
         matchesDate
       );
     });
-  }, [createdAfter, domains.domains, search, status]);
+  }, [appliedFilters, domains.domains]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, pageCount);
@@ -519,7 +533,7 @@ export function TrackingDomainsPage({
             <CatalogToolbar
               onSearch={(value) => {
                 setSearch(value);
-                setPage(1);
+
               }}
               search={search}
             >
@@ -528,7 +542,7 @@ export function TrackingDomainsPage({
                   setStatus(
                     event.currentTarget.value as TrackingDomainStatus | "all",
                   );
-                  setPage(1);
+
                 }}
                 value={status}
               >
@@ -544,12 +558,25 @@ export function TrackingDomainsPage({
                 aria-label="Created after"
                 onChange={(event) => {
                   setCreatedAfter(event.currentTarget.value);
-                  setPage(1);
+
                 }}
                 type="date"
                 value={createdAfter}
               />
-            </CatalogToolbar>
+
+            <div className="filter-apply-actions">
+              <button
+                className="primary-gradient-button primary-gradient-button--compact filter-apply-button"
+                onClick={() => {
+                  applyFilters();
+                  setPage(1);
+                }}
+                type="button"
+              >
+                Apply Filters
+              </button>
+            </div>
+</CatalogToolbar>
           )}
 
           {domainLoadFailed ? (

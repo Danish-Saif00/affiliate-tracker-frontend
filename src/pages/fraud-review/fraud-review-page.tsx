@@ -1,4 +1,5 @@
 import { type FormEvent, useMemo, useState } from 'react';
+import { useAppliedFilters } from '../../features/filters/use-applied-filters';
 
 import { MaterialIcon } from '../../components/icons/material-icon';
 import { GlassPanel } from '../../components/ui/glass-panel';
@@ -33,13 +34,19 @@ export function FraudReviewPage() {
   const [lockMode, setLockMode] = useState<DuplicateProtectionLockMode>('duration');
   const [feedback, setFeedback] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
-  const fraud = useFraudReview({
-    ...(networkAccountId.length > 0 ? { networkAccountId } : {}),
-    ...(offerId.length > 0 ? { offerId } : {}),
-    ...(risk !== 'all' ? { fraudRiskLevel: risk } : {}),
-    ...(decision !== 'all' ? { duplicateDecision: decision } : {}),
-    limit: 200,
-  });
+  const draftFilters = useMemo(
+    () => ({
+      ...(networkAccountId.length > 0 ? { networkAccountId } : {}),
+      ...(offerId.length > 0 ? { offerId } : {}),
+      ...(risk !== 'all' ? { fraudRiskLevel: risk } : {}),
+      ...(decision !== 'all' ? { duplicateDecision: decision } : {}),
+      limit: 200,
+    }),
+    [decision, networkAccountId, offerId, risk],
+  );
+  const { appliedFilters, applyFilters } =
+    useAppliedFilters(draftFilters);
+  const fraud = useFraudReview(appliedFilters);
   const accounts = useNetworkAccounts();
   const offers = useOffers();
   const activeAccounts = useMemo(
@@ -356,7 +363,15 @@ export function FraudReviewPage() {
               <option value="duplicate">Duplicate</option>
               <option value="accepted">Accepted</option>
             </select>
-          </div>
+                    <div className="filter-apply-actions">
+            <button
+              className="primary-gradient-button primary-gradient-button--compact filter-apply-button"
+              onClick={applyFilters}
+              type="button"
+            >
+              Apply Filters
+            </button>
+          </div></div>
 
           {fraud.clicks.length === 0 ? (
             <ControlEmpty

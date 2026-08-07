@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useAppliedFilters } from "../../features/filters/use-applied-filters";
 
 import {
   ManagedUserCreateForm,
@@ -41,7 +42,7 @@ export function ManagersPage({ mode }: { mode: ManagersPageMode }) {
   const [actionError, setActionError] = useState<string | null>(null);
   const [passwordTarget, setPasswordTarget] =
     useState<CompanyDirectoryUser | null>(null);
-  const filters = useMemo<DirectoryFilters>(
+  const draftFilters = useMemo<DirectoryFilters>(
     () => ({
       search,
       role: "manager",
@@ -50,7 +51,9 @@ export function ManagersPage({ mode }: { mode: ManagersPageMode }) {
     }),
     [membershipStatus, search],
   );
-  const tenant = useTenantAdministration(filters);
+  const { appliedFilters, applyFilters } =
+    useAppliedFilters(draftFilters);
+  const tenant = useTenantAdministration(appliedFilters);
 
   function resetFeedback(): void {
     setFeedback(null);
@@ -236,7 +239,15 @@ export function ManagersPage({ mode }: { mode: ManagersPageMode }) {
                 <option value="suspended">Suspended</option>
                 <option value="revoked">Revoked</option>
               </select>
-            </div>
+                      <div className="filter-apply-actions">
+            <button
+              className="primary-gradient-button primary-gradient-button--compact filter-apply-button"
+              onClick={applyFilters}
+              type="button"
+            >
+              Apply Filters
+            </button>
+          </div></div>
 
             {tenant.directory.items.length === 0 ? (
               <ControlEmpty

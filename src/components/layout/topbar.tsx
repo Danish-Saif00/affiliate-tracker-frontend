@@ -8,8 +8,6 @@ import { useApiHealth } from "../../features/system/use-api-health";
 import { useAccountProfile } from "../../features/final-operations/use-final-operations";
 
 type TopbarProps = {
-  filterAvailable: boolean;
-  onOpenFilters: () => void;
   onOpenNavigation: () => void;
   onToggleTheme: () => void;
   theme: "light" | "dark";
@@ -67,8 +65,6 @@ function ThemeToggleIcon({ theme }: { theme: "light" | "dark" }) {
 }
 
 export function Topbar({
-  filterAvailable,
-  onOpenFilters,
   onOpenNavigation,
   onToggleTheme,
   theme,
@@ -187,17 +183,7 @@ export function Topbar({
       )}
 
       <div className="app-topbar__actions">
-        {filterAvailable && (
-          <button
-            aria-label="Open page filters"
-            className="icon-button app-topbar__filter"
-            onClick={onOpenFilters}
-            title="Search & filters"
-            type="button"
-          >
-            <MaterialIcon name="filter_alt" />
-          </button>
-        )}
+
 
         <button
           aria-label={`Switch to ${theme === "light" ? "dark" : "light"} theme`}

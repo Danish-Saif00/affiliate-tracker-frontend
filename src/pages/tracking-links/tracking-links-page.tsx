@@ -1,4 +1,5 @@
 import { type FormEvent, useMemo, useState } from "react";
+import { useAppliedFilters } from "../../features/filters/use-applied-filters";
 
 import { MaterialIcon } from "../../components/icons/material-icon";
 import { GlassPanel } from "../../components/ui/glass-panel";
@@ -284,7 +285,17 @@ export function TrackingLinksPage() {
   const [status, setStatus] = useState<TrackingLinkStatus | "all">("all");
   const [feedback, setFeedback] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
-  const links = useTrackingLinks(status === "all" ? {} : { status });
+  const draftFilters = useMemo(
+    () => ({ search, status }),
+    [search, status],
+  );
+  const { appliedFilters, applyFilters } =
+    useAppliedFilters(draftFilters);
+  const links = useTrackingLinks(
+    appliedFilters.status === "all"
+      ? {}
+      : { status: appliedFilters.status },
+  );
   const offers = useOffers({ status: "active" });
   const domains = useTrackingDomains();
   const customization = useCustomization();
@@ -321,7 +332,7 @@ export function TrackingLinksPage() {
     [tenant.directory.items],
   );
   const filteredLinks = useMemo(() => {
-    const normalized = search.trim().toLowerCase();
+    const normalized = appliedFilters.search.trim().toLowerCase();
 
     return links.links.filter(
       (link) =>
@@ -331,7 +342,7 @@ export function TrackingLinksPage() {
         link.hostname.toLowerCase().includes(normalized) ||
         link.trackingCode.toLowerCase().includes(normalized),
     );
-  }, [links.links, search]);
+  }, [appliedFilters.search, links.links]);
 
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -648,7 +659,15 @@ export function TrackingLinksPage() {
               <option value="paused">Paused</option>
               <option value="archived">Archived</option>
             </select>
-          </div>
+                    <div className="filter-apply-actions">
+            <button
+              className="primary-gradient-button primary-gradient-button--compact filter-apply-button"
+              onClick={applyFilters}
+              type="button"
+            >
+              Apply Filters
+            </button>
+          </div></div>
           <div className="control-record-list">
             {filteredLinks.length === 0 ? (
               <ControlEmpty
