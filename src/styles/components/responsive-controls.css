@@ -2803,7 +2803,6 @@
   }
 }
 
-@media (max-width: 900px) {
 /* publisher_tracker_full_height_filter_sidebar_v2 */
 /*
  * Unified filter presentation:
@@ -3265,7 +3264,7 @@ html[data-theme="dark"][data-filter-route="true"]
     transition: none !important;
   }
 }
-}
+
 /* publisher_tracker_filter_panel_clip_fix_v1 */
 /*
  * GlassPanel renders both .glass-panel and .specular-panel.
@@ -3705,26 +3704,6 @@ html[data-filter-route="true"][data-filter-drawer-open="true"]
  * Mobile/tablet keeps the existing bottom-right Filter FAB + right drawer.
  * No React state, API, tracking, postback, or data flow is changed here.
  */
-@media (min-width: 901px) {
-  html[data-filter-route="true"]
-    .responsive-filter-fab,
-  html[data-filter-route="true"]
-    .responsive-filter-drawer-header,
-  html[data-filter-route="true"]
-    .responsive-filter-backdrop {
-    display: none !important;
-  }
-
-  html[data-filter-route="true"]
-    .app-content
-    [data-responsive-filter-host="true"] {
-    opacity: 1 !important;
-    visibility: visible !important;
-    pointer-events: auto !important;
-    transform: none !important;
-  }
-}
-
 /*
  * Native select arrows were too low-contrast in dark mode.
  * Restore the browser's native menulist affordance across app-content.
@@ -4009,3 +3988,9 @@ html[data-filter-route="true"][data-filter-drawer-open="true"]
       inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
   }
 }
+/* publisher_tracker_desktop_filter_drawer_restored_v2 */
+/*
+ * Filter-capable pages use the same floating Filter trigger and right drawer
+ * on desktop, tablet and mobile. AppShell still decides whether a page
+ * actually has filter controls, so pages without filters get no empty FAB.
+ */

@@ -30,7 +30,6 @@ import type { CompanyRecord, CreateCompanyInput } from './company.types';
 
 const COMPANIES_QUERY_KEY = ['available-companies'] as const;
 const COMPANY_SCOPED_QUERY_KEY = ['company-scoped'] as const;
-const ACCESS_RETRY_INTERVAL_MS = 60_000;
 const SUBSCRIPTION_RESTRICTION_CODES: readonly CompanyAccessRestrictionCode[] = [
   'COMPANY_SUBSCRIPTION_REQUIRED',
   'COMPANY_SUBSCRIPTION_NOT_STARTED',
@@ -202,15 +201,10 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
         });
     };
 
-    const intervalId = window.setInterval(
-      verifyCompanyAccess,
-      ACCESS_RETRY_INTERVAL_MS,
-    );
     window.addEventListener('focus', verifyCompanyAccess);
 
     return () => {
       active = false;
-      window.clearInterval(intervalId);
       window.removeEventListener('focus', verifyCompanyAccess);
     };
   }, [
