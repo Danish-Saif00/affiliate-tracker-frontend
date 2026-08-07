@@ -66,17 +66,60 @@ const REPORT_CONFIGURATION: Readonly<
   },
 };
 
+type ReportRange =
+  | 'today'
+  | 'yesterday'
+  | '7'
+  | '30'
+  | '90'
+  | '365'
+  | 'all';
 function startOfRange(days: number): string {
   const date = new Date();
   date.setDate(date.getDate() - days);
   date.setHours(0, 0, 0, 0);
   return date.toISOString();
 }
-
-function endOfToday(): string {
+function startOfDay(offsetDays = 0): string {
   const date = new Date();
+  date.setDate(date.getDate() + offsetDays);
+  date.setHours(0, 0, 0, 0);
+  return date.toISOString();
+}
+function endOfDay(offsetDays = 0): string {
+  const date = new Date();
+  date.setDate(date.getDate() + offsetDays);
   date.setHours(23, 59, 59, 999);
   return date.toISOString();
+}
+function resolveReportRange(
+  range: ReportRange,
+): {
+  from?: string;
+  to: string;
+} {
+  const now = new Date().toISOString();
+  switch (range) {
+    case 'today':
+      return {
+        from: startOfDay(),
+        to: now,
+      };
+    case 'yesterday':
+      return {
+        from: startOfDay(-1),
+        to: endOfDay(-1),
+      };
+    case 'all':
+      return {
+        to: now,
+      };
+    default:
+      return {
+        from: startOfRange(Number(range)),
+        to: now,
+      };
+  }
 }
 
 export function ReportsPage({
@@ -87,7 +130,7 @@ export function ReportsPage({
   hideModuleHeader?: boolean;
 }) {
   const configuration = REPORT_CONFIGURATION[dimension];
-  const [rangeDays, setRangeDays] = useState(30);
+  const [range, setRange] = useState<ReportRange>('30');
   const [search, setSearch] = useState('');
   const [dimensionStatus, setDimensionStatus] = useState('');
   const [countryCode, setCountryCode] = useState('');
@@ -95,8 +138,7 @@ export function ReportsPage({
   const [page, setPage] = useState(1);
   const draftFilters = useMemo(
     () => ({
-      from: startOfRange(rangeDays),
-      to: endOfToday(),
+      ...resolveReportRange(range),
       ...(search.trim().length > 0 ? { search: search.trim() } : {}),
       ...(dimensionStatus !== '' ? { dimensionStatus } : {}),
       ...(countryCode.trim().length > 0
@@ -109,7 +151,7 @@ export function ReportsPage({
       countryCode,
       device,
       dimensionStatus,
-      rangeDays,
+      range,
       search,
     ],
   );
@@ -233,15 +275,18 @@ export function ReportsPage({
             <span>Range</span>
             <select
               onChange={(event) => {
-                setRangeDays(Number(event.currentTarget.value));
+                setRange(event.currentTarget.value as ReportRange);
 
               }}
-              value={rangeDays}
+              value={range}
             >
-              <option value={7}>Last 7 days</option>
-              <option value={30}>Last 30 days</option>
-              <option value={90}>Last 90 days</option>
-              <option value={365}>Last 365 days</option>
+              <option value="today">Today</option>
+              <option value="yesterday">Yesterday</option>
+              <option value="7">Last 7 days</option>
+              <option value="30">Last 30 days</option>
+              <option value="90">Last 90 days</option>
+              <option value="365">Last 365 days</option>
+              <option value="all">Till now</option>
             </select>
           </label>
 
