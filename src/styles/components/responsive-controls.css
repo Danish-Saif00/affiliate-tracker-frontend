@@ -5147,3 +5147,175 @@ html[data-theme="dark"] :is(
 }
 
 /* publisher_tracker_admin_manager_offer_card_match_v1:end */
+
+/* publisher_tracker_offer_identity_surface_polish_v1:start */
+
+/*
+ * Final Company Admin + Manager Offer-card refinement.
+ * Only visual geometry changes: more breathing room, rounded inner surface,
+ * clearer background separation and stronger curved borders.
+ */
+.company-admin-offers-page
+  .offer-directory-card {
+  padding: 10px !important;
+  border-width: 1px !important;
+  border-color: rgba(150, 178, 220, 0.34) !important;
+  border-radius: 22px !important;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(25, 39, 56, 0.98),
+      rgba(14, 25, 38, 0.99)
+    ) !important;
+}
+
+.company-admin-offers-page
+  .offer-directory-card
+  > summary {
+  min-height: 88px !important;
+  margin: 0 !important;
+  padding: 14px !important;
+  border: 1px solid rgba(145, 174, 216, 0.2) !important;
+  border-radius: 17px !important;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(27, 43, 61, 0.92),
+      rgba(19, 31, 46, 0.94)
+    ) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.025) !important;
+}
+
+.company-admin-offers-page
+  .offer-directory-card
+  > summary:hover {
+  border-color: rgba(159, 188, 230, 0.34) !important;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(31, 49, 69, 0.96),
+      rgba(21, 35, 51, 0.96)
+    ) !important;
+}
+
+/* Title + Offer ID become a proper inner rounded text surface. */
+.company-admin-offers-page
+  .offer-directory-card__identity {
+  gap: 6px !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 12px 14px !important;
+  border: 1px solid rgba(145, 174, 216, 0.17) !important;
+  border-radius: 14px !important;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(16, 29, 44, 0.76),
+      rgba(11, 21, 33, 0.74)
+    ) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.02) !important;
+}
+
+.company-admin-offers-page
+  .offer-directory-card__identity
+  strong {
+  margin: 0 !important;
+  padding: 0 2px !important;
+  line-height: 1.4 !important;
+}
+
+.company-admin-offers-page
+  .offer-directory-card__identity
+  small {
+  margin: 0 !important;
+  padding: 0 2px !important;
+  line-height: 1.45 !important;
+}
+
+/* Keep actions/status away from the text surface and card edges. */
+.company-admin-offers-page
+  .offer-directory-card__quick-actions {
+  margin: 0 !important;
+  padding: 4px 0 4px 16px !important;
+}
+
+.company-admin-offers-page
+  .offer-directory-card__summary-status {
+  margin: 0 !important;
+  padding: 4px 2px 4px 6px !important;
+}
+
+/* Expanded body aligns with the new rounded summary inset. */
+.company-admin-offers-page
+  .offer-directory-card__body {
+  gap: 16px !important;
+  margin: 10px 2px 0 !important;
+  padding: 18px 8px 8px !important;
+  border-top: 1px solid rgba(145, 174, 216, 0.17) !important;
+  border-radius: 0 0 14px 14px !important;
+}
+
+/* Light theme keeps exactly the same geometry. */
+:root[data-theme="light"]
+  .company-admin-offers-page
+  .offer-directory-card {
+  border-color: rgba(99, 113, 145, 0.2) !important;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.99),
+      rgba(245, 248, 252, 0.98)
+    ) !important;
+}
+
+:root[data-theme="light"]
+  .company-admin-offers-page
+  .offer-directory-card
+  > summary {
+  border-color: rgba(99, 113, 145, 0.14) !important;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(252, 253, 255, 0.99),
+      rgba(246, 249, 253, 0.98)
+    ) !important;
+}
+
+:root[data-theme="light"]
+  .company-admin-offers-page
+  .offer-directory-card__identity {
+  border-color: rgba(99, 113, 145, 0.12) !important;
+  background: rgba(243, 247, 252, 0.94) !important;
+}
+
+@media (max-width: 620px) {
+  .company-admin-offers-page
+    .offer-directory-card {
+    padding: 7px !important;
+    border-radius: 18px !important;
+  }
+
+  .company-admin-offers-page
+    .offer-directory-card
+    > summary {
+    min-height: 0 !important;
+    padding: 10px !important;
+    border-radius: 14px !important;
+  }
+
+  .company-admin-offers-page
+    .offer-directory-card__identity {
+    padding: 10px 11px !important;
+    border-radius: 12px !important;
+  }
+
+  .company-admin-offers-page
+    .offer-directory-card__body {
+    margin-top: 8px !important;
+    padding: 14px 4px 4px !important;
+  }
+}
+
+/* publisher_tracker_offer_identity_surface_polish_v1:end */
