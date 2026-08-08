@@ -61,6 +61,7 @@ async function clearLocalSession(): Promise<void> {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>(initialAuthState);
+  const stateRef = useRef<AuthState>(initialAuthState);
   const synchronizationSequence = useRef(0);
 
   const synchronizeSession = useCallback(
@@ -132,6 +133,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
+  useEffect(() => {
     let active = true;
 
     void supabase.auth.getSession().then(({ data, error }) => {
@@ -153,11 +158,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       void synchronizeSession(data.session);
     });
 
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
       queueMicrotask(() => {
-        if (active) {
-          void synchronizeSession(session);
+        if (!active) {
+          return;
         }
+
+        if (
+          (event === "TOKEN_REFRESHED" || event === "SIGNED_IN") &&
+          session !== null
+        ) {
+          const current = stateRef.current;
+
+          if (
+            current.status === "authenticated" &&
+            current.identity !== null &&
+            current.user?.id === session.user.id
+          ) {
+            setState({
+              ...current,
+              session,
+              user: session.user,
+              error: null,
+            });
+            return;
+          }
+        }
+
+        void synchronizeSession(session);
       });
     });
 
