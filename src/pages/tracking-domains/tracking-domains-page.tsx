@@ -198,9 +198,8 @@ export function TrackingDomainsPage({
     try {
       const created = await domains.createDomain({ hostname });
       setHostname("");
-      setExpandedDomainId(created.id);
       setMessage(
-        `${created.hostname} was added. Publish the TXT ownership record shown below, then run Verify & Continue.`,
+        `${created.hostname} was added. Open Manage Domains, expand the new domain, publish its TXT ownership record, then run Verify & Continue.`,
       );
       await refreshRelatedData();
     } catch (error: unknown) {
@@ -417,7 +416,7 @@ export function TrackingDomainsPage({
       {showCreatePanel && (
         <div
           className={
-            approvalMode
+            approvalMode || mode === "add"
               ? "catalog-two-column managed-domains-onboarding"
               : "managed-domains-onboarding"
           }
@@ -455,6 +454,65 @@ export function TrackingDomainsPage({
             </form>
           </GlassPanel>
 
+          {mode === "add" && (
+            <GlassPanel
+              as="section"
+              className="control-card dns-instructions-card"
+            >
+              <ControlCardHeading
+                eyebrow="DNS Setup Guide"
+                title="Add and activate your tracking domain"
+                description="Follow these steps after entering your tracking hostname."
+              />
+              <ol>
+                <li>
+                  Enter the complete hostname in the format{" "}
+                  <code>track.example.com</code>. Include{" "}
+                  <strong>track.</strong> at the beginning. Do not enter
+                  <code> https://</code>, a path, or only the root domain.
+                </li>
+                <li>
+                  Click Add managed domain, then open Manage Domains and expand
+                  the domain you just added.
+                </li>
+                <li>
+                  Create the TXT ownership record exactly as shown there. Copy
+                  both the TXT Name / Host and Value into your DNS provider and
+                  save the record.
+                </li>
+                <li>
+                  Return to Publisher Tracker and click Verify &amp; Continue.
+                  DNS changes may need time to propagate before verification
+                  succeeds.
+                </li>
+                <li>
+                  When the Tracking CNAME record appears, create a CNAME record
+                  in your DNS provider. For a normal DNS zone, Name / Host is{" "}
+                  <code>track</code>. Copy the Target exactly as shown in
+                  Publisher Tracker.
+                </li>
+                <li>
+                  Remove any conflicting A, AAAA, CNAME, or redirect record
+                  using the same <code>track</code> hostname, then run Verify
+                  &amp; Continue again until TXT, DNS, TLS, and the domain are
+                  Active.
+                </li>
+                <li>
+                  After activation, make the domain Primary if required and
+                  assign it to the appropriate Offers or tracking links.
+                </li>
+              </ol>
+              <div className="catalog-security-note">
+                <MaterialIcon name="info" />
+                <span>
+                  Most DNS providers automatically append the root domain when
+                  Name / Host is <strong>track</strong>. If your DNS provider
+                  specifically asks for the full hostname, use the complete
+                  <code> track.example.com</code> value instead.
+                </span>
+              </div>
+            </GlassPanel>
+          )}
           {approvalMode && (
             <GlassPanel
               as="section"
@@ -493,7 +551,7 @@ export function TrackingDomainsPage({
         </div>
       )}
 
-      {(mode === "manage" || mode === "add" || approvalMode) && (
+      {(mode === "manage" || approvalMode) && (
         <GlassPanel
           as="section"
           className={`control-card catalog-table-panel${
@@ -822,14 +880,14 @@ export function TrackingDomainsPage({
                                         <div className="managed-domain-record">
                                           <span>Name / Host</span>
                                           <code>
-                                            {domain.dnsRecordName ??
-                                              domain.hostname}
+                                            {domain.dnsRecordName?.split(".")[0] ??
+                                              domain.hostname.split(".")[0]}
                                           </code>
                                           <button
                                             onClick={() =>
                                               void copyValue(
-                                                domain.dnsRecordName ??
-                                                  domain.hostname,
+                                                domain.dnsRecordName?.split(".")[0] ??
+                                                  domain.hostname.split(".")[0],
                                                 "CNAME record name",
                                               )
                                             }
