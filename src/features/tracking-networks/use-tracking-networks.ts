@@ -213,9 +213,9 @@ export function useTrackingDomains() {
       if (
         session === null ||
         companyId === null ||
-        !permissions.platformAdmin
+        !permissions.canManage
       ) {
-        throw new Error("Platform Super Admin access is required.");
+        throw new Error("Domain management access is required.");
       }
 
       return adoptPlatformTrackingDomain(
@@ -236,9 +236,9 @@ export function useTrackingDomains() {
       if (
         session === null ||
         companyId === null ||
-        !permissions.platformAdmin
+        !permissions.canManage
       ) {
-        throw new Error("Platform Super Admin access is required.");
+        throw new Error("Domain management access is required.");
       }
 
       return reconcilePlatformTrackingDomain(
@@ -259,9 +259,9 @@ export function useTrackingDomains() {
       if (
         session === null ||
         companyId === null ||
-        !permissions.platformAdmin
+        !permissions.canManage
       ) {
-        throw new Error("Platform Super Admin access is required.");
+        throw new Error("Domain management access is required.");
       }
 
       return disconnectPlatformTrackingDomain(

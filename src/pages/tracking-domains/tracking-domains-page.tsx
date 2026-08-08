@@ -493,7 +493,7 @@ export function TrackingDomainsPage({
         </div>
       )}
 
-      {(mode === "manage" || approvalMode) && (
+      {(mode === "manage" || mode === "add" || approvalMode) && (
         <GlassPanel
           as="section"
           className={`control-card catalog-table-panel${
@@ -606,7 +606,7 @@ export function TrackingDomainsPage({
                   {pageRows.map((domain) => {
                     const expanded = expandedDomainId === domain.id;
                     const canReconcile =
-                      domains.permissions.platformAdmin &&
+                      domains.permissions.canManage &&
                       domain.provider === "render" &&
                       domain.provisioningStatus !== "disconnected" &&
                       domain.status !== "archived";
@@ -659,7 +659,7 @@ export function TrackingDomainsPage({
                                   name={expanded ? "expand_less" : "settings"}
                                 />
                               </button>
-                              {domains.permissions.platformAdmin &&
+                              {domains.permissions.canManage &&
                                 domain.provider === "manual" &&
                                 domain.status !== "archived" && (
                                   <button
@@ -698,7 +698,7 @@ export function TrackingDomainsPage({
                                     <MaterialIcon name="star" />
                                   </button>
                                 )}
-                              {domains.permissions.platformAdmin &&
+                              {domains.permissions.canManage &&
                                 domain.status === "active" && (
                                   <button
                                     aria-label={`Suspend ${domain.hostname}`}
@@ -712,7 +712,7 @@ export function TrackingDomainsPage({
                                     <MaterialIcon name="pause" />
                                   </button>
                                 )}
-                              {domains.permissions.platformAdmin &&
+                              {domains.permissions.canManage &&
                                 domain.provider === "render" &&
                                 domain.provisioningStatus !== "disconnected" &&
                                 !domain.isPrimary && (
@@ -893,7 +893,7 @@ export function TrackingDomainsPage({
                                 </dl>
 
                                 <div className="managed-domain-detail-actions">
-                                  {domains.permissions.platformAdmin &&
+                                  {domains.permissions.canManage &&
                                     domain.provider === "manual" &&
                                     domain.status !== "archived" && (
                                       <button
