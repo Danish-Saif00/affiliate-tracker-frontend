@@ -5319,3 +5319,190 @@ html[data-theme="dark"] :is(
 }
 
 /* publisher_tracker_offer_identity_surface_polish_v1:end */
+
+/* publisher_tracker_manager_password_card_polish_v1:start */
+/*
+ * Company Admin > Manage Managers > password reset surface.
+ * Visual-only refinement: spacing, rounded card geometry, form hierarchy,
+ * inputs and action alignment. No manager/account behavior changes.
+ */
+.company-admin-managers-page .manager-invite-card {
+  width: 100% !important;
+  margin: 0 0 18px !important;
+  padding: 24px !important;
+  border: 1px solid var(--pt-border-strong, rgba(126, 164, 255, 0.28)) !important;
+  border-radius: 22px !important;
+  overflow: hidden !important;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(22, 34, 50, 0.97),
+      rgba(14, 24, 37, 0.98)
+    ) !important;
+  box-shadow:
+    0 18px 44px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035) !important;
+}
+
+.company-admin-managers-page
+  .manager-invite-card
+  .control-card-heading {
+  margin: 0 0 20px !important;
+  padding: 0 0 18px !important;
+  border-bottom: 1px solid var(--pt-border, rgba(176, 193, 220, 0.14)) !important;
+}
+
+.company-admin-managers-page
+  .manager-invite-card
+  .control-card-heading
+  :is(h2, p) {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+.company-admin-managers-page
+  .manager-invite-card
+  .account-form {
+  display: grid !important;
+  gap: 16px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.company-admin-managers-page
+  .manager-invite-card
+  .account-form
+  > p {
+  margin: 0 0 2px !important;
+  padding: 14px 16px !important;
+  border: 1px solid var(--pt-border, rgba(176, 193, 220, 0.14)) !important;
+  border-radius: 14px !important;
+  background: rgba(10, 20, 32, 0.44) !important;
+  line-height: 1.6 !important;
+}
+
+.company-admin-managers-page
+  .manager-invite-card
+  .account-form
+  > label {
+  display: grid !important;
+  gap: 8px !important;
+  margin: 0 !important;
+}
+
+.company-admin-managers-page
+  .manager-invite-card
+  .account-form
+  > label
+  > span {
+  margin: 0 !important;
+  padding: 0 2px !important;
+  color: var(--pt-text-muted, #9da9bd) !important;
+  font-size: 0.76rem !important;
+  font-weight: 750 !important;
+  letter-spacing: 0.035em !important;
+  text-transform: uppercase !important;
+}
+
+.company-admin-managers-page
+  .manager-invite-card
+  .account-form
+  input {
+  width: 100% !important;
+  min-height: 46px !important;
+  margin: 0 !important;
+  padding: 11px 14px !important;
+  border-radius: 13px !important;
+}
+
+.company-admin-managers-page
+  .manager-invite-card
+  .account-form
+  .manager-row-actions {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  flex-wrap: wrap !important;
+  gap: 10px !important;
+  margin: 4px 0 0 !important;
+  padding: 16px 0 0 !important;
+  border-top: 1px solid var(--pt-border, rgba(176, 193, 220, 0.14)) !important;
+  background: transparent !important;
+}
+
+.company-admin-managers-page
+  .manager-invite-card
+  .account-form
+  .manager-row-actions
+  button {
+  width: auto !important;
+  min-width: max-content !important;
+  min-height: 42px !important;
+  margin: 0 !important;
+  padding: 9px 16px !important;
+  border-radius: 12px !important;
+}
+
+.company-admin-managers-page
+  .manager-invite-card
+  .account-form
+  .manager-row-actions
+  button
+  .material-symbols-outlined {
+  margin: 0 !important;
+}
+
+:root[data-theme="light"]
+  .company-admin-managers-page
+  .manager-invite-card {
+  border-color: rgba(99, 113, 145, 0.2) !important;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.99),
+      rgba(247, 249, 253, 0.98)
+    ) !important;
+  box-shadow:
+    0 16px 40px rgba(47, 61, 96, 0.09),
+    0 2px 8px rgba(47, 61, 96, 0.05) !important;
+}
+
+:root[data-theme="light"]
+  .company-admin-managers-page
+  .manager-invite-card
+  .account-form
+  > p {
+  border-color: rgba(125, 139, 165, 0.14) !important;
+  background: rgba(248, 250, 253, 0.92) !important;
+}
+
+@media (max-width: 720px) {
+  .company-admin-managers-page .manager-invite-card {
+    margin-bottom: 14px !important;
+    padding: 18px !important;
+    border-radius: 18px !important;
+  }
+
+  .company-admin-managers-page
+    .manager-invite-card
+    .control-card-heading {
+    margin-bottom: 16px !important;
+    padding-bottom: 15px !important;
+  }
+
+  .company-admin-managers-page
+    .manager-invite-card
+    .account-form
+    .manager-row-actions {
+    align-items: stretch !important;
+  }
+
+  .company-admin-managers-page
+    .manager-invite-card
+    .account-form
+    .manager-row-actions
+    button {
+    justify-content: center !important;
+  }
+}
+/* publisher_tracker_manager_password_card_polish_v1:end */
