@@ -10,6 +10,7 @@ import {
   fetchCompanyDirectory,
   resetManagedUserPassword,
   updateCompanyMembership,
+  updateManagedUser,
   updatePlatformUserStatus,
 } from "./tenant-administration-api";
 import type {
@@ -20,7 +21,9 @@ import type {
   CursorPage,
   DirectoryFilters,
   ManagedUserPasswordResetResult,
+  ManagedUserUpdateResult,
   ResetManagedUserPasswordInput,
+  UpdateManagedUserInput,
   UpdateMembershipInput,
   UpdateUserStatusInput,
   UserProfile,
@@ -113,6 +116,20 @@ export function useTenantAdministration(filters: DirectoryFilters) {
     onSettled: invalidateTenantData,
   });
 
+  const updateManagedUserMutation = useMutation<
+    ManagedUserUpdateResult,
+    Error,
+    UpdateManagedUserInput
+  >({
+    mutationFn: async (input) => {
+      if (session === null || companyId === null) {
+        throw new Error("An active authenticated company context is required.");
+      }
+
+      return updateManagedUser(session.access_token, companyId, input);
+    },
+    onSettled: invalidateTenantData,
+  });
   const resetPasswordMutation = useMutation<
     ManagedUserPasswordResetResult,
     Error,
@@ -175,6 +192,7 @@ export function useTenantAdministration(filters: DirectoryFilters) {
     directoryQuery.error ??
     auditError ??
     createUserMutation.error ??
+    updateManagedUserMutation.error ??
     resetPasswordMutation.error ??
     membershipMutation.error ??
     userStatusMutation.error;
@@ -193,10 +211,12 @@ export function useTenantAdministration(filters: DirectoryFilters) {
     error: firstError === null ? null : getErrorMessage(firstError),
     isMutating:
       createUserMutation.isPending ||
+      updateManagedUserMutation.isPending ||
       resetPasswordMutation.isPending ||
       membershipMutation.isPending ||
       userStatusMutation.isPending,
     createManagedUser: createUserMutation.mutateAsync,
+    updateManagedUser: updateManagedUserMutation.mutateAsync,
     resetManagedUserPassword: resetPasswordMutation.mutateAsync,
     updateMembership: membershipMutation.mutateAsync,
     updateUserStatus: userStatusMutation.mutateAsync,

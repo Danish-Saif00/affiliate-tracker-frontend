@@ -68,9 +68,14 @@ export function ControlFeedback({
 }
 
 export function ControlStatus({ status }: { status: string }) {
+  const label =
+    status === "archived" || status === "revoked"
+      ? "Deleted"
+      : formatLabel(status);
+
   return (
-    <span className={`control-status control-status--${status.replaceAll('_', '-')}`}>
-      {formatLabel(status)}
+    <span className={`control-status control-status--${status.replaceAll("_", "-")}`}>
+      {label}
     </span>
   );
 }

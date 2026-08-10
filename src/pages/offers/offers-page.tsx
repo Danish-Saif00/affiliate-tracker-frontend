@@ -397,7 +397,6 @@ function OfferForm({
             <option value="draft">Draft</option>
             {mode !== "clone" && <option value="active">Active</option>}
             {mode === "edit" && <option value="paused">Paused</option>}
-            {mode === "edit" && <option value="archived">Archived</option>}
           </select>
         </label>
       </div>
@@ -799,7 +798,7 @@ export function OffersPage({ mode }: { mode: OffersPageMode }) {
   const [cloningSourceId, setCloningSourceId] = useState<string | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<CatalogOfferStatus | "all">("all");
+  const [status, setStatus] = useState<CatalogOfferStatus | "all">("active");
   const [networkId, setNetworkId] = useState("");
   const [domainId, setDomainId] = useState("");
   const [managerId, setManagerId] = useState("");
@@ -865,6 +864,16 @@ export function OffersPage({ mode }: { mode: OffersPageMode }) {
     }
 
     const needle = appliedFilters.search.trim().toLowerCase();
+    const activeNetworkIds = new Set(
+      snapshot.networks
+        .filter((network) => network.status === "active")
+        .map((network) => network.id),
+    );
+    const activeDomainIds = new Set(
+      snapshot.domains
+        .filter((domain) => domain.status === "active")
+        .map((domain) => domain.id),
+    );
     return snapshot.offers.filter((offer) => {
       const matchesSearch =
         needle.length === 0 ||
@@ -878,10 +887,17 @@ export function OffersPage({ mode }: { mode: OffersPageMode }) {
         new Date(offer.createdAt).getTime() >=
           new Date(`${appliedFilters.createdAfter}T00:00:00`).getTime();
 
+      const matchesStatus =
+        appliedFilters.status === "all" ||
+        (appliedFilters.status === "active"
+          ? offer.status === "active" &&
+            activeNetworkIds.has(offer.networkAccountId) &&
+            offer.trackingDomainId !== null &&
+            activeDomainIds.has(offer.trackingDomainId)
+          : offer.status === appliedFilters.status);
       return (
         matchesSearch &&
-        (appliedFilters.status === "all" ||
-          offer.status === appliedFilters.status) &&
+        matchesStatus &&
         (appliedFilters.networkId.length === 0 ||
           offer.networkAccountId === appliedFilters.networkId) &&
         (appliedFilters.domainId.length === 0 ||
@@ -1071,12 +1087,12 @@ export function OffersPage({ mode }: { mode: OffersPageMode }) {
     }
   }
 
-  async function permanentlyDeleteOffer(offer: CatalogOffer): Promise<void> {
+    async function deleteOffer(offer: CatalogOffer): Promise<void> {
     resetFeedback();
 
     if (
       !window.confirm(
-        `Permanently delete archived Offer "${offer.name}"? This cannot be undone.`,
+        `Delete Offer "${offer.name}"? It will disappear from active panels and assignment access, while historical clicks and conversions remain available. Deleted Offers cannot be restored.`,
       )
     ) {
       return;
@@ -1084,17 +1100,16 @@ export function OffersPage({ mode }: { mode: OffersPageMode }) {
 
     try {
       await catalog.deleteOffer({ offerId: offer.id });
-      setMessage(`${offer.name} was permanently deleted.`);
+      setMessage(
+        `${offer.name} was deleted. Historical clicks and conversions are preserved.`,
+      );
     } catch (error: unknown) {
       setActionError(
-        error instanceof Error
-          ? error.message
-          : "The Offer could not be permanently deleted.",
+        error instanceof Error ? error.message : "The Offer could not be deleted.",
       );
     }
   }
-
-  if (!catalog.permissions.canReadCatalog) {
+if (!catalog.permissions.canReadCatalog) {
     return (
       <ControlAccessDenied
         message="Company Administrator access is required."
@@ -1113,7 +1128,7 @@ export function OffersPage({ mode }: { mode: OffersPageMode }) {
         description={
           mode === "add"
             ? "Create a complete Offer, assign it to Managers, and configure tracking, payout, schedule, proxy, and fraud behavior in one place."
-            : "Edit, clone, activate, pause, or archive every company Offer."
+            : "Edit, clone, activate, pause, or delete company Offers while preserving historical reporting."
         }
         eyebrow="Offer Operations"
         icon="local_offer"
@@ -1209,7 +1224,7 @@ export function OffersPage({ mode }: { mode: OffersPageMode }) {
               <option value="draft">Draft</option>
               <option value="active">Active</option>
               <option value="paused">Paused</option>
-              <option value="archived">Archived</option>
+              <option value="archived">Deleted</option>
             </select>
             <select
               onChange={(event) => {
@@ -1546,16 +1561,17 @@ export function OffersPage({ mode }: { mode: OffersPageMode }) {
                               <MaterialIcon name="edit" />
                             </button>
                           )}
-                        {catalog.permissions.canManageCatalog && (
-                          <button
-                            aria-label={`Clone ${offer.name}`}
-                            onClick={() => cloneOffer(offer)}
-                            title="Clone"
-                            type="button"
-                          >
-                            <MaterialIcon name="content_copy" />
-                          </button>
-                        )}
+                        {catalog.permissions.canManageCatalog &&
+                          offer.status !== "archived" && (
+                            <button
+                              aria-label={`Clone ${offer.name}`}
+                              onClick={() => cloneOffer(offer)}
+                              title="Clone"
+                              type="button"
+                            >
+                              <MaterialIcon name="content_copy" />
+                            </button>
+                          )}
                         {catalog.permissions.canManageCatalog &&
                           offer.status !== "active" &&
                           offer.status !== "archived" && (
@@ -1586,25 +1602,12 @@ export function OffersPage({ mode }: { mode: OffersPageMode }) {
                         {catalog.permissions.canManageCatalog &&
                           offer.status !== "archived" && (
                             <button
-                              aria-label={`Archive ${offer.name}`}
-                              onClick={() =>
-                                void updateOfferStatus(offer, "archived")
-                              }
-                              title="Archive Offer"
+                              aria-label={`Delete ${offer.name}`}
+                              onClick={() => void deleteOffer(offer)}
+                              title="Delete Offer"
                               type="button"
                             >
                               <MaterialIcon name="delete" />
-                            </button>
-                          )}
-                        {catalog.permissions.canManageCatalog &&
-                          offer.status === "archived" && (
-                            <button
-                              aria-label={`Permanently delete ${offer.name}`}
-                              onClick={() => void permanentlyDeleteOffer(offer)}
-                              title="Permanently delete unused Offer"
-                              type="button"
-                            >
-                              <MaterialIcon name="delete_forever" />
                             </button>
                           )}
                       </RowActions>

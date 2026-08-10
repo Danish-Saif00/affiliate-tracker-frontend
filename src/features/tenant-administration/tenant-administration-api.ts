@@ -17,7 +17,9 @@ import type {
   CursorPage,
   DirectoryFilters,
   ManagedUserPasswordResetResult,
+  ManagedUserUpdateResult,
   ResetManagedUserPasswordInput,
+  UpdateManagedUserInput,
   UpdateMembershipInput,
   UpdateUserStatusInput,
   UserProfile,
@@ -288,6 +290,40 @@ export async function createManagedUser(
   }
 
   return parseDirectoryUser(data.user);
+}
+
+export async function updateManagedUser(
+  accessToken: string,
+  companyId: string,
+  input: UpdateManagedUserInput,
+): Promise<ManagedUserUpdateResult> {
+  const payload = await authenticatedApiRequest(
+    accessToken,
+    `/companies/${companyId}/managed-users/${input.userId}`,
+    {
+      method: "PATCH",
+      companyId,
+      body: {
+        ...(input.email !== undefined ? { email: input.email.trim() } : {}),
+        ...(input.displayName !== undefined
+          ? { displayName: input.displayName.trim() }
+          : {}),
+        ...(input.password !== undefined ? { password: input.password } : {}),
+      },
+    },
+  );
+  const data = readData(payload);
+  if (!isRecord(data)) {
+    throw new Error("The API returned an invalid managed-user update response.");
+  }
+
+  return {
+    user: parseDirectoryUser(data.user),
+    passwordUpdated: readRequiredBoolean(
+      data.passwordUpdated,
+      "password-updated flag",
+    ),
+  };
 }
 
 export async function resetManagedUserPassword(

@@ -110,7 +110,9 @@ export function TrackingDomainsPage({
   const catalog = useCatalogOperations({ enabled: !approvalMode });
   const [hostname, setHostname] = useState("");
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<TrackingDomainStatus | "all">("all");
+  const [status, setStatus] = useState<TrackingDomainStatus | "all">(
+    approvalMode ? "all" : "active",
+  );
   const [createdAfter, setCreatedAfter] = useState("");
   const [page, setPage] = useState(1);
   const [expandedDomainId, setExpandedDomainId] = useState<string | null>(null);
@@ -303,7 +305,7 @@ export function TrackingDomainsPage({
 
   async function handleDisconnect(domain: TrackingDomain) {
     const confirmed = window.confirm(
-      `Disconnect ${domain.hostname} from the infrastructure provider? This is blocked while tracking links still use the domain.`,
+      `Delete ${domain.hostname}? It will disappear from active Domain selection, while historical click/conversion records remain available. Deleted Domains cannot be restored.`,
     );
 
     if (!confirmed) {
@@ -314,7 +316,7 @@ export function TrackingDomainsPage({
 
     try {
       await domains.disconnectDomain({ domainId: domain.id });
-      setMessage(`${domain.hostname} was disconnected and archived.`);
+      setMessage(`${domain.hostname} was deleted from active use. Historical reporting is preserved.`);
       await refreshRelatedData();
     } catch (error: unknown) {
       setActionError(
@@ -610,7 +612,7 @@ export function TrackingDomainsPage({
                 </option>
                 <option value="active">Active</option>
                 <option value="suspended">Suspended</option>
-                <option value="archived">Archived</option>
+                <option value="archived">Deleted</option>
               </select>
               <input
                 aria-label="Created after"
@@ -771,19 +773,34 @@ export function TrackingDomainsPage({
                                   </button>
                                 )}
                               {domains.permissions.canManage &&
+                                domain.provider === "manual" &&
+                                domain.status !== "archived" && (
+                                  <button
+                                    aria-label={`Delete ${domain.hostname}`}
+                                    disabled={domains.isMutating}
+                                    onClick={() =>
+                                      void handleStatus(domain.id, "archived")
+                                    }
+                                    title="Delete Domain"
+                                    type="button"
+                                  >
+                                    <MaterialIcon name="delete" />
+                                  </button>
+                                )}
+                              {domains.permissions.canManage &&
                                 domain.provider === "render" &&
                                 domain.provisioningStatus !== "disconnected" &&
-                                !domain.isPrimary && (
+                                domain.status !== "archived" && (
                                   <button
-                                    aria-label={`Disconnect ${domain.hostname}`}
+                                    aria-label={`Delete ${domain.hostname}`}
                                     disabled={domains.isMutating}
                                     onClick={() =>
                                       void handleDisconnect(domain)
                                     }
-                                    title="Disconnect unused domain"
+                                    title="Delete Domain"
                                     type="button"
                                   >
-                                    <MaterialIcon name="link_off" />
+                                    <MaterialIcon name="delete" />
                                   </button>
                                 )}
                             </RowActions>

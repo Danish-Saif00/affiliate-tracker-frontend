@@ -309,7 +309,7 @@ function ProviderEditor({
               name="status"
             >
               <option value="active">Active</option>
-              <option value="archived">Archived</option>
+              <option value="archived">Deleted</option>
             </select>
           </label>
           <button
@@ -330,7 +330,7 @@ export function NetworkProvidersPage() {
   const company = useCompany();
   const providers = useNetworkProviders();
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<NetworkProviderStatus | "all">("all");
+  const [status, setStatus] = useState<NetworkProviderStatus | "all">("active");
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
@@ -761,7 +761,7 @@ export function NetworkProvidersPage() {
             >
               <option value="all">All statuses</option>
               <option value="active">Active</option>
-              <option value="archived">Archived</option>
+              <option value="archived">Deleted</option>
             </select>
 
             <div className="filter-apply-actions">

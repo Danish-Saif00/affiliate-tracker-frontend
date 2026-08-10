@@ -298,7 +298,7 @@ export function NetworkAccountsPage({
   const [cloningId, setCloningId] = useState<string | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<CatalogNetworkStatus | "all">("all");
+  const [status, setStatus] = useState<CatalogNetworkStatus | "all">("active");
   const [providerId, setProviderId] = useState("");
   const [createdAfter, setCreatedAfter] = useState("");
   const [page, setPage] = useState(1);
@@ -548,11 +548,9 @@ export function NetworkAccountsPage({
     }
   }
 
-  async function permanentlyDeleteNetwork(
-    network: CatalogNetwork,
-  ): Promise<void> {
+    async function deleteNetwork(network: CatalogNetwork): Promise<void> {
     const confirmed = window.confirm(
-      `Permanently delete ${network.name}? This action cannot be undone and only succeeds when the archived Network has no dependent records.`,
+      `Delete ${network.name}? The Network and its linked active Offers will disappear from operational panels, while historical clicks/conversions remain available. Deleted Networks cannot be restored.`,
     );
 
     if (!confirmed) {
@@ -560,20 +558,18 @@ export function NetworkAccountsPage({
     }
 
     resetFeedback();
-
     try {
       await catalog.deleteNetwork({ accountId: network.id });
-      setMessage(`${network.name} was permanently deleted.`);
+      setMessage(
+        `${network.name} was deleted. Historical reporting is preserved.`,
+      );
     } catch (error: unknown) {
       setActionError(
-        error instanceof Error
-          ? error.message
-          : "The Network could not be permanently deleted.",
+        error instanceof Error ? error.message : "The Network could not be deleted.",
       );
     }
   }
-
-  if (!catalog.permissions.canReadCatalog) {
+if (!catalog.permissions.canReadCatalog) {
     return (
       <ControlAccessDenied
         message="Company Administrator access is required."
@@ -753,7 +749,7 @@ export function NetworkAccountsPage({
               <option value="all">All statuses</option>
               <option value="active">Active</option>
               <option value="suspended">Paused</option>
-              <option value="archived">Archived</option>
+              <option value="archived">Deleted</option>
             </select>
             <input
               aria-label="Networks added after"
@@ -830,16 +826,17 @@ export function NetworkAccountsPage({
                                 <MaterialIcon name="edit" />
                               </button>
                             )}
-                          {catalog.permissions.canManageCatalog && (
-                            <button
-                              aria-label={`Clone ${network.name}`}
-                              onClick={() => cloneNetwork(network)}
-                              title="Clone"
-                              type="button"
-                            >
-                              <MaterialIcon name="content_copy" />
-                            </button>
-                          )}
+                          {catalog.permissions.canManageCatalog &&
+                            network.status !== "archived" && (
+                              <button
+                                aria-label={`Clone ${network.name}`}
+                                onClick={() => cloneNetwork(network)}
+                                title="Clone"
+                                type="button"
+                              >
+                                <MaterialIcon name="content_copy" />
+                              </button>
+                            )}
                           {catalog.permissions.canManageCatalog &&
                             network.status !== "active" &&
                             network.status !== "archived" && (
@@ -870,27 +867,12 @@ export function NetworkAccountsPage({
                           {catalog.permissions.canManageCatalog &&
                             network.status !== "archived" && (
                               <button
-                                aria-label={`Archive ${network.name}`}
-                                onClick={() =>
-                                  void updateNetworkStatus(network, "archived")
-                                }
-                                title="Archive Network"
+                                aria-label={`Delete ${network.name}`}
+                                onClick={() => void deleteNetwork(network)}
+                                title="Delete Network"
                                 type="button"
                               >
-                                <MaterialIcon name="archive" />
-                              </button>
-                            )}
-                          {catalog.permissions.canManageCatalog &&
-                            network.status === "archived" && (
-                              <button
-                                aria-label={`Permanently delete ${network.name}`}
-                                onClick={() =>
-                                  void permanentlyDeleteNetwork(network)
-                                }
-                                title="Permanently delete unused Network"
-                                type="button"
-                              >
-                                <MaterialIcon name="delete_forever" />
+                                <MaterialIcon name="delete" />
                               </button>
                             )}
                         </RowActions>

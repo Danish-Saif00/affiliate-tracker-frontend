@@ -74,6 +74,18 @@ export type CreateManagedUserInput = {
   password: string;
 };
 
+export type UpdateManagedUserInput = {
+  userId: string;
+  email?: string;
+  displayName?: string;
+  password?: string;
+};
+
+export type ManagedUserUpdateResult = {
+  user: CompanyDirectoryUser;
+  passwordUpdated: boolean;
+};
+
 export type ResetManagedUserPasswordInput = {
   userId: string;
   password: string;

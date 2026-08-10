@@ -83,8 +83,8 @@ export function TenantAdministrationPage() {
   const [search, setSearch] = useState("");
   const [membershipStatus, setMembershipStatus] = useState<
     CompanyMembershipStatus | ""
-  >("");
-  const [userStatus, setUserStatus] = useState<UserStatus | "">("");
+  >("active");
+  const [userStatus, setUserStatus] = useState<UserStatus | "">("active");
   const [feedback, setFeedback] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [passwordTarget, setPasswordTarget] =
@@ -327,7 +327,7 @@ export function TenantAdministrationPage() {
                 <option value="">All memberships</option>
                 <option value="active">Active</option>
                 <option value="suspended">Suspended</option>
-                <option value="revoked">Revoked</option>
+                <option value="revoked">Deleted</option>
               </select>
             </label>
           )}
@@ -395,18 +395,20 @@ export function TenantAdministrationPage() {
                     <td>{formatDateTime(user.joinedAt)}</td>
                     <td>
                       <div className="manager-row-actions">
-                        <button
-                          disabled={tenant.isMutating}
-                          onClick={() => setPasswordTarget(user)}
-                          title="Reset password"
-                          type="button"
-                        >
-                          <MaterialIcon name="password" />
-                        </button>
+                        {(platformAdmin || user.membershipStatus !== "revoked") && (
+                          <button
+                            disabled={tenant.isMutating}
+                            onClick={() => setPasswordTarget(user)}
+                            title="Reset password"
+                            type="button"
+                          >
+                            <MaterialIcon name="password" />
+                          </button>
+                        )}
 
                         {(platformAdmin
                           ? user.userStatus !== "active"
-                          : user.membershipStatus !== "active") && (
+                          : user.membershipStatus === "suspended") && (
                           <button
                             disabled={tenant.isMutating}
                             onClick={() =>
@@ -441,7 +443,7 @@ export function TenantAdministrationPage() {
                               onClick={() =>
                                 void updateManagedStatus(user, "revoked")
                               }
-                              title="Revoke membership"
+                              title="Delete membership"
                               type="button"
                             >
                               <MaterialIcon name="delete" />

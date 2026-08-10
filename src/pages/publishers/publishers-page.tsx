@@ -98,7 +98,7 @@ export function PublishersPage() {
     assignedOfferIds: [],
   });
   const [search, setSearch] = useState("");
-  const [membershipStatus, setMembershipStatus] = useState("all");
+  const [membershipStatus, setMembershipStatus] = useState("active");
   const [createdAfter, setCreatedAfter] = useState("");
   const [page, setPage] = useState(1);
   const [message, setMessage] = useState<string | null>(null);
@@ -298,15 +298,10 @@ export function PublishersPage() {
         membershipId: publisher.membershipId,
         role: "publisher",
         status,
-      });
-
-      const action =
-        publisher.membershipStatus === "revoked" && status === "suspended"
-          ? "restored to suspended"
-          : status;
-
-      setMessage(
-        `${publisher.displayName ?? publisher.email ?? "Publisher"} was ${action}.`,
+      });      setMessage(
+        status === "revoked"
+          ? `${publisher.displayName ?? publisher.email ?? "Publisher"} was deleted.`
+          : `${publisher.displayName ?? publisher.email ?? "Publisher"} is now ${status}.`,
       );
       setEditingId(null);
       await Promise.all([catalog.refresh(), tenant.refresh()]);
@@ -611,7 +606,7 @@ export function PublishersPage() {
             <option value="all">All statuses</option>
             <option value="active">Active</option>
             <option value="suspended">Suspended</option>
-            <option value="revoked">Revoked</option>
+            <option value="revoked">Deleted</option>
           </select>
           <input
             aria-label="Publishers added after"
@@ -682,17 +677,18 @@ export function PublishersPage() {
                     </td>
                     <td>
                       <RowActions>
-                        {catalog.permissions.canManagePublishers && (
-                          <button
-                            aria-label={`Reset password for ${publisher.email ?? "Publisher"}`}
-                            disabled={catalog.isMutating || tenant.isMutating}
-                            onClick={() => setPasswordTarget(publisher)}
-                            title="Reset Publisher password"
-                            type="button"
-                          >
-                            <MaterialIcon name="password" />
-                          </button>
-                        )}
+                        {catalog.permissions.canManagePublishers &&
+                          publisher.membershipStatus !== "revoked" && (
+                            <button
+                              aria-label={`Reset password for ${publisher.email ?? "Publisher"}`}
+                              disabled={catalog.isMutating || tenant.isMutating}
+                              onClick={() => setPasswordTarget(publisher)}
+                              title="Reset Publisher password"
+                              type="button"
+                            >
+                              <MaterialIcon name="password" />
+                            </button>
+                          )}
 
                         {catalog.permissions.canManagePublishers &&
                           publisher.membershipStatus !== "revoked" && (
