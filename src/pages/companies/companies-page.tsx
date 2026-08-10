@@ -4,6 +4,7 @@ import { MaterialIcon } from '../../components/icons/material-icon';
 import { GlassPanel } from '../../components/ui/glass-panel';
 import { useAuth } from '../../features/auth/use-auth';
 import { useCompany } from '../../features/companies/use-company';
+import { FactoryResetDangerPanel } from '../../features/factory-reset/factory-reset-panel';
 
 function createSlug(value: string): string {
   return value
@@ -319,6 +320,15 @@ export function CompaniesPage() {
           )}
         </GlassPanel>
       </div>
+
+      <GlassPanel as="section">
+        <FactoryResetDangerPanel
+          onCompleted={async () => {
+            await company.refreshCompanies();
+          }}
+          scope="tracker"
+        />
+      </GlassPanel>
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { useState, type FormEvent } from 'react';
 import { MaterialIcon } from '../../components/icons/material-icon';
 import { useAuth } from '../../features/auth/use-auth';
 import { useCustomization } from '../../features/control-plane/use-control-plane';
+import { FactoryResetDangerPanel } from '../../features/factory-reset/factory-reset-panel';
 import { TrackingDomainsPanel } from '../tracking-domains/tracking-domains-panel';
 import { LinkCustomizationPanel } from './link-customization-panel';
 import { ProxyCustomizationPanel } from './proxy-customization-panel';
@@ -25,7 +26,8 @@ type CustomizeTab =
   | 'domain'
   | 'link'
   | 'proxy'
-  | 'smtp';
+  | 'smtp'
+  | 'danger';
 const customizeTabs: readonly {
   id: CustomizeTab;
   label: string;
@@ -61,6 +63,12 @@ const customizeTabs: readonly {
     label: 'SMTP',
     icon: 'mail',
     description: 'Brevo email delivery',
+  },
+  {
+    id: 'danger',
+    label: 'Danger',
+    icon: 'warning',
+    description: 'Reset company operational data',
   },
 ];
 export function SettingsPage() {
@@ -149,6 +157,12 @@ export function SettingsPage() {
   const customizationKey =
     settings.customization?.updatedAt ??
     'empty';
+  const visibleCustomizeTabs =
+    membershipRole === 'company_admin' && platformRole === null
+      ? customizeTabs
+      : customizeTabs.filter((tab) => tab.id !== 'danger');
+  const resetCompanyId =
+    auth.identity?.authorization.requestedCompanyId ?? undefined;
   return (
     <div className="control-page customize-page">
       <style>{`
@@ -179,7 +193,7 @@ export function SettingsPage() {
         }
         .customize-tab-navigation {
           display: grid;
-          grid-template-columns: repeat(5, minmax(0, 1fr));
+          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
           gap: 12px;
           margin-bottom: 22px;
         }
@@ -504,7 +518,7 @@ export function SettingsPage() {
           aria-label="Customize sections"
           className="customize-tab-navigation"
         >
-          {customizeTabs.map((tab) => (
+          {visibleCustomizeTabs.map((tab) => (
             <button
               className={
                 activeTab === tab.id
@@ -758,6 +772,15 @@ export function SettingsPage() {
         {activeTab === 'smtp' && (
           <SmtpCustomizationPanel />
         )}
+        {activeTab === 'danger' &&
+          membershipRole === 'company_admin' &&
+          platformRole === null && (
+            <FactoryResetDangerPanel
+              companyId={resetCompanyId}
+              companyName={settings.companyName}
+              scope="company"
+            />
+          )}
       </div>
     </div>
   );
