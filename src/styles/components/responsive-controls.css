@@ -5506,3 +5506,234 @@ html[data-theme="dark"] :is(
   }
 }
 /* publisher_tracker_manager_password_card_polish_v1:end */
+/* publisher_tracker_company_admin_add_offer_dark_cards_v2 */
+/*
+ * Company Admin > Add/Edit Offer dark-theme completion.
+ * Visual-only. No Offer state, tracking, conversion, postback,
+ * payout, assignment, fraud, API or database behavior is changed.
+ */
+
+:root[data-theme="dark"]
+  .company-admin-offers-page
+  .catalog-editor-panel {
+  border-color: rgba(132, 154, 184, 0.26) !important;
+  background: linear-gradient(145deg, #172333, #101a27) !important;
+  color: #e8eef8 !important;
+}
+
+:root[data-theme="dark"]
+  .company-admin-offers-page
+  .company-admin-offer-form {
+  color: #e7eef8 !important;
+}
+
+/* Light section/banner cards shown in the screenshot. */
+:root[data-theme="dark"]
+  .company-admin-offers-page
+  .company-admin-offer-form
+  .catalog-form-section-heading {
+  border: 1px solid rgba(132, 154, 184, 0.23) !important;
+  background: linear-gradient(145deg, #1b293a, #131e2c) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025) !important;
+  color: #edf3fb !important;
+}
+
+:root[data-theme="dark"]
+  .company-admin-offers-page
+  .company-admin-offer-form
+  .catalog-form-section-heading
+  strong {
+  color: #f0f4fb !important;
+}
+
+:root[data-theme="dark"]
+  .company-admin-offers-page
+  .company-admin-offer-form
+  .catalog-form-section-heading
+  small {
+  color: #95a7be !important;
+}
+
+/* Native fields must not fall back to a white browser surface. */
+:root[data-theme="dark"]
+  .company-admin-offers-page
+  .company-admin-offer-form
+  :is(input:not([type="checkbox"]), select, textarea) {
+  color-scheme: dark !important;
+  border-color: rgba(132, 154, 184, 0.30) !important;
+  background: #111b28 !important;
+  color: #edf3fb !important;
+}
+
+:root[data-theme="dark"]
+  .company-admin-offers-page
+  .company-admin-offer-form
+  :is(input:not([type="checkbox"]), select, textarea):focus {
+  border-color: rgba(132, 160, 255, 0.58) !important;
+  background: #152235 !important;
+  box-shadow: 0 0 0 3px rgba(104, 125, 255, 0.11) !important;
+}
+
+:root[data-theme="dark"]
+  .company-admin-offers-page
+  .company-admin-offer-form
+  select
+  option {
+  background: #0f1925 !important;
+  color: #edf3fb !important;
+}
+
+/* Device and Active Days groups. */
+:root[data-theme="dark"]
+  .company-admin-offers-page
+  .company-admin-offer-form
+  .catalog-checkbox-fieldset {
+  border: 1px solid rgba(132, 154, 184, 0.24) !important;
+  background: linear-gradient(145deg, #172433, #111c29) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02) !important;
+}
+
+:root[data-theme="dark"]
+  .company-admin-offers-page
+  .company-admin-offer-form
+  .catalog-checkbox-fieldset
+  legend {
+  color: #a9b8ca !important;
+}
+
+/*
+ * IMPORTANT:
+ * Unselected Desktop/Android/iOS and weekday cards stay dark.
+ */
+:root[data-theme="dark"]
+  .company-admin-offers-page
+  .company-admin-offer-form
+  .catalog-chip {
+  border: 1px solid rgba(132, 154, 184, 0.30) !important;
+  background: linear-gradient(145deg, #182536, #111b28) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.022) !important;
+  color: #c8d4e3 !important;
+}
+
+:root[data-theme="dark"]
+  .company-admin-offers-page
+  .company-admin-offer-form
+  .catalog-chip:hover {
+  border-color: rgba(145, 174, 214, 0.48) !important;
+  background: linear-gradient(145deg, #1d2b3e, #152131) !important;
+  color: #edf3fb !important;
+}
+
+/* Selected cards remain dark but visibly highlighted. */
+:root[data-theme="dark"]
+  .company-admin-offers-page
+  .company-admin-offer-form
+  .catalog-chip--selected {
+  border-color: rgba(126, 147, 255, 0.72) !important;
+  background: linear-gradient(145deg, #263353, #1b2744) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(137, 154, 255, 0.12),
+    0 7px 18px rgba(0, 0, 0, 0.20) !important;
+  color: #eef1ff !important;
+}
+
+:root[data-theme="dark"]
+  .company-admin-offers-page
+  .company-admin-offer-form
+  .catalog-chip
+  input {
+  accent-color: #8494ff !important;
+}
+
+/* Countries / Managers multi-select surfaces. */
+:root[data-theme="dark"]
+  .company-admin-offers-page
+  .company-admin-offer-form
+  .catalog-multi-select__trigger {
+  border-color: rgba(132, 154, 184, 0.30) !important;
+  background: #111b28 !important;
+  color: #edf3fb !important;
+}
+
+:root[data-theme="dark"]
+  .company-admin-offers-page
+  .company-admin-offer-form
+  .catalog-multi-select__menu {
+  border-color: rgba(132, 154, 184, 0.30) !important;
+  background: #0d1723 !important;
+  color: #e7eef8 !important;
+}
+
+:root[data-theme="dark"]
+  .company-admin-offers-page
+  .company-admin-offer-form
+  .catalog-multi-select__option {
+  background: #101a27 !important;
+  color: #c7d3e2 !important;
+}
+
+:root[data-theme="dark"]
+  .company-admin-offers-page
+  .company-admin-offer-form
+  .catalog-multi-select__option:hover {
+  background: #182638 !important;
+  color: #f0f4fb !important;
+}
+
+:root[data-theme="dark"]
+  .company-admin-offers-page
+  .company-admin-offer-form
+  .catalog-multi-select__option--selected {
+  border-color: rgba(126, 147, 255, 0.44) !important;
+  background: #202d4b !important;
+  color: #eef1ff !important;
+}
+
+/* Automatic Tracking Links preview. */
+:root[data-theme="dark"]
+  .company-admin-offers-page
+  .company-admin-offer-form
+  .offer-tracking-link-panel {
+  border-color: rgba(132, 154, 184, 0.24) !important;
+  background: linear-gradient(145deg, #172433, #111b28) !important;
+  color: #e7eef8 !important;
+}
+
+:root[data-theme="dark"]
+  .company-admin-offers-page
+  .company-admin-offer-form
+  .offer-tracking-link-panel
+  > div {
+  border-color: rgba(132, 154, 184, 0.18) !important;
+  background: #0f1926 !important;
+}
+
+/* Proxy / duplicate cards. */
+:root[data-theme="dark"]
+  .company-admin-offers-page
+  .company-admin-offer-form
+  .offer-inline-toggles
+  .catalog-toggle-field {
+  border-color: rgba(132, 154, 184, 0.25) !important;
+  background: linear-gradient(145deg, #172433, #111b28) !important;
+  color: #e7eef8 !important;
+}
+
+:root[data-theme="dark"]
+  .company-admin-offers-page
+  .company-admin-offer-form
+  .offer-inline-toggles
+  .catalog-toggle-field
+  i {
+  border-color: rgba(132, 154, 184, 0.34) !important;
+  background: #0b1521 !important;
+}
+
+@media (max-width: 720px) {
+  :root[data-theme="dark"]
+    .company-admin-offers-page
+    .company-admin-offer-form
+    .catalog-checkbox-fieldset {
+    padding: 12px !important;
+  }
+}
