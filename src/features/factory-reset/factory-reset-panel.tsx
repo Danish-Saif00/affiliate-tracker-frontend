@@ -39,7 +39,7 @@ export function FactoryResetDangerPanel({
   const title =
     scope === 'tracker'
       ? 'Factory Reset Tracker'
-      : 'Factory Reset Company';
+      : 'Reset Company Data';
   const [dialogOpen, setDialogOpen] = useState(false);
   const [confirmation, setConfirmation] = useState('');
   const [isResetting, setIsResetting] = useState(false);
@@ -125,7 +125,7 @@ export function FactoryResetDangerPanel({
       ? 'Erase every Company and every tracker-owned record, including Billing history and Billing plan data. Only Platform Super Admin login identity is preserved.'
       : 'Return ' +
         (companyName?.trim() || 'this Company') +
-        ' to a clean state. The Company shell and your current Company Admin login are preserved so you can sign back in; subscription, invoices, and operational data are erased.';
+        ' to a clean operational state. The Company, your current Company Admin login, Billing subscription and plan assignment, and invoice history are preserved. Managers, Publishers, Domains, Networks, Offers, Tracking data, Conversions, reports, settings, and other Company operational data are permanently erased.';
 
   return (
     <section className="factory-reset-danger-panel">
