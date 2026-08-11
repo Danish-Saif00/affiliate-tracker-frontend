@@ -63,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>(initialAuthState);
 
   const synchronizationSequence = useRef(0);
+  const requestedCompanyIdRef = useRef<string | undefined>(undefined);
 
   const synchronizeSession = useCallback(
     async (
@@ -72,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const sequence = ++synchronizationSequence.current;
 
       if (session === null) {
+        requestedCompanyIdRef.current = undefined;
         setState({
           status: "unauthenticated",
           session: null,
@@ -92,6 +94,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return identity;
         }
 
+        requestedCompanyIdRef.current =
+          identity.authorization.requestedCompanyId ?? undefined;
+
         setState({
           status: "authenticated",
           session,
@@ -108,7 +113,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         const message = getErrorMessage(error);
 
-        if (companyId !== undefined && error instanceof ApiRequestError) {
+        if (
+          companyId !== undefined &&
+          error instanceof ApiRequestError &&
+          error.code !== "ACCOUNT_ACCESS_DENIED"
+        ) {
           setState((current) => ({
             ...current,
             error: message,
@@ -116,6 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           throw error;
         }
 
+        requestedCompanyIdRef.current = undefined;
         await clearLocalSession();
 
         setState({
@@ -153,7 +163,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      await synchronizeSession(data.session);
+      const requestedCompanyId = requestedCompanyIdRef.current;
+
+      try {
+        await synchronizeSession(data.session, requestedCompanyId);
+      } catch (error: unknown) {
+        if (
+          requestedCompanyId !== undefined &&
+          error instanceof ApiRequestError &&
+          error.code === "COMPANY_ACCESS_DENIED"
+        ) {
+          requestedCompanyIdRef.current = undefined;
+          await synchronizeSession(data.session);
+        }
+      }
     };
 
     void synchronizeStoredSession();
@@ -168,7 +191,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Auth lifecycle event. This makes Company suspension, membership
         // revocation, and account suspension effective for already-open
         // Publisher/User sessions instead of trusting a cached identity.
-        void synchronizeSession(session);
+        const requestedCompanyId = requestedCompanyIdRef.current;
+
+        void synchronizeSession(session, requestedCompanyId).catch(
+          (error: unknown) => {
+            if (
+              session !== null &&
+              requestedCompanyId !== undefined &&
+              error instanceof ApiRequestError &&
+              error.code === "COMPANY_ACCESS_DENIED"
+            ) {
+              requestedCompanyIdRef.current = undefined;
+              void synchronizeSession(session);
+            }
+          },
+        );
       });
     });
 
@@ -217,6 +254,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const identity = await fetchCurrentIdentity(data.session.access_token);
 
+        requestedCompanyIdRef.current =
+          identity.authorization.requestedCompanyId ?? undefined;
+
         setState({
           status: "authenticated",
           session: data.session,
@@ -241,6 +281,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     clearRememberSession();
     queryClient.clear();
+    requestedCompanyIdRef.current = undefined;
 
     setState({
       status: "unauthenticated",
