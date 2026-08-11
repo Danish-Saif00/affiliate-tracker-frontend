@@ -11,7 +11,8 @@ import type {
 import { useCatalogOperations } from "../../features/catalog/use-catalog";
 import { usePostbackEndpointCreator } from "../../features/control-plane/use-control-plane";
 import { buildProviderPostbackSetup } from "../../features/tracking-networks/provider-postback-setup";
-import { InlineProviderCreator } from "./inline-provider-creator";
+import type { NetworkProviderIntegrationInput } from "../../features/tracking-networks/tracking-networks.types";
+import { useNetworkProviders } from "../../features/tracking-networks/use-tracking-networks";
 import { NetworkPostbackManager } from "./network-postback-manager";
 import {
   CatalogPagination,
@@ -40,6 +41,7 @@ type NetworkFormState = {
   name: string;
   externalAccountId: string;
   trackingParameter: string;
+  clickIdToken: string;
   postbackUrl: string;
   duplicateAllowed: boolean;
   createPostbackEndpoint: boolean;
@@ -56,7 +58,8 @@ function emptyForm(): NetworkFormState {
     providerId: "",
     name: "",
     externalAccountId: "",
-    trackingParameter: "",
+    trackingParameter: "click_id",
+    clickIdToken: "",
     postbackUrl: "",
     duplicateAllowed: false,
     createPostbackEndpoint: true,
@@ -65,12 +68,17 @@ function emptyForm(): NetworkFormState {
   };
 }
 
-function formFromNetwork(network: CatalogNetwork): NetworkFormState {
+function formFromNetwork(
+  network: CatalogNetwork,
+  clickIdToken: string,
+): NetworkFormState {
   return {
     providerId: network.providerId,
     name: network.name,
     externalAccountId: network.externalAccountId ?? "",
-    trackingParameter: network.trackingParameter ?? "",
+    trackingParameter:
+      network.trackingParameter ?? network.effectiveTrackingParameter,
+    clickIdToken,
     postbackUrl: network.postbackUrl ?? "",
     duplicateAllowed: network.duplicateAllowed,
     createPostbackEndpoint: false,
@@ -79,10 +87,50 @@ function formFromNetwork(network: CatalogNetwork): NetworkFormState {
   };
 }
 
+function createInternalProviderIdentity(networkName: string): {
+  code: string;
+  name: string;
+} {
+  const normalizedName = networkName.trim();
+  const baseCode =
+    normalizedName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/gu, "_")
+      .replace(/^_+|_+$/gu, "")
+      .slice(0, 48) || "network";
+  const suffix =
+    `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+  const code = `${baseCode}_${suffix}`.slice(0, 80).replace(/_+$/gu, "");
+  const internalName =
+    `${normalizedName.slice(0, 136)} [${suffix}]`.slice(0, 160);
+
+  return {
+    code,
+    name: internalName,
+  };
+}
+
+function createProviderIntegration(
+  form: NetworkFormState,
+  inherited?: NetworkProviderIntegrationInput,
+): NetworkProviderIntegrationInput {
+  return {
+    defaultTrackingParameter: form.trackingParameter.trim(),
+    postbackClickIdToken: form.clickIdToken.trim(),
+    postbackConversionIdToken:
+      inherited?.postbackConversionIdToken ?? null,
+    postbackRevenueAmountToken:
+      inherited?.postbackRevenueAmountToken ?? null,
+    postbackRevenueCurrencyToken:
+      inherited?.postbackRevenueCurrencyToken ?? null,
+    postbackConversionStatus:
+      inherited?.postbackConversionStatus ?? "approved",
+  };
+}
+
 function NetworkForm({
   form,
   mode,
-  providers,
   disabled,
   onChange,
   onSubmit,
@@ -91,37 +139,21 @@ function NetworkForm({
 }: {
   form: NetworkFormState;
   mode: "clone" | "create" | "edit";
-  providers: readonly {
-    id: string;
-    code: string;
-    name: string;
-    integration: {
-      defaultTrackingParameter: string | null;
-      configured: boolean;
-    };
-  }[];
   disabled: boolean;
   onChange: (form: NetworkFormState) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onCancel?: () => void;
   networkAccountId: string | null;
 }) {
-  const selectedSoftware = providers.find(
-    (provider) => provider.id === form.providerId,
-  );
-
-  const inheritedTrackingParameter =
-    selectedSoftware?.integration.defaultTrackingParameter ?? "click_id";
-
   return (
     <form className="catalog-form network-combined-form" onSubmit={onSubmit}>
       <div className="catalog-form-section-heading">
         <MaterialIcon name="account_tree" />
         <div>
-          <strong>Network integration</strong>
+          <strong>Network setup</strong>
           <small>
-            Keep the visible setup simple while preserving the existing
-            tracking and conversion contracts.
+            One Network name, one Click ID parameter, and one Click ID token.
+            Internal provider records are handled automatically.
           </small>
         </div>
       </div>
@@ -135,41 +167,10 @@ function NetworkForm({
             onChange={(event) =>
               onChange({ ...form, name: event.currentTarget.value })
             }
-            placeholder="Network name"
+            placeholder="D8Ads, ClickAds, Affizer..."
             required
             value={form.name}
           />
-        </label>
-
-        <label>
-          <span>Software</span>
-          <select
-            disabled={disabled}
-            onChange={(event) =>
-              onChange({
-                ...form,
-                providerId: event.currentTarget.value,
-                trackingParameter: "",
-              })
-            }
-            required
-            value={form.providerId}
-          >
-            <option value="">Select software</option>
-            {providers.map((provider) => (
-              <option key={provider.id} value={provider.id}>
-                {provider.name}
-              </option>
-            ))}
-          </select>
-
-          {selectedSoftware !== undefined && (
-            <small>
-              {selectedSoftware.integration.configured
-                ? "Software click/conversion mapping is configured."
-                : "Verify this software's click token before production use."}
-            </small>
-          )}
         </label>
 
         <label>
@@ -177,34 +178,45 @@ function NetworkForm({
           <input
             autoCapitalize="none"
             disabled={disabled}
+            maxLength={120}
             onChange={(event) =>
               onChange({
                 ...form,
                 trackingParameter: event.currentTarget.value,
               })
             }
-            placeholder={inheritedTrackingParameter}
+            placeholder="click_id"
+            required
             spellCheck={false}
             value={form.trackingParameter}
           />
           <small>
-            {form.trackingParameter.trim().length === 0
-              ? "Using software default: " + inheritedTrackingParameter
-              : "Network override: " + form.trackingParameter.trim()}
+            Parameter name only, for example click_id, subid, or s8.
           </small>
         </label>
 
-        {mode !== "edit" && (
-          <InlineProviderCreator
-            onCreated={(providerId) =>
+        <label>
+          <span>Click ID token</span>
+          <input
+            autoCapitalize="none"
+            disabled={disabled}
+            maxLength={240}
+            onChange={(event) =>
               onChange({
                 ...form,
-                providerId,
-                trackingParameter: "",
+                clickIdToken: event.currentTarget.value,
               })
             }
+            placeholder="{click_id} or #s8#"
+            required
+            spellCheck={false}
+            value={form.clickIdToken}
           />
-        )}
+          <small>
+            Macro/token format is preserved exactly after trimming. Hash-style
+            tokens such as #s8# are supported.
+          </small>
+        </label>
       </div>
 
       {mode === "edit" && networkAccountId !== null ? (
@@ -219,7 +231,6 @@ function NetworkForm({
               </small>
             </div>
           </div>
-
           <NetworkPostbackManager
             key={networkAccountId}
             networkAccountId={networkAccountId}
@@ -233,21 +244,23 @@ function NetworkForm({
             <strong>One secure Postback URL</strong>
             <span>
               The existing backend flow will automatically create one secure
-              provider-ready endpoint after this Network is saved.
+              endpoint after this Network is saved.
             </span>
           </div>
         </div>
       )}
 
-      <ToggleField
-        checked={form.duplicateAllowed}
-        disabled={disabled}
-        hint="Allow repeated provider-side conversion identifiers for this Network."
-        label="Allow duplicate conversions"
-        onChange={(duplicateAllowed) =>
-          onChange({ ...form, duplicateAllowed })
-        }
-      />
+      {mode === "edit" && (
+        <ToggleField
+          checked={form.duplicateAllowed}
+          disabled={disabled}
+          hint="Allow repeated provider-side conversion identifiers for this Network."
+          label="Allow duplicate conversions"
+          onChange={(duplicateAllowed) =>
+            onChange({ ...form, duplicateAllowed })
+          }
+        />
+      )}
 
       <div className="catalog-form-actions">
         {onCancel !== undefined && (
@@ -260,7 +273,6 @@ function NetworkForm({
             Cancel
           </button>
         )}
-
         <button
           className="primary-gradient-button primary-gradient-button--compact"
           disabled={disabled}
@@ -292,6 +304,7 @@ export function NetworkAccountsPage({
   mode: NetworkAccountsPageMode;
 }) {
   const catalog = useCatalogOperations();
+  const providerOperations = useNetworkProviders();
   const postbackCreator = usePostbackEndpointCreator();
   const [form, setForm] = useState<NetworkFormState>(() => emptyForm());
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -299,7 +312,6 @@ export function NetworkAccountsPage({
   const [editorOpen, setEditorOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<CatalogNetworkStatus | "all">("active");
-  const [providerId, setProviderId] = useState("");
   const [createdAfter, setCreatedAfter] = useState("");
   const [page, setPage] = useState(1);
   const [message, setMessage] = useState<string | null>(null);
@@ -307,22 +319,15 @@ export function NetworkAccountsPage({
   const [createdPostback, setCreatedPostback] =
     useState<CreatedPostbackSetup | null>(null);
   const snapshot = catalog.snapshot;
-
-  const providers = useMemo(
-    () =>
-      snapshot?.providers.filter((provider) => provider.status === "active") ??
-      [],
-    [snapshot],
-  );
+  const providers = snapshot?.providers ?? [];
 
   const draftFilters = useMemo(
     () => ({
       search,
       status,
-      providerId,
       createdAfter,
     }),
-    [createdAfter, providerId, search, status],
+    [createdAfter, search, status],
   );
   const { appliedFilters, applyFilters } =
     useAppliedFilters(draftFilters, () => setPage(1));
@@ -330,31 +335,24 @@ export function NetworkAccountsPage({
     if (snapshot === null) {
       return [];
     }
-
     const needle = appliedFilters.search.trim().toLowerCase();
     return snapshot.networks.filter((network) => {
       const matchesSearch =
         needle.length === 0 ||
         network.name.toLowerCase().includes(needle) ||
-        network.providerName.toLowerCase().includes(needle) ||
-        network.providerCode.toLowerCase().includes(needle) ||
         network.externalAccountId?.toLowerCase().includes(needle) === true;
       const matchesCreatedAfter =
         appliedFilters.createdAfter.length === 0 ||
         new Date(network.createdAt).getTime() >=
           new Date(`${appliedFilters.createdAfter}T00:00:00`).getTime();
-
       return (
         matchesSearch &&
         (appliedFilters.status === "all" ||
           network.status === appliedFilters.status) &&
-        (appliedFilters.providerId.length === 0 ||
-          network.providerId === appliedFilters.providerId) &&
         matchesCreatedAfter
       );
     });
   }, [appliedFilters, snapshot]);
-
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, pageCount);
   const pageRows = filtered.slice(
@@ -383,15 +381,48 @@ export function NetworkAccountsPage({
     }
   }
 
-  function createInput(current: NetworkFormState): CreateCatalogNetworkInput {
+  function createInput(
+    current: NetworkFormState,
+    providerId: string,
+  ): CreateCatalogNetworkInput {
     return {
-      providerId: current.providerId,
-      name: current.name,
+      providerId,
+      name: current.name.trim(),
       externalAccountId: current.externalAccountId.trim() || null,
-      trackingParameter: current.trackingParameter.trim() || null,
+      trackingParameter: current.trackingParameter.trim(),
       postbackUrl: current.postbackUrl.trim() || null,
       duplicateAllowed: current.duplicateAllowed,
     };
+  }
+
+  async function createInternalProvider(
+    current: NetworkFormState,
+    inherited?: NetworkProviderIntegrationInput,
+  ) {
+    const identity = createInternalProviderIdentity(current.name);
+
+    return providerOperations.createProvider({
+      code: identity.code,
+      name: identity.name,
+      websiteUrl: null,
+      documentationUrl: null,
+      integration: createProviderIntegration(current, inherited),
+    });
+  }
+
+  async function archiveInternalProviderBestEffort(
+    providerId: string,
+  ): Promise<void> {
+    try {
+      await providerOperations.updateProvider({
+        providerId,
+        status: "archived",
+      });
+    } catch {
+      // Keep the original Network mutation failure as the user-facing error.
+      // An unused hidden provider is safer than deleting or mutating tracking
+      // history to compensate for a later failure.
+    }
   }
 
   function closeEditor(): void {
@@ -407,15 +438,55 @@ export function NetworkAccountsPage({
     event.preventDefault();
     resetFeedback();
 
+    const normalizedName = form.name.trim();
+    const clickParameter = form.trackingParameter.trim();
+    const clickIdToken = form.clickIdToken.trim();
+
+    if (normalizedName.length < 2 || normalizedName.length > 160) {
+      setActionError("Network name must contain between 2 and 160 characters.");
+      return;
+    }
+
+    if (clickParameter.length === 0) {
+      setActionError("Click ID parameter is required.");
+      return;
+    }
+
+    if (clickIdToken.length === 0) {
+      setActionError("Click ID token is required.");
+      return;
+    }
+
     try {
       if (editingId === null) {
         const cloning = cloningId !== null;
-        const createdNetwork = cloning
-          ? await catalog.cloneNetwork({
-              sourceAccountId: cloningId,
-              ...createInput(form),
-            })
-          : await catalog.createNetwork(createInput(form));
+        const sourceProvider =
+          cloning && form.providerId.length > 0
+            ? providers.find(
+                (provider) => provider.id === form.providerId,
+              )
+            : undefined;
+        const internalProvider = await createInternalProvider(
+          form,
+          sourceProvider?.integration,
+        );
+
+        let createdNetwork: CatalogNetwork;
+
+        try {
+          createdNetwork =
+            cloning && cloningId !== null
+              ? await catalog.cloneNetwork({
+                  sourceAccountId: cloningId,
+                  ...createInput(form, internalProvider.id),
+                })
+              : await catalog.createNetwork(
+                  createInput(form, internalProvider.id),
+                );
+        } catch (networkError: unknown) {
+          await archiveInternalProviderBestEffort(internalProvider.id);
+          throw networkError;
+        }
 
         if (form.createPostbackEndpoint) {
           try {
@@ -427,7 +498,6 @@ export function NetworkAccountsPage({
               name: endpointName,
               status: "active",
             });
-
             setCreatedPostback({
               ...buildProviderPostbackSetup(result),
               networkName: createdNetwork.name,
@@ -459,17 +529,46 @@ export function NetworkAccountsPage({
           );
         }
       } else {
-        await catalog.updateNetwork({
-          accountId: editingId,
-          providerId: form.providerId,
-          name: form.name,
-          externalAccountId: form.externalAccountId.trim() || null,
-          status: form.status,
-          trackingParameter: form.trackingParameter.trim() || null,
-          postbackUrl: form.postbackUrl.trim() || null,
-          duplicateAllowed: form.duplicateAllowed,
-        });
-        setMessage(`${form.name.trim()} was updated.`);
+        const existingProvider = providers.find(
+          (provider) => provider.id === form.providerId,
+        );
+        const mappingChanged =
+          existingProvider === undefined ||
+          existingProvider.integration.defaultTrackingParameter !==
+            clickParameter ||
+          existingProvider.integration.postbackClickIdToken !== clickIdToken;
+
+        let providerId = form.providerId;
+        let replacementProviderId: string | null = null;
+
+        if (mappingChanged) {
+          const replacementProvider = await createInternalProvider(
+            form,
+            existingProvider?.integration,
+          );
+          providerId = replacementProvider.id;
+          replacementProviderId = replacementProvider.id;
+        }
+
+        try {
+          await catalog.updateNetwork({
+            accountId: editingId,
+            providerId,
+            name: normalizedName,
+            externalAccountId: form.externalAccountId.trim() || null,
+            status: form.status,
+            trackingParameter: clickParameter,
+            postbackUrl: form.postbackUrl.trim() || null,
+            duplicateAllowed: form.duplicateAllowed,
+          });
+        } catch (networkError: unknown) {
+          if (replacementProviderId !== null) {
+            await archiveInternalProviderBestEffort(replacementProviderId);
+          }
+          throw networkError;
+        }
+
+        setMessage(`${normalizedName} was updated.`);
       }
 
       closeEditor();
@@ -483,10 +582,19 @@ export function NetworkAccountsPage({
   }
 
   function editNetwork(network: CatalogNetwork): void {
+    const provider = providers.find(
+      (candidate) => candidate.id === network.providerId,
+    );
+
     resetFeedback();
     setEditingId(network.id);
     setCloningId(null);
-    setForm(formFromNetwork(network));
+    setForm(
+      formFromNetwork(
+        network,
+        provider?.integration.postbackClickIdToken ?? "",
+      ),
+    );
     setEditorOpen(true);
     document.querySelector(".catalog-editor-panel")?.scrollIntoView({
       behavior: "smooth",
@@ -496,12 +604,18 @@ export function NetworkAccountsPage({
 
   function cloneNetwork(network: CatalogNetwork): void {
     const suffix = Date.now().toString(36).slice(-5);
+    const provider = providers.find(
+      (candidate) => candidate.id === network.providerId,
+    );
 
     resetFeedback();
     setEditingId(null);
     setCloningId(network.id);
     setForm({
-      ...formFromNetwork(network),
+      ...formFromNetwork(
+        network,
+        provider?.integration.postbackClickIdToken ?? "",
+      ),
       name: `${network.name} Copy ${suffix}`,
       externalAccountId: "",
       createPostbackEndpoint: true,
@@ -587,8 +701,8 @@ if (!catalog.permissions.canReadCatalog) {
       <ControlModuleHeader
         description={
           mode === "add"
-            ? "Add a Network with its software and click-ID mapping. One secure Postback URL is generated automatically."
-            : "Edit Network integration and manage the existing Postback while preserving lifecycle controls."
+            ? "Add one Network directly with its name, Click ID parameter, and Click ID token. One secure Postback URL is generated automatically."
+            : "Manage Networks directly without a separate software-selection step while preserving lifecycle and Postback controls."
         }
         eyebrow="Network Operations"
         icon="account_tree"
@@ -606,7 +720,12 @@ if (!catalog.permissions.canReadCatalog) {
       />
 
       <ControlFeedback
-        error={actionError ?? postbackCreator.error ?? catalog.error}
+        error={
+          actionError ??
+          providerOperations.error ??
+          postbackCreator.error ??
+          catalog.error
+        }
         message={message}
       />
 
@@ -624,8 +743,9 @@ if (!catalog.permissions.canReadCatalog) {
               <span>Network Postback</span>
               <strong>{createdPostback.networkName} is connected</strong>
               <small>
-                Copy this single working provider-ready URL into the Network
-                software. The endpoint credential is not shown separately.
+                Copy this secure callback URL into the Network when its
+                conversion mapping is ready. The endpoint credential is not
+                shown separately.
               </small>
             </div>
 
@@ -648,9 +768,9 @@ if (!catalog.permissions.canReadCatalog) {
 
             {createdPostback.templateUrl === null && (
               <small>
-                The software mapping does not currently provide a complete
-                macro template. Verify its click token before using the base
-                callback in production.
+                This Network does not currently provide a separate
+                conversion-ID macro, so the secure base callback is shown.
+                Click and conversion identifiers are not guessed or merged.
               </small>
             )}
           </div>
@@ -677,8 +797,8 @@ if (!catalog.permissions.canReadCatalog) {
           <ControlCardHeading
             description={
               editorMode === "edit"
-                ? "Update the same Network integration and manage its secure Postback."
-                : "Choose software and click-ID mapping. One secure Postback URL is generated automatically."
+                ? "Update this Network directly and manage its secure Postback."
+                : "Enter the Network name, Click ID parameter, and Click ID token. No separate software setup is required."
             }
             eyebrow={
               editorMode === "edit"
@@ -696,14 +816,17 @@ if (!catalog.permissions.canReadCatalog) {
             }
           />
           <NetworkForm
-            disabled={catalog.isMutating || postbackCreator.isMutating}
+            disabled={
+              catalog.isMutating ||
+              providerOperations.isMutating ||
+              postbackCreator.isMutating
+            }
             form={form}
             mode={editorMode}
             onCancel={mode === "manage" ? closeEditor : undefined}
             onChange={setForm}
             networkAccountId={editingId}
             onSubmit={(event) => void handleSubmit(event)}
-            providers={providers}
           />
         </GlassPanel>
       )}
@@ -723,20 +846,7 @@ if (!catalog.permissions.canReadCatalog) {
             }}
             search={search}
           >
-            <select
-              onChange={(event) => {
-                setProviderId(event.currentTarget.value);
 
-              }}
-              value={providerId}
-            >
-              <option value="">All software</option>
-              {snapshot.providers.map((provider) => (
-                <option key={provider.id} value={provider.id}>
-                  {provider.name}
-                </option>
-              ))}
-            </select>
             <select
               onChange={(event) => {
                 setStatus(
@@ -784,7 +894,6 @@ if (!catalog.permissions.canReadCatalog) {
                 <thead>
                   <tr>
                     <th>Network</th>
-                    <th>Software</th>
                     <th>Offers</th>
                     <th>Tracking</th>
                     <th>Postback</th>
@@ -799,7 +908,6 @@ if (!catalog.permissions.canReadCatalog) {
                       <td>
                         <strong>{network.name}</strong>
                       </td>
-                      <td>{network.providerName}</td>
                       <td>{network.offerCount}</td>
                       <td>
                         <code>{network.effectiveTrackingParameter}</code>
@@ -807,7 +915,7 @@ if (!catalog.permissions.canReadCatalog) {
                       <td>
                         {network.providerIntegrationConfigured
                           ? "Postback ready"
-                          : "Software mapping required"}
+                          : "Conversion mapping pending"}
                       </td>
                       <td>
                         <ControlStatus status={network.status} />
