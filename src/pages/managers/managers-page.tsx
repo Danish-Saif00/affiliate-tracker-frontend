@@ -29,8 +29,8 @@ import {
 import { formatDateTime } from "../control-plane/control-plane-formatters";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/u;
-const MINIMUM_PASSWORD_LENGTH = 12;
-const MAXIMUM_PASSWORD_LENGTH = 128;
+const MINIMUM_PASSWORD_LENGTH = 6;
+const MAXIMUM_PASSWORD_LENGTH = 16;
 
 export type ManagersPageMode = "add" | "manage";
 
@@ -411,6 +411,9 @@ export function ManagersPage({ mode }: { mode: ManagersPageMode }) {
                       type="password"
                       value={editForm.password}
                     />
+                    <small>
+                      6-16 characters. Letters, numbers, symbols, or any combination are allowed.
+                    </small>
                   </label>
                   <label>
                     <span>Confirm new password</span>

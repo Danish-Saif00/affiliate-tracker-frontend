@@ -47,7 +47,7 @@ export function FactoryResetDangerPanel({
   const [message, setMessage] = useState<string | null>(null);
   const accessToken = auth.session?.access_token;
   const ready =
-    confirmation === phrase &&
+    confirmation.trim() === phrase &&
     accessToken !== undefined &&
     (scope === 'tracker' || companyId !== undefined);
 
@@ -83,7 +83,7 @@ export function FactoryResetDangerPanel({
       if (scope === 'tracker') {
         report = await resetTracker(
           accessToken,
-          confirmation,
+          confirmation.trim(),
         );
       } else {
         if (companyId === undefined) {
@@ -95,7 +95,7 @@ export function FactoryResetDangerPanel({
         report = await resetCompany(
           accessToken,
           companyId,
-          confirmation,
+          confirmation.trim(),
         );
       }
 
@@ -137,7 +137,7 @@ export function FactoryResetDangerPanel({
               filled
             />
           </span>
-          <div>
+          <div className="factory-reset-danger-panel__content">
             <span className="factory-reset-danger-panel__eyebrow">
               Danger Zone
             </span>
@@ -213,7 +213,15 @@ export function FactoryResetDangerPanel({
               {description}
             </p>
 
-            <div className="factory-reset-modal__warning">
+                        <div className="factory-reset-modal__instruction">
+              <MaterialIcon name="info" />
+              <span>
+                Opening this window does not delete anything. Type
+                <strong> {phrase}</strong> and then click
+                <strong> OK, reset now</strong> to execute the reset.
+              </span>
+            </div>
+<div className="factory-reset-modal__warning">
               <MaterialIcon name="shield_lock" />
               <span>
                 This is a physical purge and cannot be undone.
@@ -259,7 +267,7 @@ export function FactoryResetDangerPanel({
                 Cancel
               </button>
               <button
-                className="factory-reset-danger-panel__button"
+                className="factory-reset-danger-panel__button factory-reset-danger-panel__button--confirm"
                 disabled={!ready || isResetting}
                 onClick={() => void handleReset()}
                 type="button"

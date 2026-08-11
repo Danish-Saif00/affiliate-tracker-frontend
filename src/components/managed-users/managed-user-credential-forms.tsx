@@ -2,8 +2,8 @@ import { type FormEvent, useState } from "react";
 
 import { MaterialIcon } from "../icons/material-icon";
 
-const MINIMUM_PASSWORD_LENGTH = 12;
-const MAXIMUM_PASSWORD_LENGTH = 128;
+const MINIMUM_PASSWORD_LENGTH = 6;
+const MAXIMUM_PASSWORD_LENGTH = 16;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/u;
 
 type ManagedUserCreateFormProps = {
@@ -108,6 +108,9 @@ export function ManagedUserCreateForm({
           required
           type="password"
         />
+        <small>
+          6-16 characters. Letters, numbers, symbols, or any combination are allowed.
+        </small>
       </label>
 
       <label>
@@ -197,6 +200,9 @@ export function ManagedUserPasswordResetForm({
           required
           type="password"
         />
+        <small>
+          6-16 characters. Letters, numbers, symbols, or any combination are allowed.
+        </small>
       </label>
 
       <label>
