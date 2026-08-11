@@ -61,7 +61,7 @@ async function clearLocalSession(): Promise<void> {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>(initialAuthState);
-  const stateRef = useRef<AuthState>(initialAuthState);
+
   const synchronizationSequence = useRef(0);
 
   const synchronizeSession = useCallback(
@@ -133,13 +133,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   useEffect(() => {
-    stateRef.current = state;
-  }, [state]);
-
-  useEffect(() => {
     let active = true;
 
-    void supabase.auth.getSession().then(({ data, error }) => {
+    const synchronizeStoredSession = async (): Promise<void> => {
+      const { data, error } = await supabase.auth.getSession();
+
       if (!active) {
         return;
       }
@@ -155,43 +153,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      void synchronizeSession(data.session);
-    });
+      await synchronizeSession(data.session);
+    };
 
-    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+    void synchronizeStoredSession();
+
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
       queueMicrotask(() => {
         if (!active) {
           return;
         }
 
-        if (
-          (event === "TOKEN_REFRESHED" || event === "SIGNED_IN") &&
-          session !== null
-        ) {
-          const current = stateRef.current;
-
-          if (
-            current.status === "authenticated" &&
-            current.identity !== null &&
-            current.user?.id === session.user.id
-          ) {
-            setState({
-              ...current,
-              session,
-              user: session.user,
-              error: null,
-            });
-            return;
-          }
-        }
-
+        // Re-resolve the authoritative backend identity after every Supabase
+        // Auth lifecycle event. This makes Company suspension, membership
+        // revocation, and account suspension effective for already-open
+        // Publisher/User sessions instead of trusting a cached identity.
         void synchronizeSession(session);
       });
     });
 
+    const handleWindowFocus = (): void => {
+      void synchronizeStoredSession();
+    };
+
+    const handleVisibilityChange = (): void => {
+      if (document.visibilityState === "visible") {
+        void synchronizeStoredSession();
+      }
+    };
+
+    window.addEventListener("focus", handleWindowFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     return () => {
       active = false;
       data.subscription.unsubscribe();
+      window.removeEventListener("focus", handleWindowFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [synchronizeSession]);
 

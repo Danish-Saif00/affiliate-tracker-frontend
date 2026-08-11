@@ -212,7 +212,7 @@ export function BillingPage() {
   }
 
   return (
-    <div className="control-page">
+    <div className="control-page company-admin-billing-page">
       <ControlModuleHeader
         description={
           <>
