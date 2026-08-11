@@ -1,31 +1,41 @@
 .factory-reset-danger-panel {
   display: grid;
-  gap: 18px;
-  padding: 24px;
+  gap: 14px;
+  padding: 22px 24px;
   border: 1px solid rgba(239, 68, 68, 0.32);
   border-radius: 24px;
   background: rgba(127, 29, 29, 0.045);
   box-shadow: 0 18px 45px rgba(127, 29, 29, 0.08);
 }
 
+.factory-reset-danger-panel__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
 .factory-reset-danger-panel__heading {
   display: flex;
+  min-width: 0;
   align-items: flex-start;
   gap: 14px;
 }
 
-.factory-reset-danger-panel__heading h2 {
+.factory-reset-danger-panel__heading h2,
+.factory-reset-modal__header h2 {
   margin: 2px 0 7px;
 }
 
 .factory-reset-danger-panel__heading p {
-  max-width: 760px;
+  max-width: 780px;
   margin: 0;
   color: var(--text-muted, #687287);
   line-height: 1.6;
 }
 
-.factory-reset-danger-panel__icon {
+.factory-reset-danger-panel__icon,
+.factory-reset-modal__danger-icon {
   display: grid;
   width: 44px;
   height: 44px;
@@ -44,48 +54,8 @@
   text-transform: uppercase;
 }
 
-.factory-reset-danger-panel__warning,
-.factory-reset-danger-panel__feedback {
-  display: flex;
-  align-items: flex-start;
-  gap: 9px;
-  padding: 13px 15px;
-  border-radius: 15px;
-  line-height: 1.5;
-}
-
-.factory-reset-danger-panel__warning {
-  color: #991b1b;
-  background: rgba(239, 68, 68, 0.09);
-}
-
-.factory-reset-danger-panel__field {
-  display: grid;
-  gap: 8px;
-  max-width: 520px;
-}
-
-.factory-reset-danger-panel__field > span {
-  font-size: 0.82rem;
-  font-weight: 700;
-}
-
-.factory-reset-danger-panel__field input {
-  min-height: 46px;
-  padding: 10px 14px;
-  border: 1px solid rgba(239, 68, 68, 0.28);
-  border-radius: 14px;
-  outline: none;
-  color: inherit;
-  background: var(--surface-elevated, rgba(255, 255, 255, 0.78));
-}
-
-.factory-reset-danger-panel__field input:focus {
-  border-color: rgba(239, 68, 68, 0.62);
-  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.09);
-}
-
-.factory-reset-danger-panel__button {
+.factory-reset-danger-panel__button,
+.factory-reset-modal__cancel {
   display: inline-flex;
   width: fit-content;
   min-height: 44px;
@@ -93,17 +63,37 @@
   justify-content: center;
   gap: 8px;
   padding: 0 18px;
-  border: 1px solid rgba(239, 68, 68, 0.35);
   border-radius: 14px;
-  color: #fff;
-  background: #b91c1c;
   cursor: pointer;
   font-weight: 800;
 }
 
-.factory-reset-danger-panel__button:disabled {
+.factory-reset-danger-panel__button {
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #fff;
+  background: #b91c1c;
+}
+
+.factory-reset-modal__cancel {
+  border: 1px solid var(--border-subtle, rgba(100, 116, 139, 0.28));
+  color: var(--text-primary, #172033);
+  background: var(--surface-elevated, #f8fafc);
+}
+
+.factory-reset-danger-panel__button:disabled,
+.factory-reset-modal__cancel:disabled {
   cursor: not-allowed;
   opacity: 0.46;
+}
+
+.factory-reset-danger-panel__feedback,
+.factory-reset-modal__warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 13px 15px;
+  border-radius: 15px;
+  line-height: 1.5;
 }
 
 .factory-reset-danger-panel__feedback.is-error {
@@ -116,22 +106,109 @@
   background: rgba(34, 197, 94, 0.09);
 }
 
+.factory-reset-modal {
+  position: fixed;
+  z-index: 2200;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(2, 6, 23, 0.72);
+  backdrop-filter: blur(8px);
+}
+
+.factory-reset-modal__dialog {
+  display: grid;
+  width: min(620px, 100%);
+  max-height: min(760px, calc(100vh - 48px));
+  gap: 18px;
+  overflow: auto;
+  padding: 26px;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 24px;
+  color: var(--text-primary, #172033);
+  background: var(--surface-elevated, #fff);
+  box-shadow: 0 30px 90px rgba(2, 6, 23, 0.34);
+}
+
+.factory-reset-modal__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.factory-reset-modal__description {
+  margin: 0;
+  color: var(--text-muted, #687287);
+  line-height: 1.65;
+}
+
+.factory-reset-modal__warning {
+  color: #991b1b;
+  background: rgba(239, 68, 68, 0.09);
+}
+
+.factory-reset-modal__field {
+  display: grid;
+  gap: 8px;
+}
+
+.factory-reset-modal__field > span {
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.factory-reset-modal__field input {
+  width: 100%;
+  min-height: 48px;
+  padding: 11px 14px;
+  border: 1px solid rgba(239, 68, 68, 0.34);
+  border-radius: 14px;
+  outline: none;
+  color: inherit;
+  background: var(--surface-elevated, rgba(255, 255, 255, 0.92));
+}
+
+.factory-reset-modal__field input:focus {
+  border-color: rgba(239, 68, 68, 0.68);
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
+}
+
+.factory-reset-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 2px;
+}
+
 [data-theme='dark'] .factory-reset-danger-panel {
   border-color: rgba(248, 113, 113, 0.32);
   background: rgba(127, 29, 29, 0.15);
   box-shadow: none;
 }
 
-[data-theme='dark'] .factory-reset-danger-panel__heading p {
+[data-theme='dark'] .factory-reset-danger-panel__heading p,
+[data-theme='dark'] .factory-reset-modal__description {
   color: rgba(226, 232, 240, 0.72);
 }
 
-[data-theme='dark'] .factory-reset-danger-panel__field input {
+[data-theme='dark'] .factory-reset-modal__dialog {
   color: #f8fafc;
-  background: rgba(15, 23, 42, 0.72);
+  background: #111c2a;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.5);
 }
 
-[data-theme='dark'] .factory-reset-danger-panel__warning,
+[data-theme='dark'] .factory-reset-modal__field input,
+[data-theme='dark'] .factory-reset-modal__cancel {
+  color: #f8fafc;
+  background: #0c1622;
+}
+
+[data-theme='dark'] .factory-reset-modal__cancel {
+  border-color: rgba(148, 163, 184, 0.3);
+}
+
+[data-theme='dark'] .factory-reset-modal__warning,
 [data-theme='dark'] .factory-reset-danger-panel__feedback.is-error {
   color: #fecaca;
 }
@@ -146,11 +223,30 @@
     border-radius: 20px;
   }
 
-  .factory-reset-danger-panel__heading {
+  .factory-reset-danger-panel__summary {
+    align-items: stretch;
     flex-direction: column;
   }
 
   .factory-reset-danger-panel__button {
+    width: 100%;
+  }
+
+  .factory-reset-modal {
+    padding: 14px;
+  }
+
+  .factory-reset-modal__dialog {
+    max-height: calc(100vh - 28px);
+    padding: 20px;
+    border-radius: 20px;
+  }
+
+  .factory-reset-modal__actions {
+    flex-direction: column-reverse;
+  }
+
+  .factory-reset-modal__cancel {
     width: 100%;
   }
 }

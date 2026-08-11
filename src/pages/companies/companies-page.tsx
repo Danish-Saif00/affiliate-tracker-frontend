@@ -321,14 +321,12 @@ export function CompaniesPage() {
         </GlassPanel>
       </div>
 
-      <GlassPanel as="section">
-        <FactoryResetDangerPanel
-          onCompleted={async () => {
-            await company.refreshCompanies();
-          }}
-          scope="tracker"
-        />
-      </GlassPanel>
+      <FactoryResetDangerPanel
+        onCompleted={async () => {
+          await company.refreshCompanies();
+        }}
+        scope="tracker"
+      />
     </div>
   );
 }

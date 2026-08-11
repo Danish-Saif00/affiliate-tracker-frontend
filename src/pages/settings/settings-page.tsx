@@ -26,8 +26,7 @@ type CustomizeTab =
   | 'domain'
   | 'link'
   | 'proxy'
-  | 'smtp'
-  | 'danger';
+  | 'smtp';
 const customizeTabs: readonly {
   id: CustomizeTab;
   label: string;
@@ -63,12 +62,6 @@ const customizeTabs: readonly {
     label: 'SMTP',
     icon: 'mail',
     description: 'Brevo email delivery',
-  },
-  {
-    id: 'danger',
-    label: 'Danger',
-    icon: 'warning',
-    description: 'Reset company operational data',
   },
 ];
 export function SettingsPage() {
@@ -157,10 +150,7 @@ export function SettingsPage() {
   const customizationKey =
     settings.customization?.updatedAt ??
     'empty';
-  const visibleCustomizeTabs =
-    membershipRole === 'company_admin' && platformRole === null
-      ? customizeTabs
-      : customizeTabs.filter((tab) => tab.id !== 'danger');
+  const visibleCustomizeTabs = customizeTabs;
   const resetCompanyId =
     auth.identity?.authorization.requestedCompanyId ?? undefined;
   return (
@@ -772,16 +762,15 @@ export function SettingsPage() {
         {activeTab === 'smtp' && (
           <SmtpCustomizationPanel />
         )}
-        {activeTab === 'danger' &&
-          membershipRole === 'company_admin' &&
-          platformRole === null && (
-            <FactoryResetDangerPanel
-              companyId={resetCompanyId}
-              companyName={settings.companyName}
-              scope="company"
-            />
-          )}
       </div>
+      {membershipRole === 'company_admin' &&
+        platformRole === null && (
+          <FactoryResetDangerPanel
+            companyId={resetCompanyId}
+            companyName={settings.companyName}
+            scope="company"
+          />
+        )}
     </div>
   );
 }
