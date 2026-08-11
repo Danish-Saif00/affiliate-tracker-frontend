@@ -241,7 +241,7 @@ export function FactoryResetDangerPanel({
                 onChange={(event) =>
                   setConfirmation(event.target.value)
                 }
-                placeholder={phrase}
+                placeholder={`Type ${phrase} here`}
                 spellCheck={false}
                 value={confirmation}
               />
@@ -281,7 +281,9 @@ export function FactoryResetDangerPanel({
                 />
                 {isResetting
                   ? 'Resetting...'
-                  : 'OK, reset now'}
+                  : ready
+                    ? 'OK, reset now'
+                    : `Type ${phrase} first`}
               </button>
             </div>
           </div>
