@@ -15,6 +15,7 @@ import type {
 import {
   ControlEmpty,
   ControlFeedback,
+  ControlStatus,
 } from "../control-plane/control-plane-ui";
 import { PublisherDashboard } from "./publisher-dashboard";
 import { SuperAdminDashboard } from "./super-admin-dashboard";
@@ -171,6 +172,10 @@ function ManagerAssignmentTable({
 }: {
   managers: readonly CatalogManager[];
 }) {
+  const visibleManagers = managers.filter(
+    (manager) => manager.membershipStatus !== "revoked",
+  );
+
   return (
     <GlassPanel as="section" className="dashboard-report-card">
       <div className="dashboard-card-heading">
@@ -180,7 +185,7 @@ function ManagerAssignmentTable({
         </div>
         <Link to="/reports/managers">View report</Link>
       </div>
-      {managers.length === 0 ? (
+      {visibleManagers.length === 0 ? (
         <ControlEmpty
           icon="supervisor_account"
           message="Add an active Manager before assigning Offers."
@@ -197,7 +202,7 @@ function ManagerAssignmentTable({
               </tr>
             </thead>
             <tbody>
-              {managers.slice(0, 8).map((manager) => (
+              {visibleManagers.slice(0, 8).map((manager) => (
                 <tr key={manager.membershipId}>
                   <td>
                     <strong>
@@ -208,7 +213,9 @@ function ManagerAssignmentTable({
                     <small>Manager #{manager.publicId}</small>
                   </td>
                   <td>{formatCompact(manager.offerCount)}</td>
-                  <td>{manager.membershipStatus}</td>
+                  <td>
+                    <ControlStatus status={manager.membershipStatus} />
+                  </td>
                 </tr>
               ))}
             </tbody>
