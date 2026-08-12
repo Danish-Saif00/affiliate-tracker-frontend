@@ -45,6 +45,24 @@ const PROVISIONING_LABELS: Readonly<
 
 export type TrackingDomainsPageMode = "add" | "manage" | "approvals";
 
+function readOwnershipRecordHost(
+  domain: TrackingDomain,
+): string {
+  const recordName = domain.ownershipRecordName.replace(/\.$/, "");
+  const hostname = domain.hostname.replace(/\.$/, "");
+  const hostnameLabels = hostname.split(".");
+  const zoneName = hostnameLabels.slice(1).join(".");
+
+  if (
+    zoneName.length > 0 &&
+    recordName.endsWith(`.${zoneName}`)
+  ) {
+    return recordName.slice(0, -(zoneName.length + 1));
+  }
+
+  return recordName;
+}
+
 function readProvisioningHint(domain: TrackingDomain): string {
   switch (domain.provisioningStatus) {
     case "manual":
@@ -846,11 +864,11 @@ export function TrackingDomainsPage({
                                     <h4>1. Ownership TXT record</h4>
                                     <div className="managed-domain-record">
                                       <span>Name / Host</span>
-                                      <code>{domain.ownershipRecordName}</code>
+                                      <code>{readOwnershipRecordHost(domain)}</code>
                                       <button
                                         onClick={() =>
                                           void copyValue(
-                                            domain.ownershipRecordName,
+                                            readOwnershipRecordHost(domain),
                                             "TXT record name",
                                           )
                                         }
