@@ -104,6 +104,8 @@ export function PublishersPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const snapshot = catalog.snapshot;
+  const [createAssignedOfferIds, setCreateAssignedOfferIds] = useState<readonly string[]>([]);
+
 
   const offerOptions = useMemo(
     () =>
@@ -174,6 +176,16 @@ export function PublishersPage() {
 
     try {
       const publisher = await tenant.createManagedUser(input);
+
+      if (createAssignedOfferIds.length > 0) {
+        try {
+          await catalog.updatePublisher({ membershipId: publisher.membershipId, timezone: 'UTC', payoutType: 'per_offer', fixedPayoutAmountMinor: null, payoutCurrency: null, postbackUrl: null, emailNotificationsEnabled: true, assignedOfferIds: createAssignedOfferIds });
+        } catch (assignmentError: unknown) {
+          setActionError(assignmentError instanceof Error ? `Publisher account was created, but selected Offers could not be assigned: ${assignmentError.message}` : 'Publisher account was created, but selected Offers could not be assigned. Open Edit and retry.');
+          return;
+        }
+      }
+      setCreateAssignedOfferIds([]);
       setMessage(
         `${publisher.email ?? input.email} was created as an active Publisher.`,
       );
@@ -391,6 +403,10 @@ export function PublishersPage() {
               onCreate={createPublisher}
               roleLabel="Publisher"
             />
+            <div className="catalog-form-section">
+              <div className="catalog-form-section__heading"><strong>Assign Offers now</strong><small>Select from the Offers currently assigned to this Manager. You can change access later from Edit.</small></div>
+              <MultiSelectDropdown ariaLabel="Assign Offers to new Publisher" emptyMessage="No active assigned Offers are available." onChange={setCreateAssignedOfferIds} options={offerOptions} placeholder="Select Offers" searchPlaceholder="Search Offers" values={createAssignedOfferIds} />
+            </div>
           </GlassPanel>
 
           {passwordTarget !== null && (

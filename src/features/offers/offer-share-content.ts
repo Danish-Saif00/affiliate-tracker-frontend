@@ -24,16 +24,20 @@ export function formatOfferCountries(countries: readonly string[]): string {
   return countries.length === 0 ? "Worldwide" : countries.join(", ");
 }
 
+function normalizeOfferShareCopyValue(value: string): string {
+  return value.replace(/https:\/\/[^\s<>"']+/gu, candidate => candidate.replace(/%25&/giu,'.').replace(/%&/gu,'.').replace(/%2e/giu,'.'));
+}
+
 export async function copyOfferShareValue(value: string): Promise<void> {
   const clipboard = navigator.clipboard;
 
   if (clipboard !== undefined && typeof clipboard.writeText === "function") {
-    await clipboard.writeText(value);
+    await clipboard.writeText(normalizeOfferShareCopyValue(value));
     return;
   }
 
   const textarea = document.createElement("textarea");
-  textarea.value = value;
+  textarea.value = normalizeOfferShareCopyValue(value);
   textarea.setAttribute("readonly", "");
   textarea.style.position = "fixed";
   textarea.style.opacity = "0";

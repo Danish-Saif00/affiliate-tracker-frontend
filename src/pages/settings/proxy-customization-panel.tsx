@@ -775,11 +775,7 @@ function ProxyConfigurationEditor({
           </div>
           <p className="customize-form-note">
             <MaterialIcon name="info" />
-            Secure configuration storage is
-            active. Live provider checks will
-            be connected to the tracker
-            redirect flow in the next runtime
-            batch.
+            Secure configuration storage is active. The tracker uses the saved provider configuration during live redirect checks. For security, the raw API key is not returned to the browser after Save; only its masked ending is shown.
           </p>
         </section>
       </div>
