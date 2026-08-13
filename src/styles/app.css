@@ -16,3 +16,294 @@
 @import "./components/offer-owned-tracking-links.css";
 @import "./components/managed-tracking-domains.css";
 @import "./components/responsive-controls.css";
+
+
+/* =========================================================
+   SUPER ADMIN DARK SURFACE REPAIR — authoritative overrides
+   Keep these scoped to Super Admin modules so tracking and
+   role-aware operational surfaces are not affected.
+   ========================================================= */
+
+.companies-page {
+  --sa-surface: rgba(14, 16, 22, 0.96);
+  --sa-surface-raised: rgba(19, 22, 30, 0.98);
+  --sa-surface-inset: rgba(9, 11, 16, 0.82);
+  --sa-border: rgba(255, 255, 255, 0.10);
+  --sa-border-strong: rgba(192, 193, 255, 0.28);
+  --sa-text: rgba(244, 245, 248, 0.94);
+  --sa-muted: rgba(199, 198, 202, 0.62);
+}
+
+.companies-page .page-heading-panel,
+.companies-page .company-create-card,
+.companies-page .company-directory-card,
+.companies-page .company-card {
+  background: var(--sa-surface) !important;
+  border: 1px solid var(--sa-border) !important;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.24) !important;
+  color: var(--sa-text) !important;
+}
+
+.companies-page .page-heading-panel,
+.companies-page .company-create-card,
+.companies-page .company-directory-card {
+  padding: 28px !important;
+  border-radius: 20px !important;
+}
+
+.companies-page .company-directory-card {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.companies-page .company-directory-card__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 0 0 20px;
+  padding: 0 0 16px;
+  border-bottom: 1px solid var(--sa-border);
+}
+
+.companies-page .company-directory-card__actions .eyebrow-chip {
+  margin: 0;
+}
+
+.companies-page .company-card-list {
+  margin-top: 0;
+  gap: 14px;
+}
+
+.companies-page .company-card {
+  grid-template-columns: 50px minmax(0, 1fr) auto;
+  gap: 18px;
+  padding: 20px !important;
+  border-radius: 16px !important;
+  background: var(--sa-surface-raised) !important;
+}
+
+.companies-page .company-card:hover {
+  background: rgba(24, 27, 36, 0.98) !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+}
+
+.companies-page .company-card--selected {
+  border-color: var(--sa-border-strong) !important;
+  background:
+    linear-gradient(135deg, rgba(192, 193, 255, 0.10), rgba(18, 21, 29, 0.98)) !important;
+  box-shadow:
+    inset 3px 0 var(--secondary),
+    0 12px 28px rgba(0, 0, 0, 0.20) !important;
+}
+
+.companies-page .company-card h3 {
+  color: var(--sa-text) !important;
+  font-size: 17px !important;
+}
+
+.companies-page .company-card__content > p {
+  color: var(--sa-muted) !important;
+}
+
+.companies-page .company-card dt {
+  color: rgba(199, 198, 202, 0.42) !important;
+}
+
+.companies-page .company-card dd {
+  color: rgba(235, 235, 239, 0.78) !important;
+}
+
+.companies-page .company-card__icon {
+  width: 50px !important;
+  height: 50px !important;
+  background: rgba(192, 193, 255, 0.08) !important;
+  border-color: rgba(192, 193, 255, 0.18) !important;
+}
+
+.companies-page .company-card__actions {
+  gap: 9px;
+}
+
+/* Company Admin directory */
+.tenant-administration-page .tenant-directory-card,
+.tenant-administration-page .tenant-invite-card,
+.tenant-administration-page .tenant-audit-card {
+  background: rgba(14, 16, 22, 0.96) !important;
+  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.22) !important;
+}
+
+.tenant-administration-page .tenant-directory-card {
+  padding: 26px !important;
+  border-radius: 20px !important;
+  overflow: hidden;
+}
+
+.tenant-administration-page .tenant-filter-grid {
+  padding: 16px !important;
+  margin: 0 0 18px !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  border-radius: 16px !important;
+  background: rgba(9, 11, 16, 0.78) !important;
+}
+
+.tenant-administration-page .responsive-table,
+.tenant-administration-page .responsive-table table {
+  background: transparent !important;
+}
+
+.tenant-administration-page .responsive-table {
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  border-radius: 16px !important;
+  overflow-x: auto;
+}
+
+.tenant-administration-page .responsive-table th,
+.tenant-administration-page .responsive-table td {
+  background: rgba(15, 17, 23, 0.96) !important;
+  border-color: rgba(255,255,255,0.07) !important;
+}
+
+.tenant-administration-page .responsive-table thead th {
+  background: rgba(22, 25, 33, 0.98) !important;
+}
+
+.tenant-administration-page .responsive-table tbody tr:hover td {
+  background: rgba(27, 30, 39, 0.98) !important;
+}
+
+/* Billing */
+.company-admin-billing-page .billing-plan-card,
+.company-admin-billing-page .control-side-card,
+.company-admin-billing-page .control-main-card,
+.company-admin-billing-page .control-record,
+.company-admin-billing-page .control-form--inline-card,
+.company-admin-billing-page .subscription-renewal-form {
+  background: rgba(14, 16, 22, 0.96) !important;
+  border: 1px solid rgba(255,255,255,0.10) !important;
+  box-shadow: 0 14px 34px rgba(0,0,0,0.22) !important;
+  color: var(--on-surface) !important;
+}
+
+.company-admin-billing-page .billing-plan-card,
+.company-admin-billing-page .control-side-card,
+.company-admin-billing-page .control-main-card {
+  padding: 26px !important;
+  border-radius: 20px !important;
+}
+
+.company-admin-billing-page .control-form--inline-card,
+.company-admin-billing-page .subscription-renewal-form {
+  padding: 18px !important;
+  border-radius: 16px !important;
+}
+
+.company-admin-billing-page .control-meta-grid {
+  background: rgba(9,11,16,0.78) !important;
+  border-color: rgba(255,255,255,0.07) !important;
+}
+
+.company-admin-billing-page .control-meta-grid > div {
+  background: rgba(19,22,30,0.96) !important;
+  border: 1px solid rgba(255,255,255,0.07) !important;
+}
+
+.company-admin-billing-page .control-form input,
+.company-admin-billing-page .control-form select,
+.company-admin-billing-page .control-form textarea,
+.company-admin-billing-page .control-inline-field select,
+.company-admin-billing-page .control-action-row input,
+.company-admin-billing-page .control-action-row select {
+  background: rgba(8,10,15,0.92) !important;
+  border-color: rgba(255,255,255,0.10) !important;
+  color: var(--on-surface) !important;
+}
+
+.company-admin-billing-page .control-table-wrap {
+  background: rgba(9,11,16,0.82) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  border-radius: 16px !important;
+  overflow-x: auto;
+}
+
+.company-admin-billing-page .control-table {
+  background: transparent !important;
+}
+
+.company-admin-billing-page .control-table th,
+.company-admin-billing-page .control-table td {
+  background: rgba(15,17,23,0.96) !important;
+  border-color: rgba(255,255,255,0.07) !important;
+}
+
+.company-admin-billing-page .control-table thead th {
+  background: rgba(22,25,33,0.98) !important;
+}
+
+/* Catalog */
+.catalog-page,
+.dashboard-page--catalog {
+  --catalog-border: rgba(255,255,255,0.10) !important;
+  --catalog-border-strong: rgba(192,193,255,0.30) !important;
+  --catalog-surface: rgba(14,16,22,0.96) !important;
+  --catalog-surface-muted: rgba(19,22,30,0.98) !important;
+  --catalog-text: rgba(244,245,248,0.94) !important;
+  --catalog-muted: rgba(199,198,202,0.62) !important;
+}
+
+.catalog-page .control-module-header,
+.dashboard-page--catalog .dashboard-command-bar,
+.catalog-page .control-card,
+.dashboard-page--catalog .glass-panel,
+.catalog-page .catalog-editor-panel,
+.catalog-page .catalog-table-panel,
+.catalog-page .publisher-editor-panel {
+  background: rgba(14,16,22,0.96) !important;
+  border: 1px solid rgba(255,255,255,0.10) !important;
+  box-shadow: 0 14px 34px rgba(0,0,0,0.22) !important;
+  color: var(--catalog-text) !important;
+}
+
+.catalog-page .catalog-editor-panel,
+.catalog-page .catalog-table-panel,
+.catalog-page .publisher-editor-panel {
+  padding: 26px !important;
+  border-radius: 20px !important;
+}
+
+.catalog-page .catalog-form input:not([type='checkbox']),
+.catalog-page .catalog-form select,
+.catalog-page .catalog-form textarea,
+.catalog-page .catalog-toolbar input,
+.catalog-page .catalog-toolbar select {
+  background: rgba(8,10,15,0.92) !important;
+  border-color: rgba(255,255,255,0.10) !important;
+  color: var(--catalog-text) !important;
+  box-shadow: none !important;
+}
+
+.catalog-page .catalog-search {
+  background: rgba(8,10,15,0.92) !important;
+  border-color: rgba(255,255,255,0.10) !important;
+  box-shadow: none !important;
+}
+
+.catalog-page .catalog-chip,
+.catalog-page .catalog-toggle-field,
+.catalog-page .catalog-record,
+.catalog-page .catalog-table-wrap {
+  background: rgba(19,22,30,0.98) !important;
+  border-color: rgba(255,255,255,0.08) !important;
+  color: var(--catalog-text) !important;
+}
+
+@media (max-width: 820px) {
+  .companies-page .company-card {
+    grid-template-columns: 44px minmax(0, 1fr);
+  }
+
+  .companies-page .company-card__actions {
+    grid-column: 1 / -1;
+  }
+}

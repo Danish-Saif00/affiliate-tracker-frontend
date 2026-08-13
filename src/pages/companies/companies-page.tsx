@@ -209,11 +209,11 @@ export function CompaniesPage() {
         </GlassPanel>
 
         <GlassPanel as="section" className="company-directory-card">
-          <div className="panel-heading company-directory-card__heading">
-            <div>
-              <h2>Company Directory</h2>
-              <p>{company.companies.length} tenant records available.</p>
-            </div>
+          <div className="company-directory-card__actions">
+            <span className="eyebrow-chip">
+              <MaterialIcon name="domain" filled />
+              Company records
+            </span>
             <button
               className="icon-button"
               onClick={() => void company.refreshCompanies()}
