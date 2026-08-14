@@ -298,7 +298,7 @@ function ProxyConfigurationEditor({
     tenant.error;
   const savedKeyLabel =
     configuration?.hasApiKey === true
-      ? '???? ' +
+      ? '•••• ' +
         configuration.apiKeyLast4
       : 'Not configured';
   return (
@@ -641,16 +641,30 @@ function ProxyConfigurationEditor({
               </div>
             </div>
             {canManage && (
-              <button
-                className="link-customize-save"
-                disabled={isMutating}
-                type="submit"
-              >
-                <MaterialIcon name="save" />
-                {isMutating
-                  ? 'Saving...'
-                  : 'Save proxy settings'}
-              </button>
+              <div className="proxy-save-action">
+                <button
+                  className="link-customize-save"
+                  disabled={isMutating}
+                  type="submit"
+                >
+                  <MaterialIcon name="save" />
+                  {isMutating
+                    ? 'Saving...'
+                    : 'Save proxy settings'}
+                </button>
+                {feedback !== null && (
+                  <div className="proxy-save-confirmation" role="status">
+                    <MaterialIcon name="check_circle" />
+                    <span>{feedback}</span>
+                  </div>
+                )}
+                {actionError !== null && (
+                  <div className="proxy-save-confirmation is-error" role="alert">
+                    <MaterialIcon name="error" />
+                    <span>{actionError}</span>
+                  </div>
+                )}
+              </div>
             )}
           </form>
         </section>

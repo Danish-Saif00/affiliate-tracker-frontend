@@ -194,7 +194,7 @@ export function AppShell() {
   }
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell${companyRole === "company_admin" ? " app-shell--company-admin" : ""}`}>
       <div className="ambient-orb ambient-orb--violet" />
       <div className="ambient-orb ambient-orb--blue" />
 

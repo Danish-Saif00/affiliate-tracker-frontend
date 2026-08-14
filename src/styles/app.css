@@ -307,3 +307,145 @@
     grid-column: 1 / -1;
   }
 }
+
+
+/* =========================================================
+   COMPANY ADMIN THEME NORMALIZATION — authoritative final layer
+   Scoped by AppShell role so Platform Admin/Manager/Publisher
+   surfaces keep their own styling contracts.
+   ========================================================= */
+.proxy-save-action {
+  display: grid;
+  gap: 12px;
+  align-items: start;
+}
+.proxy-save-confirmation {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--success) 38%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--success) 12%, var(--surface-solid));
+  color: var(--on-surface);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.proxy-save-confirmation.is-error {
+  border-color: color-mix(in srgb, var(--danger) 42%, transparent);
+  background: color-mix(in srgb, var(--danger) 12%, var(--surface-solid));
+}
+
+html[data-theme="dark"] .app-shell--company-admin .app-content {
+  --company-admin-surface: #121e2b;
+  --company-admin-surface-raised: #162433;
+  --company-admin-surface-inset: #0e1925;
+  --company-admin-border: rgba(131, 157, 188, 0.24);
+  --company-admin-border-soft: rgba(131, 157, 188, 0.16);
+  --company-admin-text: #edf3fb;
+  --company-admin-muted: #9eb0c5;
+}
+
+html[data-theme="dark"] .app-shell--company-admin .app-content :is(
+  .glass-panel,
+  .control-card,
+  .catalog-editor-panel,
+  .catalog-table-panel,
+  .link-customize-card,
+  .customize-neumorphic-panel,
+  .offer-directory-card,
+  .offer-tracking-link-panel,
+  .catalog-form-section-heading,
+  .control-directory-surface,
+  .control-main-card,
+  .control-side-card,
+  .control-record
+) {
+  background: var(--company-admin-surface) !important;
+  border-color: var(--company-admin-border) !important;
+  color: var(--company-admin-text) !important;
+}
+
+html[data-theme="dark"] .app-shell--company-admin .app-content :is(
+  .link-preview-item,
+  .customize-form-note,
+  .offer-link-directory__row,
+  .offer-directory-card__details > div,
+  .catalog-toggle-field,
+  .catalog-chip,
+  .catalog-record,
+  .control-meta-grid > div
+) {
+  background: var(--company-admin-surface-inset) !important;
+  border-color: var(--company-admin-border-soft) !important;
+  color: var(--company-admin-text) !important;
+}
+
+html[data-theme="dark"] .app-shell--company-admin .app-content :is(
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select,
+  .multi-select-trigger
+) {
+  background: #0d1824 !important;
+  border-color: var(--company-admin-border) !important;
+  color: var(--company-admin-text) !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="dark"] .app-shell--company-admin .app-content :is(
+  p, small, dt, .control-muted, .catalog-muted
+) {
+  color: var(--company-admin-muted);
+}
+
+html[data-theme="dark"] .app-shell--company-admin .app-content :is(
+  table, thead, tbody, tr, th, td, .responsive-table, .control-table-wrap
+) {
+  border-color: var(--company-admin-border-soft) !important;
+}
+
+html[data-theme="dark"] .app-shell--company-admin .app-content table thead th {
+  background: #172636 !important;
+  color: #b8c7d8 !important;
+}
+
+html[data-theme="dark"] .app-shell--company-admin .app-content table tbody td {
+  background: #111e2b !important;
+  color: var(--company-admin-text) !important;
+}
+
+html[data-theme="light"] .app-shell--company-admin .app-content :is(
+  .glass-panel,
+  .control-card,
+  .catalog-editor-panel,
+  .catalog-table-panel,
+  .link-customize-card,
+  .customize-neumorphic-panel,
+  .offer-directory-card,
+  .offer-tracking-link-panel,
+  .catalog-form-section-heading,
+  .control-directory-surface,
+  .control-main-card,
+  .control-side-card,
+  .control-record
+) {
+  background: var(--surface-solid) !important;
+  border-color: var(--outline) !important;
+  color: var(--on-surface) !important;
+}
+
+html[data-theme="light"] .app-shell--company-admin .app-content :is(
+  .link-preview-item,
+  .customize-form-note,
+  .offer-link-directory__row,
+  .offer-directory-card__details > div,
+  .catalog-toggle-field,
+  .catalog-chip,
+  .catalog-record,
+  .control-meta-grid > div
+) {
+  background: var(--surface-muted) !important;
+  border-color: var(--outline) !important;
+  color: var(--on-surface) !important;
+}
