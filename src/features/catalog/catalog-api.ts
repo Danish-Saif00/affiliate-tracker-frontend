@@ -307,10 +307,13 @@ function parseOffer(value: unknown): CatalogOffer {
     ),
     name: readRequiredString(value.name, "offer name"),
     description: readNullableString(value.description, "offer description"),
-    promotionalTextTemplate: readRequiredString(
-      value.promotionalTextTemplate,
-      "offer promotional text template",
-    ),
+    promotionalTextTemplate:
+      typeof value.promotionalTextTemplate === "string"
+        ? value.promotionalTextTemplate.trim()
+        : readRequiredString(
+            value.promotionalTextTemplate,
+            "offer promotional text template",
+          ),
     trackingLinkTemplate: readNullableString(
       value.trackingLinkTemplate,
       "offer tracking link template",
