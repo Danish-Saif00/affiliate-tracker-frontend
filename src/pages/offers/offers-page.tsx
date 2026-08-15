@@ -1384,7 +1384,8 @@ if (!catalog.permissions.canReadCatalog) {
                               <MaterialIcon name="link" />
                             </button>
                           )}
-                        {primaryTrackingLink !== undefined && (
+                        {catalog.permissions.canManageCatalog &&
+                          primaryTrackingLink !== undefined && (
                           <button
                             aria-label={`Copy generated tracking link for ${offer.name}`}
                             onClick={(event) => {
@@ -1409,6 +1410,7 @@ if (!catalog.permissions.canReadCatalog) {
                     </summary>
 
                     <div className="offer-directory-card__body">
+                      {catalog.permissions.canManageCatalog && (
                       <div className="offer-link-directory">
                         {catalog.permissions.canManageCatalog &&
                           destinationUrl !== null && (
@@ -1481,6 +1483,7 @@ if (!catalog.permissions.canReadCatalog) {
                           ))
                         )}
                       </div>
+                    )}
 
                       <dl className="offer-directory-card__details">
                         <div>

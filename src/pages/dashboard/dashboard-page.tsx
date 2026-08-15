@@ -277,6 +277,21 @@ function CompanyDashboard() {
   }
 
   if (
+    reporting.error !== null ||
+    catalog.error !== null
+  ) {
+    return (
+      <GlassPanel as="section" className="dashboard-setup-state">
+        <MaterialIcon name="error" />
+        <h1>Dashboard could not be loaded</h1>
+        <ControlFeedback
+          error={reporting.error ?? catalog.error}
+          message={null}
+        />
+      </GlassPanel>
+    );
+  }
+  if (
     reporting.isLoading ||
     catalog.isLoading ||
     reporting.dashboard === null ||
