@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useCallback } from "react";
+
 import { queryClient } from "../../app/query-client";
 import { useAuth } from "../auth/use-auth";
 import { useCompany } from "../companies/use-company";
@@ -55,14 +55,7 @@ export function useProxyConfiguration() {
       return fetchProxyConfiguration(session.access_token, companyId, signal);
     },
   });
-  const invalidate = useCallback(async (): Promise<void> => {
-    await queryClient.invalidateQueries({
-      queryKey: PROXY_QUERY_KEY,
-    });
-    await queryClient.invalidateQueries({
-      queryKey: ["company-scoped", "tenant-administration", "audit"],
-    });
-  }, []);
+
   const mutation = useMutation<
     CompanyProxyConfiguration,
     Error,
@@ -76,7 +69,18 @@ export function useProxyConfiguration() {
       }
       return updateProxyConfiguration(session.access_token, companyId, input);
     },
-    onSettled: invalidate,
+    onSuccess: (saved) => {
+      if (companyId !== null) {
+        queryClient.setQueryData<CompanyProxyConfiguration>(
+          [...PROXY_QUERY_KEY, companyId],
+          saved,
+        );
+      }
+      void queryClient.invalidateQueries({
+        queryKey: ["company-scoped", "tenant-administration", "audit"],
+        refetchType: "active",
+      });
+    },
   });
   return {
     companyId,

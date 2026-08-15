@@ -37,3 +37,6 @@ _runtime/
 *profile-dropdown-backup*
 !src/pages/logs/
 !src/pages/logs/**
+
+.vercel
+.env*
