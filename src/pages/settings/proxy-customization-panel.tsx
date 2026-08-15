@@ -864,11 +864,7 @@ export function ProxyCustomizationPanel() {
       isMutating={
         proxy.isMutating
       }
-      key={
-        proxy.configuration
-          ?.updatedAt ??
-        'proxy-empty'
-      }
+      key={proxy.companyId ?? 'proxy-empty'}
       save={
         proxy.updateConfiguration
       }
