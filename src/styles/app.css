@@ -449,3 +449,189 @@ html[data-theme="light"] .app-shell--company-admin .app-content :is(
   border-color: var(--outline) !important;
   color: var(--on-surface) !important;
 }
+/* =========================================================
+   GLOBAL ALL-ROLE SURFACE NORMALIZATION V1
+   Applies the active semantic theme consistently across
+   Platform Admin, Company Admin, Manager and Publisher
+   authenticated screens.
+   Functional/layout behavior is intentionally untouched.
+   ========================================================= */
+html[data-theme] .app-content {
+  color: var(--on-surface);
+}
+/* Primary page/card surfaces */
+html[data-theme] .app-content :is(
+  .glass-panel,
+  .glass-panel-heavy,
+  .control-card,
+  .control-main-card,
+  .control-side-card,
+  .control-record,
+  .control-directory-surface,
+  .catalog-editor-panel,
+  .catalog-table-panel,
+  .publisher-editor-panel,
+  .manager-invite-card,
+  .manager-edit-card,
+  .manager-directory-card,
+  .tenant-invite-card,
+  .tenant-directory-card,
+  .tenant-audit-card,
+  .offer-directory-card,
+  .offer-tracking-link-panel,
+  .link-customize-card,
+  .customize-neumorphic-panel,
+  .dns-instructions-card,
+  .tracking-create-card,
+  .tracking-list-card,
+  .billing-plan-card,
+  .subscription-renewal-form
+) {
+  background: var(--surface-solid) !important;
+  border-color: var(--outline) !important;
+  color: var(--on-surface) !important;
+}
+/* Nested/inset surfaces */
+html[data-theme] .app-content :is(
+  .offer-directory-card__details > div,
+  .offer-directory-card__body,
+  .link-preview-item,
+  .customize-form-note,
+  .offer-link-directory__row,
+  .catalog-toggle-field,
+  .catalog-chip,
+  .catalog-record,
+  .control-meta-grid > div,
+  .tenant-user-card,
+  .tenant-invitation-row,
+  .company-card,
+  .tracking-record-card,
+  .tracking-record-meta > div
+) {
+  background: var(--surface-muted) !important;
+  border-color: var(--outline) !important;
+  color: var(--on-surface) !important;
+}
+/* Inputs / selects / textareas */
+html[data-theme] .app-content :is(
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select,
+  .multi-select-trigger,
+  .tenant-search-field,
+  .catalog-search
+) {
+  background: var(--surface-elevated) !important;
+  border-color: var(--outline) !important;
+  color: var(--on-surface) !important;
+  box-shadow: none !important;
+}
+html[data-theme] .app-content :is(
+  input,
+  textarea
+)::placeholder {
+  color: var(--on-surface-muted) !important;
+}
+/* Native dropdown options */
+html[data-theme] .app-content select option {
+  background: var(--surface-elevated) !important;
+  color: var(--on-surface) !important;
+}
+/* Shared headings */
+html[data-theme] .app-content :is(
+  h1,
+  h2,
+  h3,
+  h4,
+  strong,
+  .control-card-heading h2,
+  .empty-directory-state h3,
+  .tenant-empty-state h3,
+  .tracking-empty-state strong
+) {
+  color: var(--on-surface-strong);
+}
+/* Muted supporting text */
+html[data-theme] .app-content :is(
+  p,
+  small,
+  dt,
+  .control-muted,
+  .catalog-muted,
+  .control-card-heading p,
+  .empty-directory-state p,
+  .tenant-empty-state p
+) {
+  color: var(--on-surface-variant);
+}
+/* Tables */
+html[data-theme] .app-content :is(
+  .responsive-table,
+  .control-table-wrap,
+  table,
+  thead,
+  tbody,
+  tr,
+  th,
+  td
+) {
+  border-color: var(--outline) !important;
+}
+html[data-theme] .app-content table thead th {
+  background: var(--surface-muted) !important;
+  color: var(--on-surface-variant) !important;
+}
+html[data-theme] .app-content table tbody td {
+  background: var(--surface-solid) !important;
+  color: var(--on-surface) !important;
+}
+html[data-theme] .app-content table tbody tr:hover td {
+  background: var(--surface-container-high) !important;
+}
+/* Empty/loading/access states must inherit theme instead of legacy white */
+html[data-theme] .app-content :is(
+  .empty-directory-state,
+  .tenant-empty-state,
+  .tracking-empty-state,
+  .tracking-access-state,
+  .table-empty-state,
+  .chart-empty-state,
+  .dashboard-loading-state,
+  .dashboard-error-state,
+  .dashboard-setup-state,
+  .access-state-panel
+) {
+  color: var(--on-surface-variant);
+}
+/* Keep structural cards from leaking legacy pseudo-layer colors */
+html[data-theme] .app-content :is(
+  .glass-panel,
+  .control-card,
+  .offer-directory-card,
+  .publisher-editor-panel,
+  .catalog-table-panel,
+  .catalog-editor-panel
+)::before {
+  border-color: var(--outline) !important;
+}
+/* Theme-specific shadow treatment */
+html[data-theme="light"] .app-content :is(
+  .glass-panel,
+  .control-card,
+  .offer-directory-card,
+  .publisher-editor-panel,
+  .catalog-editor-panel,
+  .catalog-table-panel
+) {
+  box-shadow: var(--shadow-soft) !important;
+}
+html[data-theme="dark"] .app-content :is(
+  .glass-panel,
+  .control-card,
+  .offer-directory-card,
+  .publisher-editor-panel,
+  .catalog-editor-panel,
+  .catalog-table-panel
+) {
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.24) !important;
+}
