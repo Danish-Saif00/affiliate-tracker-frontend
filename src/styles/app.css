@@ -806,3 +806,52 @@ html[data-theme="dark"]
     grid-template-columns: 1fr !important;
   }
 }
+
+/* =========================================================
+   PUBLISHER CREATE SELECTABLE SETTINGS FINAL V3
+   ========================================================= */
+.publisher-create-settings,
+.publisher-create-fixed-payout {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.publisher-create-settings label,
+.publisher-create-fixed-payout label {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+.publisher-create-settings label > span,
+.publisher-create-fixed-payout label > span {
+  color: var(--on-surface-variant);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.publisher-create-settings select,
+.publisher-create-fixed-payout input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 13px;
+  border: 1px solid var(--outline);
+  border-radius: 12px;
+  background: var(--surface-elevated);
+  color: var(--on-surface);
+  font: inherit;
+  outline: none;
+}
+.publisher-create-settings select:focus,
+.publisher-create-fixed-payout input:focus {
+  border-color: var(--primary);
+}
+@media (max-width: 640px) {
+  .publisher-create-settings,
+  .publisher-create-fixed-payout {
+    grid-template-columns: 1fr;
+  }
+}

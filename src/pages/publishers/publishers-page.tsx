@@ -105,6 +105,12 @@ export function PublishersPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const snapshot = catalog.snapshot;
   const [createAssignedOfferIds, setCreateAssignedOfferIds] = useState<readonly string[]>([]);
+  const [createTimezone, setCreateTimezone] = useState("UTC");
+  const [createPayoutType, setCreatePayoutType] =
+    useState<CatalogPayoutType>("per_offer");
+  const [createFixedPayoutAmountMinor, setCreateFixedPayoutAmountMinor] =
+    useState("");
+  const [createPayoutCurrency, setCreatePayoutCurrency] = useState("USD");
 
 
   const offerOptions = useMemo(
@@ -173,23 +179,61 @@ export function PublishersPage() {
     password: string;
   }): Promise<void> {
     resetFeedback();
-
+    const fixedPayoutAmountMinor =
+      createPayoutType === "fixed_member"
+        ? Number(createFixedPayoutAmountMinor)
+        : null;
+    const payoutCurrency =
+      createPayoutType === "fixed_member"
+        ? createPayoutCurrency.trim().toUpperCase()
+        : null;
+    if (
+      createPayoutType === "fixed_member" &&
+      (fixedPayoutAmountMinor === null ||
+        payoutCurrency === null ||
+        !Number.isSafeInteger(fixedPayoutAmountMinor) ||
+        fixedPayoutAmountMinor < 1 ||
+        payoutCurrency.length !== 3)
+    ) {
+      setActionError(
+        "Fixed payout requires a positive amount and a three-letter currency.",
+      );
+      return;
+    }
     try {
-      const publisher = await tenant.createManagedUser(input);
-
-      if (createAssignedOfferIds.length > 0) {
-        try {
-          await catalog.updatePublisher({ membershipId: publisher.membershipId, timezone: 'UTC', payoutType: 'per_offer', fixedPayoutAmountMinor: null, payoutCurrency: null, postbackUrl: null, emailNotificationsEnabled: true, assignedOfferIds: createAssignedOfferIds });
-        } catch (assignmentError: unknown) {
-          setActionError(assignmentError instanceof Error ? `Publisher account was created, but selected Offers could not be assigned: ${assignmentError.message}` : 'Publisher account was created, but selected Offers could not be assigned. Open Edit and retry.');
-          return;
-        }
+      const publisher =
+        await tenant.createManagedUser(input);
+      try {
+        await catalog.updatePublisher({
+          membershipId: publisher.membershipId,
+          timezone: createTimezone,
+          payoutType: createPayoutType,
+          fixedPayoutAmountMinor,
+          payoutCurrency,
+          postbackUrl: null,
+          emailNotificationsEnabled: true,
+          assignedOfferIds: createAssignedOfferIds,
+        });
+      } catch (settingsError: unknown) {
+        setActionError(
+          settingsError instanceof Error
+            ? `Publisher account was created, but its settings could not be saved: ${settingsError.message}`
+            : "Publisher account was created, but its settings could not be saved. Open Edit and retry.",
+        );
+        return;
       }
       setCreateAssignedOfferIds([]);
+      setCreateTimezone("UTC");
+      setCreatePayoutType("per_offer");
+      setCreateFixedPayoutAmountMinor("");
+      setCreatePayoutCurrency("USD");
       setMessage(
         `${publisher.email ?? input.email} was created as an active Publisher.`,
       );
-      await Promise.all([catalog.refresh(), tenant.refresh()]);
+      await Promise.all([
+        catalog.refresh(),
+        tenant.refresh(),
+      ]);
     } catch (error: unknown) {
       const message =
         error instanceof Error
@@ -391,7 +435,6 @@ export function PublishersPage() {
           >
             <ControlCardHeading
               description="The Publisher account becomes active immediately. No invitation or password-setup email is sent."
-              eyebrow="Direct Credentials"
               title="Create a Publisher"
             />
             <ManagedUserCreateForm
@@ -408,16 +451,114 @@ export function PublishersPage() {
               <span>Publisher setup</span>
               <strong>Assign Offers</strong>
             </div>
-            <div className="publisher-create-defaults">
-              <div>
+            <div className="publisher-create-settings">
+              <label>
                 <span>Timezone</span>
-                <strong>UTC</strong>
-              </div>
-              <div>
-                <span>Payout</span>
-                <strong>Per offer</strong>
-              </div>
+                <select
+                  disabled={
+                    catalog.isMutating ||
+                    tenant.isMutating
+                  }
+                  onChange={(event) =>
+                    setCreateTimezone(
+                      event.currentTarget.value,
+                    )
+                  }
+                  value={createTimezone}
+                >
+                  {TIMEZONE_OPTIONS.map(
+                    (timezone) => (
+                      <option
+                        key={timezone}
+                        value={timezone}
+                      >
+                        {timezone}
+                      </option>
+                    ),
+                  )}
+                </select>
+              </label>
+              <label>
+                <span>Payout type</span>
+                <select
+                  disabled={
+                    catalog.isMutating ||
+                    tenant.isMutating
+                  }
+                  onChange={(event) => {
+                    const payoutType =
+                      event.currentTarget
+                        .value as CatalogPayoutType;
+                    setCreatePayoutType(
+                      payoutType,
+                    );
+                    if (
+                      payoutType === "per_offer"
+                    ) {
+                      setCreateFixedPayoutAmountMinor(
+                        "",
+                      );
+                      setCreatePayoutCurrency(
+                        "USD",
+                      );
+                    }
+                  }}
+                  value={createPayoutType}
+                >
+                  <option value="per_offer">
+                    Per offer
+                  </option>
+                  <option value="fixed_member">
+                    Fixed payout
+                  </option>
+                </select>
+              </label>
             </div>
+            {createPayoutType === "fixed_member" && (
+              <div className="publisher-create-fixed-payout">
+                <label>
+                  <span>Fixed payout amount</span>
+                  <input
+                    disabled={
+                      catalog.isMutating ||
+                      tenant.isMutating
+                    }
+                    min="1"
+                    onChange={(event) =>
+                      setCreateFixedPayoutAmountMinor(
+                        event.currentTarget.value,
+                      )
+                    }
+                    placeholder="Amount in minor units"
+                    step="1"
+                    type="number"
+                    value={
+                      createFixedPayoutAmountMinor
+                    }
+                  />
+                </label>
+                <label>
+                  <span>Currency</span>
+                  <input
+                    disabled={
+                      catalog.isMutating ||
+                      tenant.isMutating
+                    }
+                    maxLength={3}
+                    onChange={(event) =>
+                      setCreatePayoutCurrency(
+                        event.currentTarget.value
+                          .toUpperCase(),
+                      )
+                    }
+                    placeholder="USD"
+                    value={
+                      createPayoutCurrency
+                    }
+                  />
+                </label>
+              </div>
+            )}
             <div className="catalog-form-section publisher-offer-assignment">
               <MultiSelectDropdown
                 ariaLabel="Assign Offers to new Publisher"
