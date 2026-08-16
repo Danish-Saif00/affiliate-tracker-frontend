@@ -384,14 +384,10 @@ export function PublishersPage() {
       />
 
       {catalog.permissions.canManagePublishers && (
-        <div
-          className={`catalog-two-column${
-            passwordTarget === null ? " catalog-two-column--single" : ""
-          }`}
-        >
+        <div className="catalog-two-column publisher-create-grid">
           <GlassPanel
             as="section"
-            className="control-card publisher-editor-panel"
+            className="control-card publisher-editor-panel publisher-credentials-panel"
           >
             <ControlCardHeading
               description="The Publisher account becomes active immediately. No invitation or password-setup email is sent."
@@ -403,14 +399,43 @@ export function PublishersPage() {
               onCreate={createPublisher}
               roleLabel="Publisher"
             />
-            <div className="catalog-form-section">
-              <div className="catalog-form-section__heading"><strong>Assign Offers now</strong><small>Select from the Offers currently assigned to this Manager. You can change access later from Edit.</small></div>
-              <MultiSelectDropdown ariaLabel="Assign Offers to new Publisher" emptyMessage="No active assigned Offers are available." onChange={setCreateAssignedOfferIds} options={offerOptions} placeholder="Select Offers" searchPlaceholder="Search Offers" values={createAssignedOfferIds} />
+          </GlassPanel>
+          <GlassPanel
+            as="section"
+            className="control-card publisher-editor-panel publisher-setup-panel"
+          >
+            <div className="publisher-setup-heading">
+              <span>Publisher setup</span>
+              <strong>Assign Offers</strong>
+            </div>
+            <div className="publisher-create-defaults">
+              <div>
+                <span>Timezone</span>
+                <strong>UTC</strong>
+              </div>
+              <div>
+                <span>Payout</span>
+                <strong>Per offer</strong>
+              </div>
+            </div>
+            <div className="catalog-form-section publisher-offer-assignment">
+              <MultiSelectDropdown
+                ariaLabel="Assign Offers to new Publisher"
+                emptyMessage="No active assigned Offers are available."
+                onChange={setCreateAssignedOfferIds}
+                options={offerOptions}
+                placeholder="Select Offers"
+                searchPlaceholder="Search Offers"
+                values={createAssignedOfferIds}
+              />
             </div>
           </GlassPanel>
 
           {passwordTarget !== null && (
-            <GlassPanel as="section" className="control-card">
+            <GlassPanel
+              as="section"
+              className="control-card publisher-password-reset-panel"
+            >
               <ControlCardHeading
                 description="Only the new password is accepted. The current password remains unreadable."
                 eyebrow="Administrator Reset"

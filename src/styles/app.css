@@ -635,3 +635,174 @@ html[data-theme="dark"] .app-content :is(
 ) {
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.24) !important;
 }
+/* =========================================================
+   TARGETED UI CLEANUP V1
+   UI-only refinements; no operational behavior changes.
+   ========================================================= */
+/* Publisher creation: true 50/50 desktop layout. */
+.publisher-create-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-items: start;
+}
+.publisher-create-grid > .publisher-editor-panel {
+  min-width: 0;
+  height: 100%;
+}
+.publisher-setup-panel {
+  position: relative;
+  z-index: 3;
+  overflow: visible !important;
+}
+.publisher-setup-heading {
+  display: grid;
+  gap: 5px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--outline);
+}
+.publisher-setup-heading > span {
+  color: var(--on-surface-variant);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+.publisher-setup-heading > strong {
+  color: var(--on-surface-strong);
+  font-size: 18px;
+  line-height: 1.25;
+}
+.publisher-create-defaults {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.publisher-create-defaults > div {
+  display: grid;
+  gap: 5px;
+  padding: 13px 14px;
+  border: 1px solid var(--outline);
+  border-radius: 13px;
+  background: var(--surface-muted);
+}
+.publisher-create-defaults span {
+  color: var(--on-surface-variant);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.publisher-create-defaults strong {
+  color: var(--on-surface-strong);
+  font-size: 13px;
+}
+.publisher-offer-assignment {
+  margin: 0 !important;
+}
+.publisher-setup-panel .catalog-multi-select {
+  position: relative;
+  z-index: 5;
+}
+.publisher-setup-panel .catalog-multi-select__menu {
+  z-index: 100 !important;
+}
+.publisher-password-reset-panel {
+  grid-column: 1 / -1;
+}
+/* Company dashboard: remove legacy light/sticky cell leakage. */
+html[data-theme="dark"]
+  .dashboard-page--company-admin
+  .dashboard-report-card
+  .responsive-table {
+  border-color: var(--outline) !important;
+  background: transparent !important;
+}
+html[data-theme="dark"]
+  .dashboard-page--company-admin
+  .dashboard-report-card
+  .responsive-table
+  :is(th, td) {
+  background-image: none !important;
+  box-shadow: none !important;
+}
+html[data-theme="dark"]
+  .dashboard-page--company-admin
+  .dashboard-report-card
+  .responsive-table
+  thead
+  th {
+  background: #172636 !important;
+  color: #b8c7d8 !important;
+}
+html[data-theme="dark"]
+  .dashboard-page--company-admin
+  .dashboard-report-card
+  .responsive-table
+  tbody
+  td {
+  background: #111e2b !important;
+  color: var(--on-surface) !important;
+}
+html[data-theme="dark"]
+  .dashboard-page--company-admin
+  .dashboard-report-card
+  .responsive-table
+  tbody
+  tr:nth-child(even)
+  td {
+  background: #142334 !important;
+}
+html[data-theme="dark"]
+  .dashboard-page--company-admin
+  .dashboard-report-card
+  .responsive-table
+  tbody
+  tr:hover
+  td {
+  background: #1a2b3d !important;
+}
+/* Offer targeting: cleaner device card without changing controls. */
+.offer-targeting-grid {
+  align-items: stretch;
+  gap: 18px !important;
+  margin-top: 4px;
+  margin-bottom: 18px;
+}
+.offer-targeting-grid > .catalog-checkbox-grid {
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 18px !important;
+  border: 1px solid var(--outline) !important;
+  border-radius: 15px !important;
+  background: var(--surface-muted) !important;
+}
+.offer-targeting-grid > .catalog-checkbox-grid legend {
+  padding: 0 7px;
+  color: var(--on-surface-variant);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+/* Simplified network/offer forms after instruction-card removal. */
+.company-admin-network-page .network-combined-form,
+.catalog-page .catalog-form {
+  row-gap: 20px;
+}
+@media (max-width: 980px) {
+  .publisher-create-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .publisher-password-reset-panel {
+    grid-column: auto;
+  }
+}
+@media (max-width: 640px) {
+  .publisher-create-defaults {
+    grid-template-columns: 1fr;
+  }
+  .offer-targeting-grid {
+    grid-template-columns: 1fr !important;
+  }
+}

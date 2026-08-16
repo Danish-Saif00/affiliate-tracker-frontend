@@ -401,18 +401,8 @@ function OfferForm({
         </label>
       </div>
 
-      <div className="catalog-form-section-heading">
-        <MaterialIcon name="public" />
-        <div>
-          <strong>Countries and devices</strong>
-          <small>
-            Select targeting and paste the affiliate Network URL separately for
-            every selected device.
-          </small>
-        </div>
-      </div>
 
-      <div className="catalog-form-grid catalog-form-grid--two">
+      <div className="catalog-form-grid catalog-form-grid--two offer-targeting-grid">
         <div className="catalog-field">
           <span>Countries</span>
           <MultiSelectDropdown
@@ -496,16 +486,6 @@ function OfferForm({
         )}
       </div>
 
-      <div className="catalog-form-section-heading">
-        <MaterialIcon name="link" />
-        <div>
-          <strong>Automatic Tracking Links</strong>
-          <small>
-            The system creates one secure link per Manager assignment and later
-            creates one per Publisher assignment.
-          </small>
-        </div>
-      </div>
 
       <div className="offer-tracking-link-panel offer-tracking-link-panel--automatic">
         <div>
@@ -526,15 +506,6 @@ function OfferForm({
         </p>
       </div>
 
-      <div className="catalog-form-section-heading">
-        <MaterialIcon name="route" />
-        <div>
-          <strong>Routing, payout, schedule, and fraud controls</strong>
-          <small>
-            These settings belong to the Offer and are not separate modules.
-          </small>
-        </div>
-      </div>
 
       <div className="catalog-form-grid catalog-form-grid--three">
         <label>

@@ -22,7 +22,6 @@ import {
 } from "../control-plane/catalog-page-ui";
 import {
   ControlAccessDenied,
-  ControlCardHeading,
   ControlEmpty,
   ControlFeedback,
   ControlLoading,
@@ -147,16 +146,6 @@ function NetworkForm({
 }) {
   return (
     <form className="catalog-form network-combined-form" onSubmit={onSubmit}>
-      <div className="catalog-form-section-heading">
-        <MaterialIcon name="account_tree" />
-        <div>
-          <strong>Network setup</strong>
-          <small>
-            One Network name, one Click ID parameter, and one Click ID token.
-            Internal provider records are handled automatically.
-          </small>
-        </div>
-      </div>
 
       <div className="catalog-form-grid catalog-form-grid--three">
         <label>
@@ -221,16 +210,6 @@ function NetworkForm({
 
       {mode === "edit" && networkAccountId !== null ? (
         <>
-          <div className="catalog-form-section-heading catalog-form-section-heading--postback">
-            <MaterialIcon name="webhook" />
-            <div>
-              <strong>Network Postback</strong>
-              <small>
-                Keep the working secure endpoint lifecycle attached to this
-                Network.
-              </small>
-            </div>
-          </div>
           <NetworkPostbackManager
             key={networkAccountId}
             networkAccountId={networkAccountId}
@@ -238,16 +217,7 @@ function NetworkForm({
           />
         </>
       ) : (
-        <div className="network-postback-inline network-postback-inline--automatic">
-          <MaterialIcon name="webhook" />
-          <div>
-            <strong>One secure Postback URL</strong>
-            <span>
-              The existing backend flow will automatically create one secure
-              endpoint after this Network is saved.
-            </span>
-          </div>
-        </div>
+<></>
       )}
 
       {mode === "edit" && (
@@ -794,27 +764,6 @@ if (!catalog.permissions.canReadCatalog) {
       )}
       {catalog.permissions.canManageCatalog && editorVisible && (
         <GlassPanel as="section" className="control-card catalog-editor-panel">
-          <ControlCardHeading
-            description={
-              editorMode === "edit"
-                ? "Update this Network directly and manage its secure Postback."
-                : "Enter the Network name, Click ID parameter, and Click ID token. No separate software setup is required."
-            }
-            eyebrow={
-              editorMode === "edit"
-                ? "Edit Network"
-                : editorMode === "clone"
-                  ? "Clone Network"
-                  : "Add Network"
-            }
-            title={
-              editorMode === "edit"
-                ? `Update ${form.name}`
-                : editorMode === "clone"
-                  ? `Clone ${form.name}`
-                  : "Connect a Network"
-            }
-          />
           <NetworkForm
             disabled={
               catalog.isMutating ||
