@@ -211,6 +211,73 @@ function formFromOffer(offer: CatalogOffer): OfferFormState {
   };
 }
 
+const TIER_1_COUNTRY_CODES = [
+  "US",
+  "GB",
+  "CA",
+  "AU",
+  "NZ",
+] as const;
+const TIER_2_COUNTRY_CODES = [
+  "AD",
+  "AL",
+  "AT",
+  "BA",
+  "BE",
+  "BG",
+  "BY",
+  "CH",
+  "CY",
+  "CZ",
+  "DE",
+  "DK",
+  "EE",
+  "ES",
+  "FI",
+  "FR",
+  "GB",
+  "GR",
+  "HR",
+  "HU",
+  "IE",
+  "IS",
+  "IT",
+  "LI",
+  "LT",
+  "LU",
+  "LV",
+  "MC",
+  "MD",
+  "ME",
+  "MK",
+  "MT",
+  "NL",
+  "NO",
+  "PL",
+  "PT",
+  "RO",
+  "RS",
+  "SE",
+  "SI",
+  "SK",
+  "SM",
+  "UA",
+  "VA",
+] as const;
+function addCountryPreset(
+  current: readonly string[],
+  preset: readonly string[],
+): readonly string[] {
+  const available = new Set<string>(
+    COUNTRY_OPTIONS.map(([code]) => code),
+  );
+  return Array.from(
+    new Set([
+      ...current,
+      ...preset.filter((code) => available.has(code)),
+    ]),
+  );
+}
 function OfferForm({
   form,
   mode,
@@ -420,7 +487,45 @@ function OfferForm({
             searchPlaceholder="Search countries"
             values={form.countries}
           />
-          <small>No selected country means worldwide traffic.</small>
+          <div className="catalog-form-actions">
+            <button
+              className="control-secondary-button"
+              disabled={disabled}
+              onClick={() =>
+                onChange({
+                  ...form,
+                  countries: addCountryPreset(
+                    form.countries,
+                    TIER_1_COUNTRY_CODES,
+                  ),
+                })
+              }
+              type="button"
+            >
+              Tier 1
+            </button>
+            <button
+              className="control-secondary-button"
+              disabled={disabled}
+              onClick={() =>
+                onChange({
+                  ...form,
+                  countries: addCountryPreset(
+                    form.countries,
+                    TIER_2_COUNTRY_CODES,
+                  ),
+                })
+              }
+              type="button"
+            >
+              Tier 2
+            </button>
+          </div>
+          <small>
+            Tier presets add countries without removing your existing
+            selections. You can still add or remove countries manually.
+            No selected country means worldwide traffic.
+          </small>
         </div>
         <CheckboxGrid
           legend="Devices"

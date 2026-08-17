@@ -42,6 +42,7 @@ type NetworkFormState = {
   trackingParameter: string;
   clickIdToken: string;
   postbackUrl: string;
+  postbackDomainId: string;
   duplicateAllowed: boolean;
   createPostbackEndpoint: boolean;
   postbackEndpointName: string;
@@ -60,6 +61,7 @@ function emptyForm(): NetworkFormState {
     trackingParameter: "click_id",
     clickIdToken: "",
     postbackUrl: "",
+    postbackDomainId: "",
     duplicateAllowed: false,
     createPostbackEndpoint: true,
     postbackEndpointName: "",
@@ -79,6 +81,7 @@ function formFromNetwork(
       network.trackingParameter ?? network.effectiveTrackingParameter,
     clickIdToken,
     postbackUrl: network.postbackUrl ?? "",
+    postbackDomainId: "",
     duplicateAllowed: network.duplicateAllowed,
     createPostbackEndpoint: false,
     postbackEndpointName: `${network.name} Conversions`,
@@ -135,6 +138,7 @@ function NetworkForm({
   onSubmit,
   onCancel,
   networkAccountId,
+  domains,
 }: {
   form: NetworkFormState;
   mode: "clone" | "create" | "edit";
@@ -143,6 +147,11 @@ function NetworkForm({
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onCancel?: () => void;
   networkAccountId: string | null;
+  domains: readonly {
+    readonly id: string;
+    readonly hostname: string;
+    readonly status: string;
+  }[];
 }) {
   return (
     <form className="catalog-form network-combined-form" onSubmit={onSubmit}>
@@ -208,6 +217,43 @@ function NetworkForm({
         </label>
       </div>
 
+      {mode !== "edit" && (
+        <label>
+          <span>Postback Domain</span>
+          <select
+            disabled={disabled}
+            onChange={(event) =>
+              onChange({
+                ...form,
+                postbackDomainId:
+                  event.currentTarget.value,
+              })
+            }
+            value={form.postbackDomainId}
+          >
+            <option value="">
+              Default Postback host
+            </option>
+            {domains
+              .filter(
+                (domain) =>
+                  domain.status === "active",
+              )
+              .map((domain) => (
+                <option
+                  key={domain.id}
+                  value={domain.id}
+                >
+                  {domain.hostname}
+                </option>
+              ))}
+          </select>
+          <small>
+            Optional. Select a tracking domain to use it as
+            the public Postback hostname.
+          </small>
+        </label>
+      )}
       {mode === "edit" && networkAccountId !== null ? (
         <>
           <NetworkPostbackManager
@@ -290,6 +336,7 @@ export function NetworkAccountsPage({
     useState<CreatedPostbackSetup | null>(null);
   const snapshot = catalog.snapshot;
   const providers = snapshot?.providers ?? [];
+  const domains = snapshot?.domains ?? [];
 
   const draftFilters = useMemo(
     () => ({
@@ -468,8 +515,49 @@ export function NetworkAccountsPage({
               name: endpointName,
               status: "active",
             });
+            const selectedDomain =
+              form.postbackDomainId.length === 0
+                ? undefined
+                : domains.find(
+                    (domain) =>
+                      domain.id ===
+                        form.postbackDomainId &&
+                      domain.status === "active",
+                  );
+            if (
+              form.postbackDomainId.length > 0 &&
+              selectedDomain === undefined
+            ) {
+              throw new Error(
+                "The selected Postback domain is no longer active.",
+              );
+            }
+            const postbackSetup =
+              buildProviderPostbackSetup(
+                result,
+                selectedDomain === undefined
+                  ? undefined
+                  : `https://${selectedDomain.hostname}`,
+              );
+            if (selectedDomain !== undefined) {
+              await catalog.updateNetwork({
+                accountId: createdNetwork.id,
+                providerId: createdNetwork.providerId,
+                name: createdNetwork.name,
+                externalAccountId:
+                  createdNetwork.externalAccountId,
+                status: createdNetwork.status,
+                trackingParameter:
+                  createdNetwork.trackingParameter,
+                postbackUrl:
+                  postbackSetup.templateUrl ??
+                  postbackSetup.baseUrl,
+                duplicateAllowed:
+                  createdNetwork.duplicateAllowed,
+              });
+            }
             setCreatedPostback({
-              ...buildProviderPostbackSetup(result),
+              ...postbackSetup,
               networkName: createdNetwork.name,
             });
             setMessage(
@@ -775,6 +863,7 @@ if (!catalog.permissions.canReadCatalog) {
             onCancel={mode === "manage" ? closeEditor : undefined}
             onChange={setForm}
             networkAccountId={editingId}
+          domains={domains}
             onSubmit={(event) => void handleSubmit(event)}
           />
         </GlassPanel>
