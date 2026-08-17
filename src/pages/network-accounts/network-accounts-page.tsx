@@ -11,6 +11,7 @@ import type {
 import { useCatalogOperations } from "../../features/catalog/use-catalog";
 import { usePostbackEndpointCreator } from "../../features/control-plane/use-control-plane";
 import { buildProviderPostbackSetup } from "../../features/tracking-networks/provider-postback-setup";
+import { environment } from "../../lib/environment";
 import type { NetworkProviderIntegrationInput } from "../../features/tracking-networks/tracking-networks.types";
 import { useNetworkProviders } from "../../features/tracking-networks/use-tracking-networks";
 import { NetworkPostbackManager } from "./network-postback-manager";
@@ -69,9 +70,50 @@ function emptyForm(): NetworkFormState {
   };
 }
 
+function resolvePostbackDomainId(
+  postbackUrl: string | null,
+  domains: readonly {
+    readonly id: string;
+    readonly hostname: string;
+  }[],
+): string {
+  if (
+    postbackUrl === null ||
+    postbackUrl.trim().length === 0
+  ) {
+    return "";
+  }
+  try {
+    const hostname =
+      new URL(postbackUrl).hostname.toLowerCase();
+    return (
+      domains.find(
+        (domain) =>
+          domain.hostname.toLowerCase() === hostname,
+      )?.id ?? ""
+    );
+  } catch {
+    return "";
+  }
+}
+function rewritePostbackOrigin(
+  postbackUrl: string,
+  origin: string,
+): string {
+  const existing = new URL(postbackUrl);
+  const selectedOrigin = new URL(origin);
+  existing.protocol = selectedOrigin.protocol;
+  existing.hostname = selectedOrigin.hostname;
+  existing.port = selectedOrigin.port;
+  return existing.toString();
+}
 function formFromNetwork(
   network: CatalogNetwork,
   clickIdToken: string,
+  domains: readonly {
+    readonly id: string;
+    readonly hostname: string;
+  }[],
 ): NetworkFormState {
   return {
     providerId: network.providerId,
@@ -81,7 +123,10 @@ function formFromNetwork(
       network.trackingParameter ?? network.effectiveTrackingParameter,
     clickIdToken,
     postbackUrl: network.postbackUrl ?? "",
-    postbackDomainId: "",
+    postbackDomainId: resolvePostbackDomainId(
+      network.postbackUrl,
+      domains,
+    ),
     duplicateAllowed: network.duplicateAllowed,
     createPostbackEndpoint: false,
     postbackEndpointName: `${network.name} Conversions`,
@@ -217,9 +262,8 @@ function NetworkForm({
         </label>
       </div>
 
-      {mode !== "edit" && (
-        <label>
-          <span>Postback Domain</span>
+      <label>
+        <span>Postback Domain</span>
           <select
             disabled={disabled}
             onChange={(event) =>
@@ -252,8 +296,7 @@ function NetworkForm({
             Optional. Select a tracking domain to use it as
             the public Postback hostname.
           </small>
-        </label>
-      )}
+      </label>
       {mode === "edit" && networkAccountId !== null ? (
         <>
           <NetworkPostbackManager
@@ -539,23 +582,21 @@ export function NetworkAccountsPage({
                   ? undefined
                   : `https://${selectedDomain.hostname}`,
               );
-            if (selectedDomain !== undefined) {
-              await catalog.updateNetwork({
-                accountId: createdNetwork.id,
-                providerId: createdNetwork.providerId,
-                name: createdNetwork.name,
-                externalAccountId:
-                  createdNetwork.externalAccountId,
-                status: createdNetwork.status,
-                trackingParameter:
-                  createdNetwork.trackingParameter,
-                postbackUrl:
-                  postbackSetup.templateUrl ??
-                  postbackSetup.baseUrl,
-                duplicateAllowed:
-                  createdNetwork.duplicateAllowed,
-              });
-            }
+            await catalog.updateNetwork({
+              accountId: createdNetwork.id,
+              providerId: createdNetwork.providerId,
+              name: createdNetwork.name,
+              externalAccountId:
+                createdNetwork.externalAccountId,
+              status: createdNetwork.status,
+              trackingParameter:
+                createdNetwork.trackingParameter,
+              postbackUrl:
+                postbackSetup.templateUrl ??
+                postbackSetup.baseUrl,
+              duplicateAllowed:
+                createdNetwork.duplicateAllowed,
+            });
             setCreatedPostback({
               ...postbackSetup,
               networkName: createdNetwork.name,
@@ -609,6 +650,44 @@ export function NetworkAccountsPage({
         }
 
         try {
+          const selectedDomain =
+            form.postbackDomainId.length === 0
+              ? undefined
+              : domains.find(
+                  (domain) =>
+                    domain.id === form.postbackDomainId &&
+                    domain.status === "active",
+                );
+          if (
+            form.postbackDomainId.length > 0 &&
+            selectedDomain === undefined
+          ) {
+            throw new Error(
+              "The selected Postback domain is no longer active.",
+            );
+          }
+          const currentPostbackUrl =
+            form.postbackUrl.trim();
+          if (
+            selectedDomain !== undefined &&
+            currentPostbackUrl.length === 0
+          ) {
+            throw new Error(
+              "This older Network does not have its full Postback URL stored. The endpoint was left unchanged to protect existing conversions.",
+            );
+          }
+          const persistedPostbackUrl =
+            currentPostbackUrl.length === 0
+              ? null
+              : selectedDomain === undefined
+                ? rewritePostbackOrigin(
+                    currentPostbackUrl,
+                    environment.apiOrigin,
+                  )
+                : rewritePostbackOrigin(
+                    currentPostbackUrl,
+                    `https://${selectedDomain.hostname}`,
+                  );
           await catalog.updateNetwork({
             accountId: editingId,
             providerId,
@@ -616,7 +695,7 @@ export function NetworkAccountsPage({
             externalAccountId: form.externalAccountId.trim() || null,
             status: form.status,
             trackingParameter: clickParameter,
-            postbackUrl: form.postbackUrl.trim() || null,
+            postbackUrl: persistedPostbackUrl,
             duplicateAllowed: form.duplicateAllowed,
           });
         } catch (networkError: unknown) {
@@ -651,6 +730,7 @@ export function NetworkAccountsPage({
       formFromNetwork(
         network,
         provider?.integration.postbackClickIdToken ?? "",
+        domains,
       ),
     );
     setEditorOpen(true);
@@ -673,6 +753,7 @@ export function NetworkAccountsPage({
       ...formFromNetwork(
         network,
         provider?.integration.postbackClickIdToken ?? "",
+        domains,
       ),
       name: `${network.name} Copy ${suffix}`,
       externalAccountId: "",
