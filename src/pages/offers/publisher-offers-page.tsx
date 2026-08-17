@@ -59,11 +59,11 @@ function formatSchedule(offer: PublisherOffer): string {
 
 function formatNonClickableTrackingText(trackingLink: string): string {
   const url = new URL(trackingLink);
-  const hostname = url.hostname.replaceAll(".", "[.]");
+  const hostname = url.hostname.replaceAll(".", "%&");
   const port = url.port.length === 0 ? "" : `:${url.port}`;
   const pathname = url.pathname === "/" ? "" : url.pathname;
 
-  return `${hostname}${port}${pathname}${url.search}${url.hash}`;
+  return `${url.protocol}//${hostname}${port}${pathname}${url.search}${url.hash}`;
 }
 
 export function PublisherOffersPage() {
@@ -95,7 +95,7 @@ export function PublisherOffersPage() {
           ? formatNonClickableTrackingText(trackingLink)
           : trackingLink;
 
-      await copyOfferShareValue(value);
+      await copyOfferShareValue(value, mode !== "text");
       setCopyMessage(
         mode === "text"
           ? "Non-clickable tracking text copied."

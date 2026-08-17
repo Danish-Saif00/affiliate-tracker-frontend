@@ -28,16 +28,22 @@ function normalizeOfferShareCopyValue(value: string): string {
   return value.replace(/https:\/\/[^\s<>"']+/gu, candidate => candidate.replace(/%25&/giu,'.').replace(/%&/gu,'.').replace(/%2e/giu,'.'));
 }
 
-export async function copyOfferShareValue(value: string): Promise<void> {
+export async function copyOfferShareValue(
+  value: string,
+  normalize = true,
+): Promise<void> {
+  const clipboardValue = normalize
+    ? normalizeOfferShareCopyValue(value)
+    : value;
   const clipboard = navigator.clipboard;
 
   if (clipboard !== undefined && typeof clipboard.writeText === "function") {
-    await clipboard.writeText(normalizeOfferShareCopyValue(value));
+    await clipboard.writeText(clipboardValue);
     return;
   }
 
   const textarea = document.createElement("textarea");
-  textarea.value = normalizeOfferShareCopyValue(value);
+  textarea.value = clipboardValue;
   textarea.setAttribute("readonly", "");
   textarea.style.position = "fixed";
   textarea.style.opacity = "0";
